@@ -1,0 +1,76 @@
+HomeDeck License
+
+Copyright (c) 2026 Rodrigo Araujo. All rights reserved.
+
+HomeDeck ("the Software") is source-available, not open source. The source code is
+published so that you can install the Software through HACS, review what it does on your
+Home Assistant and report problems. This license explains what you may and may not do.
+
+1. Permitted use
+
+   You may download, install and use the Software on Home Assistant installations that you
+   own or administer, for personal or household use, free of charge, within the limits of
+   the free plan. You may read the source code and build it for your own installations.
+
+2. HomeDeck Pro
+
+   The Pro features require a valid license key, purchased at https://homedeck.pro and
+   activated on the Home Assistant installation it was issued for. A license covers one
+   Home Assistant installation, as described at https://homedeck.pro.
+
+3. Restrictions
+
+   You may not, without prior written permission from the copyright holder:
+
+   a. copy, publish, distribute, sublicense, rent, sell or otherwise make the Software, or
+      any modified version or substantial part of it, available to others;
+   b. publish forks, mirrors or derived dashboards based on the Software;
+   c. remove, disable, bypass or work around the license check, the free-plan limits or
+      any other mechanism that controls access to the Pro features, or help others do so;
+   d. generate, share or sell license keys, or use a license key on more installations than
+      it covers;
+   e. remove or alter copyright notices, this license or the HomeDeck name and logo.
+
+   Forking this repository on GitHub solely to propose changes back through a pull request
+   is allowed.
+
+4. Contributions
+
+   By submitting a contribution (for example a pull request, patch or translation), you
+   grant the copyright holder a perpetual, worldwide, royalty-free, irrevocable license to
+   use, modify, sublicense and distribute your contribution as part of the Software, under
+   this license or any other terms.
+
+5. Third-party components
+
+   The Software includes third-party components under their own licenses, such as the
+   Outfit and Figtree fonts (SIL Open Font License 1.1, see
+   custom_components/homedeck/frontend/fonts) and the npm packages listed in
+   frontend/package.json. Those licenses apply to those components.
+
+6. Trademarks
+
+   "HomeDeck" and the HomeDeck logo are not licensed under this license. HomeDeck is an
+   independent project, not affiliated with Home Assistant, Nabu Casa or the Open Home
+   Foundation.
+
+7. Termination
+
+   This license ends automatically if you break any of its terms. When it ends, you must
+   stop using the Software and delete your copies. Sections 4, 8 and 9 survive termination.
+
+8. No warranty
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+   INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+   PURPOSE AND NONINFRINGEMENT.
+
+9. Limitation of liability
+
+   TO THE EXTENT PERMITTED BY LAW, IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+   ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   THE SOFTWARE. Nothing in this license limits rights you have under consumer protection
+   laws that cannot be waived.
+
+Questions about this license: suporte@homedeck.pro

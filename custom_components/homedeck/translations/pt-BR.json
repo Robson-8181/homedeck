@@ -1,0 +1,15 @@
+{
+  "title": "HomeDeck",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configurar o HomeDeck",
+        "description": "Adicione o painel local-first do HomeDeck à barra lateral do Home Assistant."
+      }
+    },
+    "abort": {
+      "already_configured": "O HomeDeck já está configurado.",
+      "single_instance_allowed": "O HomeDeck já está configurado."
+    }
+  }
+}

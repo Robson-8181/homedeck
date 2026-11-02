@@ -1,0 +1,15 @@
+{
+  "title": "HomeDeck",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up HomeDeck",
+        "description": "Add the local-first HomeDeck dashboard to your Home Assistant sidebar."
+      }
+    },
+    "abort": {
+      "already_configured": "HomeDeck is already configured.",
+      "single_instance_allowed": "HomeDeck is already configured."
+    }
+  }
+}

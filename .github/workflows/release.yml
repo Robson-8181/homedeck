@@ -1,0 +1,37 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: Attach homedeck.zip
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Tag matches manifest, const.py and package.json
+        run: python3 scripts/version.py check "${{ github.event.release.tag_name }}"
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+      - name: Committed panel matches the source
+        run: git diff --exit-code -- custom_components/homedeck/frontend
+      # HACS (zip_release) extracts this archive straight into custom_components/homedeck.
+      - name: Build homedeck.zip
+        run: |
+          cd custom_components/homedeck
+          zip -r "$GITHUB_WORKSPACE/homedeck.zip" . -x "__pycache__/*" "*.pyc"
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" homedeck.zip --clobber
