@@ -7,7 +7,6 @@ export const FREE_BACKGROUNDS: HomeDeckBackgroundPreset[] = ["adaptive_ember", "
 export const FREE_VIEW_MODES: HomeDeckViewMode[] = ["grid", "list"];
 export const DEFAULT_ACCENT = "#f4edd9";
 export const DEFAULT_HIGHLIGHT = "#ffc94d";
-export const PRICES = { lifetime: 14.99, annual: 7.99 };
 export const SUPPORT_EMAIL = "suporte@homedeck.pro";
 const CONTROLLABLE = new Set(["light", "switch", "fan", "cover", "climate", "media_player", "lock"]);
 
@@ -97,6 +96,11 @@ export function effectiveConfig(config: HomeDeckConfig, pro: boolean): HomeDeckC
   };
 }
 
-export function formatPrice(value: number, language?: string): string {
-  return new Intl.NumberFormat(language, { style: "currency", currency: "USD" }).format(value);
+/** Pro prices as Stripe charges them: reais in Brazilian Portuguese (a Brazilian Stripe account
+ * charges Brazilian cards only in BRL), dollars everywhere else. */
+const PRICES = { BRL: { lifetime: 59.9, annual: 29.9 }, USD: { lifetime: 14.99, annual: 7.99 } };
+
+export function proPrice(plan: "lifetime" | "annual", language?: string): string {
+  const currency = language?.toLowerCase() === "pt-br" ? "BRL" : "USD";
+  return new Intl.NumberFormat(language, { style: "currency", currency }).format(PRICES[currency][plan]);
 }

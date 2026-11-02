@@ -6,7 +6,7 @@ import type { TranslationKey } from "../i18n";
 import type { HomeDeckBackgroundPreset, HomeDeckConfig } from "../types/config";
 import type { DiscoveryResponse } from "../types/discovery";
 import type { HomeAssistant } from "../types/home-assistant";
-import { DEFAULT_ACCENT, FREE_BACKGROUNDS, formatPrice, isControllable, PRICES, usePlan } from "../plan";
+import { DEFAULT_ACCENT, FREE_BACKGROUNDS, isControllable, proPrice, usePlan } from "../plan";
 
 interface OnboardingScreenProps { config: HomeDeckConfig; data: DiscoveryResponse; hass: HomeAssistant; onComplete: (config: HomeDeckConfig) => Promise<void>; t: (key: TranslationKey) => string; }
 const BACKGROUNDS: Array<[HomeDeckBackgroundPreset, TranslationKey, string]> = [
@@ -63,7 +63,7 @@ export function OnboardingScreen({ config, data, hass, onComplete, t }: Onboardi
       {step === 0 && <div className="welcome-panel onboarding-dashboard-welcome"><span className="eyebrow">HOMEDECK</span><h1>{t("welcomeTitle")}</h1><p>{t("welcomeDescription")}</p><button className="primary-button primary-button--large" onClick={() => setStep(1)} type="button">{t("getStarted")} <HDIcon name="chevron" size={18} /></button></div>}
       {step === 1 && <div className="setup-panel"><span className="eyebrow">{t("homeEyebrow")}</span><h1>{t("detectionTitle")}</h1><p>{t("detectionDescription")}</p><div className="detection-grid"><div><strong>{data.counts.rooms}</strong><span>{t("rooms")}</span></div><div><strong>{data.counts.devices}</strong><span>{t("devices")}</span></div><div><strong>{data.counts.entities}</strong><span>{t("entities")}</span></div></div>{overFree ? <div className="onboarding-plan">
         <p>{t("onboardingPlanIntro").replace("{rooms}", String(plan.limits.rooms)).replace("{devices}", String(plan.limits.devices))}</p>
-        <button className="onboarding-plan__pro" onClick={() => plan.upsell("general")} type="button"><span><HDIcon name="star" size={20} /></span><div><strong>HomeDeck Pro</strong><small>{t("onboardingPlanPro").replace("{lifetime}", formatPrice(PRICES.lifetime)).replace("{annual}", formatPrice(PRICES.annual))}</small></div></button>
+        <button className="onboarding-plan__pro" onClick={() => plan.upsell("general")} type="button"><span><HDIcon name="star" size={20} /></span><div><strong>HomeDeck Pro</strong><small>{t("onboardingPlanPro").replace("{lifetime}", proPrice("lifetime", hass.locale?.language ?? hass.language)).replace("{annual}", proPrice("annual", hass.locale?.language ?? hass.language))}</small></div></button>
         <button className="onboarding-plan__free" onClick={continueFree} type="button"><span><HDIcon name="home" size={20} /></span><div><strong>{t("onboardingPlanFree")}</strong><small>{t("onboardingPlanFreeNote").replace("{rooms}", String(plan.limits.rooms)).replace("{devices}", String(plan.limits.devices))}</small></div></button>
         <div className="setup-actions"><button className="secondary-button" onClick={() => setStep(0)} type="button">{t("back")}</button></div>
       </div> : actions(0, 2)}</div>}

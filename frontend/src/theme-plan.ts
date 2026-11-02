@@ -33,13 +33,15 @@ export const themePlan = String.raw`
 .app-shell .hd-pro__key button { flex: none; height: calc(var(--u)*5.4); padding: 0 calc(var(--u)*2.4); border: 0; border-radius: 99px; background: rgba(255,255,255,.92); color: #1d1a17; font: 600 calc(var(--u)*1.8)/1 var(--f-body); cursor: pointer; }
 .app-shell .hd-pro__key button:disabled { opacity: .45; cursor: default; }
 /* Paying: QR code for a phone, or this device; then the thank-you state */
-.app-shell .hd-pro__pay { display: grid; grid-template-columns: auto 1fr; gap: calc(var(--u)*2.4); align-items: center; }
+.app-shell .hd-pro__pay { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: calc(var(--u)*2.4); align-items: center; }
 .app-shell .hd-qr { width: calc(var(--u)*22); height: calc(var(--u)*22); border-radius: calc(var(--u)*1.6); display: block; }
 .app-shell .hd-pro__pay h3, .app-shell .hd-pro__done h3 { margin: 0; font: 500 calc(var(--u)*2.6)/1.15 var(--f-display); }
 .app-shell .hd-pro__pay p, .app-shell .hd-pro__done p { margin: calc(var(--u)*.8) 0 0; color: var(--ink-2); font: 500 calc(var(--u)*1.75)/1.4 var(--f-body); }
 .app-shell .hd-pro__waiting { display: flex; align-items: center; gap: calc(var(--u)*1); color: var(--ink) !important; font-weight: 600 !important; }
 .app-shell .hd-spinner { width: 16px; height: 16px; flex: none; border-radius: 50%; border: 2px solid rgba(255,255,255,.25); border-top-color: #ffc94d; animation: hd-spin .9s linear infinite; }
 @keyframes hd-spin { to { transform: rotate(360deg); } }
+/* The key from the e-mail, asked for under the QR code once "I already got the key" is tapped */
+.app-shell .hd-pro__pay > .hd-pro__key { grid-column: 1 / -1; justify-self: stretch; text-align: left; }
 .app-shell .hd-pro__pay-actions { display: flex; flex-wrap: wrap; gap: calc(var(--u)*1); margin-top: calc(var(--u)*1.8); }
 .app-shell .hd-pro__pay-actions .hd-detail__primary { width: auto; padding: 0 calc(var(--u)*2.4); text-decoration: none; display: inline-flex; align-items: center; }
 .app-shell .hd-pro__done { display: flex; flex-direction: column; align-items: center; text-align: center; gap: calc(var(--u)*.6); padding: calc(var(--u)*2) 0 calc(var(--u)*.6); }

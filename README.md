@@ -54,7 +54,7 @@ on macOS). Your rooms, backgrounds and preferences are kept.
   climate, media and locks). Sensors and scenes don't count. Grid and List layouts.
 - **Pro:** unlimited rooms and devices, all four layouts, big cards, your own pages, the
   Spotify player, the screensaver and every background and color. US$ 14.99 once or
-  US$ 7.99 per year, per home.
+  US$ 7.99 per year, per home (R$ 59.90 or R$ 29.90 per year in Brazil).
 
 Buy Pro from **Settings → Plan** in the dashboard. The license is checked locally and
 covers one Home Assistant installation; an online check every 7 days looks for renewals,

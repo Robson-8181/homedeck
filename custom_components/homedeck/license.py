@@ -11,6 +11,7 @@ from collections.abc import Callable
 from datetime import timedelta
 import json
 import logging
+import re
 import time
 from typing import Any
 
@@ -28,11 +29,12 @@ from homeassistant.helpers.storage import Store
 from .const import DOMAIN
 
 PREFIX = "HD1"
-# Signing keys by id. "dev" signs development licenses (scripts/dev_license.py) and "test1"
-# the license server in Stripe test mode; both go away when the live key is added.
+# Signing keys by id. "live1" signs the licenses sold by the license server; "dev" signs
+# complimentary licenses issued by hand (scripts/dev_license.py). Both private keys stay with the
+# author. The Stripe test-mode key ("test1") is gone, so test purchases never unlock Pro.
 PUBLIC_KEYS: dict[str, str] = {
+    "live1": "62T1UaVsjEsxSr16XMuoealsOHNaD3yn4JkXK0lsZPQ",
     "dev": "luX5CAtuGZNQBR2xEv_N2L8HGzaOEv3anjQGGD36PLk",
-    "test1": "srCwmO-ZB6GEIkL_13IQL8yL_lIE7t1sFlTh68BK2SY",
 }
 
 FREE_ROOMS = 4
@@ -59,6 +61,11 @@ class LicenseError(Exception):
     """A key or request that cannot unlock Pro here; the message is a stable error code."""
 
 
+def clean_key(key: str) -> str:
+    """A pasted key without the spaces, line breaks and invisible characters e-mail apps add."""
+    return re.sub(r"[\s\u200b-\u200d\u2060\ufeff]", "", key)
+
+
 def _b64decode(value: str) -> bytes:
     return base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
 
@@ -66,10 +73,13 @@ def _b64decode(value: str) -> bytes:
 def verify_key(key: str, installation: str, now: float | None = None) -> dict[str, Any]:
     """Return the payload of a valid key for this installation, or raise LicenseError."""
     try:
-        prefix, body, signature = key.strip().split(".")
+        prefix, body, signature = clean_key(key).split(".")
         if prefix != PREFIX:
             raise ValueError
         payload = json.loads(_b64decode(body))
+        if payload.get("kid") not in PUBLIC_KEYS:
+            # Signed with a key this version doesn't know yet: an older HomeDeck, not a bad key.
+            raise LicenseError("unknown_key")
         public = PUBLIC_KEYS[payload["kid"]]
         Ed25519PublicKey.from_public_bytes(_b64decode(public)).verify(
             _b64decode(signature), f"{prefix}.{body}".encode()
@@ -156,7 +166,7 @@ async def async_license_status(hass: HomeAssistant) -> dict[str, Any]:
 
 
 async def _save_key(hass: HomeAssistant, key: str) -> None:
-    await _store(hass).async_save({"key": key.strip(), "checked_at": time.time()})
+    await _store(hass).async_save({"key": clean_key(key), "checked_at": time.time()})
 
 
 async def async_activate(hass: HomeAssistant, key: str) -> dict[str, Any]:
@@ -167,7 +177,7 @@ async def async_activate(hass: HomeAssistant, key: str) -> dict[str, Any]:
     except LicenseError as err:
         if str(err) != "wrong_installation" or _kid(key) in OFFLINE_KIDS:
             raise
-        key = (await _server(hass, "transfer", {"key": key.strip(), "installation": installation}))["key"]
+        key = (await _server(hass, "transfer", {"key": clean_key(key), "installation": installation}))["key"]
         verify_key(key, installation)
     await _save_key(hass, key)
     return await async_license_status(hass)

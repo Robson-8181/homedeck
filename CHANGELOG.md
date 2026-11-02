@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.10.0
+## 0.10.3
 
 First public release.
 
@@ -17,4 +17,4 @@ First public release.
 - Option to hide the Home Assistant sidebar on each device.
 - Free and Pro plans, with Pro bought from the dashboard (Stripe, with a QR code to pay on
   your phone) and activated automatically.
-- English, Portuguese and Spanish.
+- English, Portuguese and Spanish; Pro priced in US dollars, or in Brazilian reais in Brazil.

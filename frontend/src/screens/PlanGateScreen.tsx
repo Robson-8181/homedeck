@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { HDIcon, domainIcon, roomIcon } from "../components/HDIcon";
 import { domainLabel, type TranslationKey } from "../i18n";
-import { formatPrice, freeDevices, freeRoomIds, isControllable, PRICES, usePlan } from "../plan";
+import { freeDevices, freeRoomIds, isControllable, proPrice, usePlan } from "../plan";
 import type { HomeDeckConfig } from "../types/config";
 import type { Room } from "../types/discovery";
 
@@ -55,7 +55,7 @@ export function PlanGateScreen({ config, language, onSave, rooms, t }: PlanGateP
 
     <section className="st-panel plan-gate__pro">
       <span className="hd-pro__mark"><HDIcon name="star" size={22} /></span>
-      <div><h2>HomeDeck Pro</h2><p>{t("gateProDescription").replace("{lifetime}", formatPrice(PRICES.lifetime, language)).replace("{annual}", formatPrice(PRICES.annual, language))}</p></div>
+      <div><h2>HomeDeck Pro</h2><p>{t("gateProDescription").replace("{lifetime}", proPrice("lifetime", language)).replace("{annual}", proPrice("annual", language))}</p></div>
       <button className="hd-pill hd-pill--solid" onClick={() => upsell("general")} type="button"><HDIcon name="star" size={16} />{t("proSeePro")}</button>
     </section>
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { claimCheckout, startCheckout, type LicenseStatus } from "../api/license";
 import type { TranslationKey } from "../i18n";
-import { formatPrice, PRICES, type UpsellReason } from "../plan";
+import { proPrice, type UpsellReason } from "../plan";
 import type { HomeAssistant } from "../types/home-assistant";
 import { HDIcon, type IconName } from "./HDIcon";
 import { QrCode } from "./QrCode";
@@ -30,6 +30,7 @@ export const LICENSE_ERRORS: Record<string, TranslationKey> = {
   revoked: "licenseRevoked",
   transferred: "licenseTransferred",
   activation_limit: "licenseActivationLimit",
+  unknown_key: "licenseUnknownKey",
   offline: "licenseOffline",
 };
 const POLL_MS = 3000;
@@ -43,6 +44,8 @@ export function ProSheet({ hass, language, license, onActivate, onClose, onLicen
   const [error, setError] = useState<TranslationKey | null>(null);
   const [payUrl, setPayUrl] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  // "I already got the key": the waiting screen offers the field for the key from the e-mail.
+  const [manual, setManual] = useState(false);
   const canBuy = Boolean(license?.can_buy);
 
   // Pro turns on by itself once the payment, on this device or a phone, is confirmed.
@@ -68,7 +71,22 @@ export function ProSheet({ hass, language, license, onActivate, onClose, onLicen
     if (!key.trim() || busy) return;
     setBusy(true);
     setError(null);
-    try { await onActivate(key.trim()); } catch (err) { setError(errorOf(err)); } finally { setBusy(false); }
+    try {
+      // E-mail apps sometimes break the long key across lines.
+      await onActivate(key.replace(/[\s\u200b-\u200d\u2060\ufeff]/g, ""));
+      if (payUrl) setDone(true);
+    } catch (err) { setError(errorOf(err)); } finally { setBusy(false); }
+  };
+  // Checks the purchase once more; if Pro is still off, asks for the key that came by e-mail.
+  const gotKey = async () => {
+    if (busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const status = await claimCheckout(hass);
+      if (status.plan === "pro") { onLicense(status); setDone(true); return; }
+    } catch { /* the field below still works */ } finally { setBusy(false); }
+    setManual(true);
   };
   const buy = async () => {
     if (!canBuy || busy) return;
@@ -76,6 +94,15 @@ export function ProSheet({ hass, language, license, onActivate, onClose, onLicen
     setError(null);
     try { setPayUrl((await startCheckout(hass, plan, language)).url); } catch (err) { setError(errorOf(err)); } finally { setBusy(false); }
   };
+
+  const keyField = (title: string) => <div className="hd-pro__key">
+    <span>{title}</span>
+    <div>
+      <input aria-label={t("proKey")} autoComplete="off" autoFocus={manual} onChange={(event) => { setKey(event.target.value); setError(null); }} onKeyDown={(event) => { if (event.key === "Enter") void activate(); }} placeholder="HD1.…" spellCheck={false} value={key} />
+      <button disabled={!key.trim() || busy} onClick={() => void activate()} type="button">{busy ? "…" : t("proActivate")}</button>
+    </div>
+    {error && <p className="hd-pro__error">{t(error)}</p>}
+  </div>;
 
   const lead: TranslationKey = reason === "rooms" ? "proReasonRooms" : reason === "devices" ? "proReasonDevices" : reason === "feature" ? "proReasonFeature" : "proReasonGeneral";
   const limits = license?.limits ?? { rooms: 4, devices: 10 };
@@ -100,29 +127,23 @@ export function ProSheet({ hass, language, license, onActivate, onClose, onLicen
           <p className="hd-pro__waiting"><span className="hd-spinner" aria-hidden="true" />{t("proWaiting")}</p>
           <div className="hd-pro__pay-actions">
             <a className="hd-detail__primary" href={payUrl} rel="noopener" target="_blank">{t("proPayHere")}</a>
-            <button className="hd-pill" onClick={() => setPayUrl(null)} type="button">{t("proBack")}</button>
+            {!manual && <button className="hd-pill" disabled={busy} onClick={() => void gotKey()} type="button">{busy ? "…" : t("proGotKey")}</button>}
           </div>
         </div>
+        {manual && keyField(t("proGotKeyHint"))}
       </div> : <>
         <p className="hd-pro__lead">{t(lead).replace("{rooms}", String(limits.rooms)).replace("{devices}", String(limits.devices))}</p>
         <ul className="hd-pro__benefits">{BENEFITS.map(([icon, label]) => <li key={label}><HDIcon name={icon} size={18} /><span>{t(label)}</span></li>)}</ul>
         <div className="hd-pro__plans" role="radiogroup" aria-label={t("proChoosePlan")}>
           <button aria-checked={plan === "lifetime"} onClick={() => setPlan("lifetime")} role="radio" type="button">
-            <small>{t("proLifetime")}</small><strong>{formatPrice(PRICES.lifetime, language)}</strong><span>{t("proLifetimeNote")}</span><i>{t("proRecommended")}</i>
+            <small>{t("proLifetime")}</small><strong>{proPrice("lifetime", language)}</strong><span>{t("proLifetimeNote")}</span><i>{t("proRecommended")}</i>
           </button>
           <button aria-checked={plan === "annual"} onClick={() => setPlan("annual")} role="radio" type="button">
-            <small>{t("proAnnual")}</small><strong>{formatPrice(PRICES.annual, language)}</strong><span>{t("proAnnualNote")}</span>
+            <small>{t("proAnnual")}</small><strong>{proPrice("annual", language)}</strong><span>{t("proAnnualNote")}</span>
           </button>
         </div>
         <button className="hd-detail__primary" disabled={!canBuy || busy} onClick={() => void buy()} type="button"><HDIcon name="star" size={18} />{!canBuy ? t("proBuySoon") : busy ? "…" : t("proBuy")}</button>
-        <div className="hd-pro__key">
-          <span>{t("proHaveKey")}</span>
-          <div>
-            <input aria-label={t("proKey")} autoComplete="off" onChange={(event) => { setKey(event.target.value); setError(null); }} onKeyDown={(event) => { if (event.key === "Enter") void activate(); }} placeholder="HD1.…" spellCheck={false} value={key} />
-            <button disabled={!key.trim() || busy} onClick={() => void activate()} type="button">{busy ? "…" : t("proActivate")}</button>
-          </div>
-          {error && <p className="hd-pro__error">{t(error)}</p>}
-        </div>
+        {keyField(t("proHaveKey"))}
       </>}
     </section>
   </div>;
