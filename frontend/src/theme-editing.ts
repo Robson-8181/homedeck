@@ -15,6 +15,19 @@ export const themeEditing = String.raw`
 .app-shell .hd-grid--editing .hd-item > :first-child { position: relative; z-index: 0; }
 .app-shell .hd-grid--editing .hd-item--dragging { animation: none; z-index: 30; cursor: grabbing; filter: drop-shadow(0 calc(var(--u)*2) calc(var(--u)*3) rgba(0,0,0,.45)); }
 @media (prefers-reduced-motion: reduce) { .app-shell .hd-grid--editing .hd-item { animation: none; outline: 1px dashed rgba(255,255,255,.35); outline-offset: 3px; } }
+/* Separators: the cards between two titles form their own grid. */
+.app-shell .hd-sections { flex: 1 0 auto; display: flex; flex-direction: column; gap: calc(var(--u)*1.8); min-width: 0; }
+.app-shell .hd-sections > .hd-item--section { position: relative; margin-top: calc(var(--u)*.6); }
+.app-shell .hd-sections > .hd-item--section:first-child { margin-top: 0; }
+.app-shell .hd-section { display: flex; align-items: center; gap: calc(var(--u)*1.4); margin: 0; min-height: calc(var(--u)*3); color: var(--ink-2); font: 600 calc(var(--u)*1.55)/1.2 var(--f-body); letter-spacing: .1em; text-transform: uppercase; }
+.app-shell .hd-section > span { flex: none; max-width: 70%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-shell .hd-section::after { content: ""; flex: 1; height: 1px; background: rgba(255,255,255,.2); }
+.app-shell .hd-sections--editing > .hd-item--section { cursor: grab; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.app-shell .hd-section--editing { padding-left: calc(var(--u)*4.6); color: var(--ink-3); }
+.app-shell .hd-section__input { flex: 0 1 calc(var(--u)*34); min-width: 0; height: calc(var(--u)*4.4); padding: 0 calc(var(--u)*1.2); border-radius: calc(var(--u)*1.2*var(--hd-r,1)); border: 1px dashed rgba(255,255,255,.35); background: rgba(255,255,255,.06); color: var(--ink); font: inherit; letter-spacing: inherit; text-transform: uppercase; }
+.app-shell .hd-section__input:focus { outline: none; border-style: solid; border-color: rgba(255,255,255,.6); }
+.app-shell .hd-sections > .hd-item--section .hd-item__badge--remove { top: 50%; left: 0; transform: translateY(-50%); }
+.app-shell .hd-sections > .hd-item--dragging { z-index: 20; }
 .app-shell .hd-item__badge {
   position: absolute; z-index: 6; width: calc(var(--u)*3.8); height: calc(var(--u)*3.8); min-width: 26px; min-height: 26px;
   border-radius: var(--hd-round,50%); border: 0; padding: 0; display: grid; place-items: center; cursor: pointer;

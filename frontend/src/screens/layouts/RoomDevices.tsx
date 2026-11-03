@@ -39,6 +39,7 @@ export function RoomDevices({ className, props, render, room, sizable = false }:
       onAdd={() => setPicking(true)}
       onLayout={(next) => onLayout(screen, next)}
       onRemove={(key) => setAdded(added.filter((id) => id !== keyId(key)))}
+      sections
       sizable={sizable}
       t={t}
     />

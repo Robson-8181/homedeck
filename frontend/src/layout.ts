@@ -14,6 +14,26 @@ export const entityKey = (entityId: string) => `entity:${entityId}`;
 export const WIDGET_KEYS = ["widget:security", "widget:climate", "widget:media"] as const;
 export type WidgetKey = (typeof WIDGET_KEYS)[number];
 
+export const SECTION_PREFIX = "section:";
+export const isSectionKey = (key: string) => key.startsWith(SECTION_PREFIX);
+
+/** Puts each separator back before the item that followed it in the saved order (or at the end). */
+export function withSections(keys: string[], layout: ScreenLayout): string[] {
+  const sections = Object.keys(layout.sections ?? {});
+  if (sections.length === 0) return keys;
+  const result = [...keys];
+  const shown = new Set(keys);
+  const position = (key: string) => { const index = layout.order.indexOf(key); return index < 0 ? Number.MAX_SAFE_INTEGER : index; };
+  for (const section of [...sections].sort((a, b) => position(a) - position(b))) {
+    const index = layout.order.indexOf(section);
+    const anchor = index < 0 ? undefined : layout.order.slice(index + 1).find((key) => shown.has(key));
+    const at = anchor ? result.indexOf(anchor) : -1;
+    if (at < 0) result.push(section);
+    else result.splice(at, 0, section);
+  }
+  return result;
+}
+
 export function keyId(key: string): string {
   return key.slice(key.indexOf(":") + 1);
 }

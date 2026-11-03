@@ -38,7 +38,7 @@ on macOS). Your rooms, backgrounds and preferences are kept.
 - **Four layouts:** Grid, Sidebar, List and Focus. Every screen, including Media,
   Security, Scenes and your own pages, follows the one you pick.
 - **Edit mode like an iPhone:** drag to reorder, tap − to hide, add devices from any room,
-  double the size of a card. Nothing is ever deleted from Home Assistant.
+  double the size of a card and split a screen into groups with separators. Nothing is ever deleted from Home Assistant.
 - **Calendar and reminders** beside the clock, with a full-screen month view and a
   reminders list.
 - **Full weather forecast:** next hours and next 7 days, using your Home Assistant weather

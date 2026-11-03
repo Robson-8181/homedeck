@@ -17,6 +17,16 @@ from .const import (
 )
 
 _STATIC_REGISTERED = "static_registered"
+# Where Home Assistant keeps its sidebar panels (a HassKey with this name on newer versions).
+_PANELS = "frontend_panels"
+
+
+def _panel_exists(hass: HomeAssistant) -> bool:
+    """frontend.async_panel_exists only exists from Home Assistant 2026.5 on."""
+    exists = getattr(frontend, "async_panel_exists", None)
+    if exists is not None:
+        return exists(hass, PANEL_PATH)
+    return PANEL_PATH in hass.data.get(_PANELS, {})
 
 
 async def async_register_frontend(hass: HomeAssistant) -> None:
@@ -30,7 +40,7 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
         )
         domain_data[_STATIC_REGISTERED] = True
 
-    if frontend.async_panel_exists(hass, PANEL_PATH):
+    if _panel_exists(hass):
         return
 
     await panel_custom.async_register_panel(
@@ -48,6 +58,6 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
 
 def async_unregister_frontend(hass: HomeAssistant) -> None:
     """Remove the HomeDeck panel while keeping its harmless static route."""
-    if frontend.async_panel_exists(hass, PANEL_PATH):
+    if _panel_exists(hass):
         frontend.async_remove_panel(hass, PANEL_PATH)
 

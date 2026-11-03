@@ -1,9 +1,10 @@
-import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createContext, Fragment, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import type { TranslationKey } from "../i18n";
 import type { ScreenLayout } from "../types/config";
 import { HDIcon } from "./HDIcon";
 import { usePlan } from "../plan";
+import { isSectionKey, SECTION_PREFIX, withSections } from "../layout";
 
 /** True inside a double-size tile, so cards can offer more controls there. */
 const WideTile = createContext(false);
@@ -29,6 +30,8 @@ interface EditableGridProps {
   onRemove?: (key: string) => void;
   /** Offers the double-size badge (cards); rows and chips keep one size. */
   sizable?: boolean;
+  /** Allows separators with a title between the items (device and card screens). */
+  sections?: boolean;
   t: (key: TranslationKey) => string;
 }
 
@@ -45,16 +48,25 @@ interface Drag {
 
 const HOLD_MS = 260;
 
-export function EditableGrid({ addLabel, className, editing, hiddenItems = [], items, layout, onAdd, onLayout, onRemove, sizable = true, t }: EditableGridProps) {
+export function EditableGrid({ addLabel, className, editing, hiddenItems = [], items: cards, layout, onAdd, onLayout, onRemove, sections = false, sizable = true, t }: EditableGridProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const plan = usePlan();
   const drag = useRef<Drag | null>(null);
   const [order, setOrder] = useState<string[] | null>(null);
   const [dragKey, setDragKey] = useState<string | null>(null);
-  const keys = items.map((item) => item.key);
+  const titles = sections ? layout.sections ?? {} : {};
+  const keys = withSections(cards.map((item) => item.key), sections ? layout : { ...layout, sections: {} });
+  const setTitle = (key: string, title: string) => onLayout({ ...layout, sections: { ...titles, [key]: title.trim().slice(0, 60) || t("newSection") } });
+  const items: GridItem[] = [...cards, ...Object.keys(titles).map((key): GridItem => ({
+    key,
+    label: titles[key],
+    removal: "remove",
+    node: editing ? <SectionTitle onTitle={(title) => setTitle(key, title)} t={t} title={titles[key]} /> : <h2 className="hd-section"><span>{titles[key]}</span></h2>,
+  }))];
   const shown = order ?? keys;
   const byKey = new Map(items.map((item) => [item.key, item]));
 
+  const sectioned = shown.some(isSectionKey);
   // While an item is being dragged on a touch screen, the page must not scroll.
   useEffect(() => {
     const root = rootRef.current;
@@ -62,7 +74,7 @@ export function EditableGrid({ addLabel, className, editing, hiddenItems = [], i
     const block = (event: TouchEvent) => { if (drag.current?.active) event.preventDefault(); };
     root.addEventListener("touchmove", block, { passive: false });
     return () => root.removeEventListener("touchmove", block);
-  }, []);
+  }, [sectioned]);
 
   useEffect(() => { if (!editing) cancel(); }, [editing]);
 
@@ -92,7 +104,7 @@ export function EditableGrid({ addLabel, className, editing, hiddenItems = [], i
   };
 
   const start = (key: string) => (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!editing || (event.target as HTMLElement).closest(".hd-item__badge, .hd-add-tile, .hd-hidden-tray")) return;
+    if (!editing || (event.target as HTMLElement).closest(".hd-item__badge, .hd-add-tile, .hd-hidden-tray, .hd-section__input")) return;
     // Grids can be nested (rows inside a section): the innermost one takes the drag.
     event.stopPropagation();
     const rect = event.currentTarget.getBoundingClientRect();
@@ -140,6 +152,11 @@ export function EditableGrid({ addLabel, className, editing, hiddenItems = [], i
     follow();
   };
 
+  const addSection = () => {
+    const key = `${SECTION_PREFIX}${Date.now().toString(36)}`;
+    onLayout({ ...layout, sections: { ...titles, [key]: t("newSection") }, order: [...keys, key, ...layout.hidden.filter((item) => !keys.includes(item))] });
+  };
+
   const end = (event: ReactPointerEvent<HTMLDivElement>) => {
     const current = drag.current;
     if (!current || current.pointerId !== event.pointerId) return;
@@ -151,40 +168,75 @@ export function EditableGrid({ addLabel, className, editing, hiddenItems = [], i
   };
 
   const hide = (item: GridItem) => {
-    if (item.removal === "remove") onRemove?.(item.key);
+    if (isSectionKey(item.key)) {
+      const { [item.key]: _removed, ...rest } = titles;
+      onLayout({ ...layout, sections: rest, order: layout.order.filter((key) => key !== item.key) });
+    } else if (item.removal === "remove") onRemove?.(item.key);
     else onLayout({ ...layout, hidden: [...new Set([...layout.hidden, item.key])] });
   };
 
+  const renderItem = (key: string, index: number) => {
+    const item = byKey.get(key);
+    if (!item) return null;
+    const section = isSectionKey(key);
+    const wide = !section && layout.wide.includes(key);
+    return <div
+      className={`hd-item ${wide ? "hd-item--wide" : ""} ${section ? "hd-item--section" : ""} ${dragKey === key ? "hd-item--dragging" : ""}`}
+      data-hd-key={key}
+      key={key}
+      onPointerDown={start(key)}
+      style={{ animationDelay: `${(index % 5) * -0.09}s` }}
+    >
+      <WideTile.Provider value={wide}>{item.node}</WideTile.Provider>
+      {editing && <>
+        <button aria-label={`${item.removal === "remove" ? t("removeItem") : t("hideItem")}: ${item.label}`} className="hd-item__badge hd-item__badge--remove" onClick={() => hide(item)} type="button"><HDIcon name="minus" size={14} /></button>
+        {sizable && !section && <button aria-label={`${wide ? t("normalSize") : t("doubleSize")}: ${item.label}`} aria-pressed={wide} className="hd-item__badge hd-item__badge--size" onClick={() => (plan.pro ? onLayout({ ...layout, wide: wide ? layout.wide.filter((entry) => entry !== key) : [...layout.wide, key] }) : plan.upsell("feature"))} type="button"><HDIcon name={!plan.pro ? "lock" : wide ? "shrink" : "expand"} size={14} /></button>}
+      </>}
+    </div>;
+  };
+  const addTiles = <>
+    {editing && onAdd && <button className="hd-add-tile" onClick={onAdd} type="button"><span><HDIcon name="plus" size={22} /></span>{addLabel ?? t("addItem")}</button>}
+    {editing && sections && <button className="hd-add-tile hd-add-tile--section" onClick={addSection} type="button"><span><HDIcon name="minus" size={22} /></span>{t("addSection")}</button>}
+  </>;
+  const gridClass = `${className} hd-grid ${editing ? "hd-grid--editing" : ""}`;
+  // Move and release are handled on the root: a card dragged across a separator changes block and
+  // loses its pointer capture, so later events can come from anywhere inside.
+  const pointer = { onPointerCancel: cancel, onPointerMove: move, onPointerUp: end, ref: rootRef };
+  // With separators the items are split into blocks, each its own grid, with the titles between them.
+  const blocks: Array<{ section?: string; keys: string[] }> = [{ keys: [] }];
+  for (const key of shown) {
+    if (isSectionKey(key) && byKey.has(key)) blocks.push({ section: key, keys: [] });
+    else blocks[blocks.length - 1].keys.push(key);
+  }
+
   return <>
-    <div className={`${className} hd-grid ${editing ? "hd-grid--editing" : ""}`} ref={rootRef}>
-      {shown.map((key, index) => {
-        const item = byKey.get(key);
-        if (!item) return null;
-        const wide = layout.wide.includes(key);
-        return <div
-          className={`hd-item ${wide ? "hd-item--wide" : ""} ${dragKey === key ? "hd-item--dragging" : ""}`}
-          data-hd-key={key}
-          key={key}
-          onPointerCancel={cancel}
-          onPointerDown={start(key)}
-          onPointerMove={move}
-          onPointerUp={end}
-          style={{ animationDelay: `${(index % 5) * -0.09}s` }}
-        >
-          <WideTile.Provider value={wide}>{item.node}</WideTile.Provider>
-          {editing && <>
-            <button aria-label={`${item.removal === "remove" ? t("removeItem") : t("hideItem")}: ${item.label}`} className="hd-item__badge hd-item__badge--remove" onClick={() => hide(item)} type="button"><HDIcon name="minus" size={14} /></button>
-            {sizable && <button aria-label={`${wide ? t("normalSize") : t("doubleSize")}: ${item.label}`} aria-pressed={wide} className="hd-item__badge hd-item__badge--size" onClick={() => (plan.pro ? onLayout({ ...layout, wide: wide ? layout.wide.filter((entry) => entry !== key) : [...layout.wide, key] }) : plan.upsell("feature"))} type="button"><HDIcon name={!plan.pro ? "lock" : wide ? "shrink" : "expand"} size={14} /></button>}
-          </>}
-        </div>;
-      })}
-      {editing && onAdd && <button className="hd-add-tile" onClick={onAdd} type="button"><span><HDIcon name="plus" size={22} /></span>{addLabel ?? t("addItem")}</button>}
-    </div>
+    {!sectioned
+      ? <div className={gridClass} {...pointer}>{shown.map(renderItem)}{addTiles}</div>
+      : <div className={`hd-sections ${editing ? "hd-sections--editing" : ""}`} {...pointer}>
+        {blocks.map((block, index) => <Fragment key={block.section ?? "start"}>
+          {block.section && renderItem(block.section, 0)}
+          {(block.keys.length > 0 || index === blocks.length - 1) && <div className={gridClass}>
+            {block.keys.map(renderItem)}
+            {index === blocks.length - 1 && addTiles}
+          </div>}
+        </Fragment>)}
+      </div>}
     {editing && hiddenItems.length > 0 && <section className="hd-hidden-tray" aria-label={t("hiddenItems")}>
       <span className="eyebrow">{t("hiddenItems")}</span>
       <div>{hiddenItems.map((item) => <button key={item.key} onClick={() => onLayout({ ...layout, hidden: layout.hidden.filter((key) => key !== item.key) })} type="button"><HDIcon name="plus" size={14} />{item.label}</button>)}</div>
     </section>}
   </>;
+}
+
+/** A separator's title in edit mode: typed freely, saved when the field is left or Enter is pressed. */
+function SectionTitle({ onTitle, t, title }: { onTitle: (title: string) => void; t: (key: TranslationKey) => string; title: string }) {
+  const [draft, setDraft] = useState(title);
+  useEffect(() => setDraft(title), [title]);
+  const commit = () => { if (draft.trim() !== title) onTitle(draft); };
+  return <div className="hd-section hd-section--editing">
+    <HDIcon name="grip" size={16} />
+    <input aria-label={t("sectionTitle")} className="hd-section__input" maxLength={60} onBlur={commit} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} placeholder={t("newSection")} value={draft} />
+  </div>;
 }
 
 function indexOf(list: string[] | null, key: string): number {

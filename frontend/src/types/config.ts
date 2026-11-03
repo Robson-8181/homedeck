@@ -30,6 +30,8 @@ export interface ScreenLayout {
   wide: string[];
   /** Entities from other rooms shown on this screen (room screens only). */
   added?: string[];
+  /** Separators placed in the order, by key ("section:<id>") with their title. */
+  sections?: Record<string, string>;
 }
 
 export interface HomeDeckConfig {

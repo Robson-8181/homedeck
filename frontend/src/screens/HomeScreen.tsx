@@ -76,6 +76,7 @@ export function HomeGrid(props: ScreenProps & { className: string; onOpenRoom: (
       onAdd={() => setPicking(true)}
       onLayout={(next) => onLayout(HOME_SCREEN, next)}
       onRemove={(key) => setHomeEntities(homeEntities.filter((id) => id !== keyId(key)))}
+      sections
       t={t}
     />
     {modalEntity && <EntityModal entity={modalEntity} hass={hass} language={language} onClose={() => setModalEntity(null)} roomName={roomName(modalEntity)} t={t} />}

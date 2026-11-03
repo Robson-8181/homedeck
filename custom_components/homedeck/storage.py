@@ -30,6 +30,7 @@ _ALLOWED_PAGE_TYPES = {"favorites", "scenes", "custom"}
 _MAX_LAYOUTS = 300
 _MAX_LAYOUT_ITEMS = 500
 _MAX_KEY_LENGTH = 300
+_MAX_SECTIONS = 50
 _SCREENSAVER_DELAYS = {30, 60, 120, 180, 300, 600, 900, 1800}
 
 
@@ -44,11 +45,26 @@ def _unique_strings(value: Any) -> list[str]:
     return result
 
 
-def _normalize_layouts(value: Any) -> dict[str, dict[str, list[str]]]:
-    """Return per-screen layouts: ordered, hidden and double-width item keys."""
+def _normalize_sections(value: Any) -> dict[str, str]:
+    """Separator titles by key ("section:<id>")."""
     if not isinstance(value, dict):
         return {}
-    layouts: dict[str, dict[str, list[str]]] = {}
+    return {
+        key: title.strip()[:60]
+        for key, title in list(value.items())[:_MAX_SECTIONS]
+        if isinstance(key, str)
+        and key.startswith("section:")
+        and len(key) <= _MAX_KEY_LENGTH
+        and isinstance(title, str)
+        and title.strip()
+    }
+
+
+def _normalize_layouts(value: Any) -> dict[str, dict[str, Any]]:
+    """Return per-screen layouts: ordered, hidden and double-width item keys, and separators."""
+    if not isinstance(value, dict):
+        return {}
+    layouts: dict[str, dict[str, Any]] = {}
     for screen, layout in list(value.items())[:_MAX_LAYOUTS]:
         if not isinstance(screen, str) or not screen or len(screen) > _MAX_KEY_LENGTH:
             continue
@@ -62,6 +78,9 @@ def _normalize_layouts(value: Any) -> dict[str, dict[str, list[str]]]:
             ][:_MAX_LAYOUT_ITEMS]
             for key in ("order", "hidden", "wide", "added")
         }
+        sections = _normalize_sections(layout.get("sections"))
+        if sections:
+            layouts[screen]["sections"] = sections
     return layouts
 
 

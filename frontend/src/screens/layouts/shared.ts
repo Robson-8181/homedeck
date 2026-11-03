@@ -82,9 +82,9 @@ export function useHold() {
 export function subsetLayout(allKeys: string[], layout: ScreenLayout, save: (layout: ScreenLayout) => void) {
   return (next: ScreenLayout) => {
     if (next.order === layout.order) return save(next);
-    const placed = layout.order.filter((key) => allKeys.includes(key));
-    const full = [...placed, ...allKeys.filter((key) => !placed.includes(key))];
-    const moved = next.order.filter((key) => full.includes(key));
+    // Every other item on the screen (cards, widgets, separators) keeps its place.
+    const full = [...layout.order, ...allKeys.filter((key) => !layout.order.includes(key))];
+    const moved = next.order.filter((key) => allKeys.includes(key));
     const movedSet = new Set(moved);
     let index = 0;
     save({ ...next, order: full.map((key) => (movedSet.has(key) ? moved[index++] : key)) });

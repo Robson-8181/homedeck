@@ -116,6 +116,12 @@ export const theme = String.raw`
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .app-shell :is(.room-card--active .room-card__content span, .device-tile--active .device-tile__copy span) { color: var(--paper-ink-2); }
+/* Long states (waste collection, alerts, text sensors) get two lines on a card and four on a double card. */
+.app-shell .device-tile__copy strong { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.app-shell .device-tile__copy span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; overflow-wrap: anywhere; text-transform: none; }
+/* Only the first letter: capitalizing every word broke longer texts ("Papiertonne Am 18."). */
+.app-shell .device-tile__copy span::first-letter { text-transform: uppercase; }
+.app-shell .device-tile--wide .device-tile__copy span { -webkit-line-clamp: 4; }
 .app-shell .room-card__open { position: absolute; inset: 0; z-index: 1; border: 0; background: none; padding: 0; cursor: pointer; border-radius: inherit; }
 .app-shell .room-card__footer { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u)*1); margin-top: calc(var(--u)*-.6); font: 500 calc(var(--u)*1.75)/1 var(--f-body); color: var(--ink-2); border: 0; padding: 0; }
 .app-shell .room-card--active .room-card__footer { color: var(--paper-ink-2); }

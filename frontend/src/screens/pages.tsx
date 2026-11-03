@@ -82,6 +82,7 @@ function useCollection(props: ScreenProps, page: CollectionPage): PageContent {
       {visible.length === 0 && !editing
         ? <section className="empty-state"><p>{t("noVisibleEntities")}</p><button className="hd-pill" onClick={() => { props.onToggleEdit(); setPicking(true); }} type="button"><HDIcon name="plus" size={16} />{t(ADD_LABELS[page])}</button></section>
         : <EditableGrid
+            sections
             addLabel={t(ADD_LABELS[page])}
             className={className}
             editing={editing}
@@ -123,6 +124,7 @@ function useCustomPage(props: ScreenProps, page: HomeDeckPageConfig): PageConten
       {visible.length === 0 && !editing
         ? <section className="empty-state"><p>{t("emptyPage")}</p><button className="hd-pill" onClick={() => { props.onToggleEdit(); setPicking(true); }} type="button"><HDIcon name="plus" size={16} />{t("addDevices")}</button></section>
         : <EditableGrid
+            sections
             addLabel={t("addDevices")}
             className={className}
             editing={editing}

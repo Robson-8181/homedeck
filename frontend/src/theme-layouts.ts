@@ -154,7 +154,7 @@ export const themeLayouts = String.raw`
 .app-shell .ls-row--on .ls-row__icon { background: var(--on); color: var(--on-ink); }
 .app-shell .ls-row__copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .app-shell .ls-row__copy b { font: 600 calc(var(--u)*1.9)/1.2 var(--f-body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.app-shell .ls-row__copy small { color: var(--ink-2); font: 500 calc(var(--u)*1.6)/1.2 var(--f-body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-shell .ls-row__copy small { color: var(--ink-2); font: 500 calc(var(--u)*1.6)/1.2 var(--f-body); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
 .app-shell .ls-row__more { color: var(--ink-3); }
 .app-shell .ls-switch { position: relative; flex: none; width: calc(var(--u)*5.8); height: calc(var(--u)*3.4); border: 0; padding: 0; border-radius: var(--hd-pill,99px); background: rgba(255,255,255,.22); cursor: pointer; transition: background .2s; }
 .app-shell .ls-switch i { position: absolute; top: 3px; left: 3px; width: calc(var(--u)*3.4 - 6px); height: calc(var(--u)*3.4 - 6px); border-radius: var(--hd-round,50%); background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.3); transition: transform .2s; }

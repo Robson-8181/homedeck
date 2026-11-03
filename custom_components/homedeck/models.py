@@ -1,6 +1,6 @@
 """Data models and defaults for HomeDeck."""
 
-from typing import Any, TypedDict
+from typing import Any, NotRequired, TypedDict
 
 
 class HomeDeckPreferences(TypedDict):
@@ -96,12 +96,13 @@ class HomeDeckPage(TypedDict):
 
 
 class HomeDeckScreenLayout(TypedDict):
-    """Order, hidden items and double-width cards of one screen."""
+    """Order, hidden items, double-width cards and separators of one screen."""
 
     order: list[str]
     hidden: list[str]
     wide: list[str]
     added: list[str]
+    sections: NotRequired[dict[str, str]]
 
 
 class HomeDeckScreensaverConfig(TypedDict):
