@@ -35,7 +35,7 @@ const ALERT_CLASSES = new Set([
 ]);
 
 export function isSecurityEntity(entity: DiscoveredEntity, state?: HassEntity): boolean {
-  if (entity.domain === "lock") return true;
+  if (entity.domain === "lock" || entity.domain === "camera") return true;
   if (entity.domain !== "binary_sensor") return false;
   return SECURITY_CLASSES.has(String(state?.attributes.device_class ?? entity.device_class ?? ""));
 }

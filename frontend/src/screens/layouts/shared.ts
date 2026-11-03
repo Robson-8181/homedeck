@@ -2,12 +2,13 @@ import { useRef } from "react";
 import type { MouseEvent, PointerEvent } from "react";
 import { arrange, entityKey, getLayout, HOME_SCREEN, keyId, roomKey, roomScreen } from "../../layout";
 import { TOGGLES } from "../../components/EntityCard";
+import { RUNNABLE, runEntity } from "../../devices";
 import type { HomeDeckConfig, ScreenLayout } from "../../types/config";
 import type { DiscoveredEntity, Room } from "../../types/discovery";
 import type { HomeAssistant } from "../../types/home-assistant";
 
-const DOMAIN_ORDER = ["light", "switch", "fan", "cover", "climate", "media_player", "scene", "lock", "binary_sensor", "sensor"];
-export const ACTIVE = new Set(["on", "open", "opening", "playing", "heat", "cool", "heat_cool", "auto", "dry", "fan_only", "unlocked"]);
+const DOMAIN_ORDER = ["light", "switch", "fan", "cover", "climate", "media_player", "vacuum", "select", "input_select", "script", "button", "input_button", "scene", "lock", "camera", "binary_sensor", "sensor"];
+export const ACTIVE = new Set(["on", "open", "opening", "playing", "heat", "cool", "heat_cool", "auto", "dry", "fan_only", "unlocked", "cleaning", "returning"]);
 
 /** Rooms in the order and visibility arranged on Home (edit mode applies to every layout). */
 export function orderedRooms(config: HomeDeckConfig, rooms: Room[]): Room[] {
@@ -35,7 +36,8 @@ export function tapEntity(hass: HomeAssistant, entity: DiscoveredEntity, openDet
   const state = hass.states[entity.entity_id]?.state;
   if (!state || ["unavailable", "unknown"].includes(state)) return;
   if (TOGGLES.has(entity.domain)) void hass.callService("homeassistant", "toggle", { entity_id: entity.entity_id });
-  else if (entity.domain === "scene" || entity.domain === "script") void hass.callService(entity.domain, "turn_on", { entity_id: entity.entity_id });
+  else if (entity.domain === "scene") void hass.callService("scene", "turn_on", { entity_id: entity.entity_id });
+  else if (RUNNABLE.has(entity.domain)) void runEntity(hass, entity.entity_id);
   else if (entity.domain === "cover") void hass.callService("cover", "toggle", { entity_id: entity.entity_id });
   else openDetails(entity);
 }

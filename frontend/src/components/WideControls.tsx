@@ -4,6 +4,8 @@ import { hvacLabel, type TranslationKey } from "../i18n";
 import type { DiscoveredEntity } from "../types/discovery";
 import type { HassEntity, HomeAssistant } from "../types/home-assistant";
 import { HDIcon } from "./HDIcon";
+import { HDSelect } from "./HDSelect";
+import { SELECTS, selectOption, selectOptions, vacuumActions } from "../devices";
 
 // Extra controls shown when a card is double size. Every control stops at the card: taps on them
 // never toggle the device underneath.
@@ -57,6 +59,9 @@ export function WideControls(props: WideProps) {
     case "media_player": return <MediaControls {...props} call={call} />;
     case "fan": return <FanControls {...props} call={call} />;
     case "lock": return <LockControls {...props} call={call} />;
+    case "vacuum": return <VacuumControls {...props} />;
+    case "select":
+    case "input_select": return <SelectControls {...props} />;
     default: return <p className="tile-wide__since">{since(state.last_changed, props.language)}</p>;
   }
 }
@@ -195,6 +200,24 @@ function LockControls({ state, t, call }: WideProps & { call: Call }) {
     {locked
       ? <button className={confirm ? "tile-buttons__warn" : undefined} onClick={() => { if (confirm) { setConfirm(false); call("lock", "unlock"); } else setConfirm(true); }} type="button"><HDIcon name="lock" size={15} />{confirm ? t("confirmUnlock") : t("unlock")}</button>
       : <button onClick={() => call("lock", "lock")} type="button"><HDIcon name="lock" size={15} />{t("lock")}</button>}
+  </div></div>;
+}
+
+/** Double-size vacuum: start or pause, stop and back to the dock, each with its label. */
+function VacuumControls({ hass, state, t }: WideProps) {
+  const actions = vacuumActions(hass, state, t);
+  return <div className="tile-wide__controls"><div className="tile-buttons">
+    {[actions.main, actions.stop, actions.dock].map((action) => <button key={action.label} onClick={() => void action.run()} type="button"><HDIcon name={action.icon} size={15} />{action.label}</button>)}
+  </div></div>;
+}
+
+/** Double-size select: every option as a button, the current one marked, or a list when there are many. */
+function SelectControls({ entity, hass, state, t }: WideProps) {
+  const options = selectOptions(state);
+  const choose = (option: string) => void selectOption(hass, entity.entity_id, option);
+  if (options.length > 6 || !SELECTS.has(entity.domain)) return <div className="tile-wide__controls"><HDSelect ariaLabel={`${t("chooseOption")}: ${entity.name}`} className="device-select" onChange={choose} options={options.map((option) => ({ label: option, value: option }))} value={state.state} /></div>;
+  return <div className="tile-wide__controls"><div className="tile-buttons tile-buttons--options">
+    {options.map((option) => <button aria-pressed={state.state === option} key={option} onClick={() => choose(option)} type="button">{option}</button>)}
   </div></div>;
 }
 

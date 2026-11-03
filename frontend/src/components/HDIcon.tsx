@@ -64,7 +64,10 @@ export type IconName =
   | "note"
   | "speaker"
   | "layout"
-  | "grip";
+  | "grip"
+  | "camera"
+  | "vacuum"
+  | "button";
 
 const paths: Record<IconName, ReactNode> = {
   arrow: <path d="m15 18-6-6 6-6" />,
@@ -131,6 +134,9 @@ const paths: Record<IconName, ReactNode> = {
   layout: <><rect x="3" y="4" width="18" height="16" rx="3" /><path d="M9 4v16M13 9h4M13 13h4" /></>,
   pause: <><rect x="6" y="5" width="4" height="14" rx="1" /><rect x="14" y="5" width="4" height="14" rx="1" /></>,
   tree: <><path d="M12 22v-6" /><path d="M12 2 6 10h3l-4 6h14l-4-6h3Z" /></>,
+  camera: <><path d="M3 8.5A2.5 2.5 0 0 1 5.5 6h2l1.5-2h6l1.5 2h2A2.5 2.5 0 0 1 21 8.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 17.5Z" /><circle cx="12" cy="12.5" r="3.5" /></>,
+  vacuum: <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3" /><path d="M8 5.8a7 7 0 0 1 8 0" /></>,
+  button: <><circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="3.5" fill="currentColor" /></>,
 };
 
 export function HDIcon({ name, size = 22 }: { name: IconName; size?: number }) {
@@ -167,15 +173,22 @@ export function roomIcon(name: string): IconName {
 export function domainIcon(domain: string): IconName {
   const icons: Record<string, IconName> = {
     binary_sensor: "sensor",
+    button: "button",
+    camera: "camera",
     climate: "climate",
     cover: "cover",
     fan: "fan",
+    input_button: "button",
+    input_select: "list",
     light: "light",
     lock: "lock",
     media_player: "media",
     scene: "scene",
+    script: "play",
+    select: "list",
     sensor: "sensor",
     switch: "switch",
+    vacuum: "vacuum",
   };
   return icons[domain] ?? "sensor";
 }

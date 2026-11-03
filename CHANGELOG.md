@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.11.0
+
+- Cameras: the latest still fills the card and refreshes every 10 seconds while the dashboard is on screen; a tap opens the live view. Cameras also appear on the Security page.
+- Vacuums: status and battery on the card, with start or pause and back to dock; stop too at double size and in the details. The card lights up and its icon moves while it cleans.
+- Scripts and buttons run with one tap, like scenes.
+- Selects (`select` and `input_select`), such as a washing machine program: the current option in a picker on the card, every option in the details and at double size.
+- Rooms with a light on show their power button lit in the highlight color.
+- Cameras, vacuums, scripts, buttons and selects don't count toward the Free plan limit.
+
 ## 0.10.3
 
 First public release.

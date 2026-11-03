@@ -6,11 +6,14 @@ import type { HassEntity, HomeAssistant } from "../types/home-assistant";
 import { useWideTile } from "./EditableGrid";
 import { domainIcon, HDIcon } from "./HDIcon";
 import { WideControls } from "./WideControls";
+import { CameraCard } from "./CameraCard";
+import { HDSelect } from "./HDSelect";
+import { RUNNABLE, SELECTS, runEntity, selectOption, selectOptions, vacuumActions, vacuumStatus } from "../devices";
 import { SpotifyCard } from "./SpotifyCard";
 import { usePlan } from "../plan";
 import { isSpotify } from "../spotify";
 
-const ACTIVE_STATES = new Set(["on", "open", "opening", "playing", "paused", "heat", "cool", "heat_cool", "auto", "dry", "fan_only", "unlocked"]);
+const ACTIVE_STATES = new Set(["on", "open", "opening", "playing", "paused", "heat", "cool", "heat_cool", "auto", "dry", "fan_only", "unlocked", "cleaning", "returning"]);
 export const TOGGLES = new Set(["light", "switch", "fan", "input_boolean", "automation"]);
 const HOLD_MS = 520;
 
@@ -31,6 +34,11 @@ export function displayState(state: HassEntity | undefined, entity: DiscoveredEn
     if (typeof position === "number") return position === 0 ? t("closed") : position === 100 ? t("open") : `${position}%`;
   }
   if (entity.domain === "lock") return state.state === "locked" ? t("lock") : t("unlock");
+  if (entity.domain === "vacuum") return vacuumStatus(state, t);
+  if (entity.domain === "camera") return t("cameraTapLive");
+  if (entity.domain === "script") return state.state === "on" ? t("scriptRunning") : t("runScript");
+  if (entity.domain === "button" || entity.domain === "input_button") return t("pressButton");
+  if (SELECTS.has(entity.domain)) return state.state;
   if (state.state === "on") return t("on");
   if (state.state === "off") return t("off");
   if (state.state === "open") return t("open");
@@ -49,13 +57,16 @@ interface EntityCardProps {
 }
 
 /**
- * Tap: lights, switches and fans toggle; scenes and scripts run; covers open or close.
- * Climate, media, locks and sensors open their details, so a stray tap never unlocks a door.
+ * Tap: lights, switches and fans toggle; scenes, scripts and buttons run; covers open or close.
+ * Climate, media, locks, cameras, vacuums and sensors open their details, so a stray tap never
+ * unlocks a door or sends the robot out.
  */
-/** A device card; Spotify (on Pro) uses the same player card as Home, wherever it appears. */
+/** A device card; Spotify (on Pro) uses the same player card as Home, wherever it appears, and a
+ * camera shows its picture. */
 export function EntityCard(props: EntityCardProps) {
   const plan = usePlan();
   if (plan.pro && isSpotify(props.entity)) return <SpotifyCard entity={props.entity} hass={props.hass} onOpen={props.onLongPress} t={props.t} />;
+  if (props.entity.domain === "camera") return <CameraCard entity={props.entity} hass={props.hass} onOpen={props.onLongPress} t={props.t} />;
   return <DeviceCard {...props} />;
 }
 
@@ -88,7 +99,8 @@ function DeviceCard({ entity, hass, language, onLongPress, t }: EntityCardProps)
   const tap = () => {
     const domain = entity.domain;
     if (TOGGLES.has(domain)) return void run(() => hass.callService("homeassistant", "toggle", { entity_id: entity.entity_id }));
-    if (domain === "scene" || domain === "script") return void run(() => hass.callService(domain, "turn_on", { entity_id: entity.entity_id }));
+    if (domain === "scene") return void run(() => hass.callService("scene", "turn_on", { entity_id: entity.entity_id }));
+    if (RUNNABLE.has(domain)) return void run(() => runEntity(hass, entity.entity_id));
     if (domain === "cover") return void run(() => hass.callService("cover", "toggle", { entity_id: entity.entity_id }));
     onLongPress(entity);
   };
@@ -128,7 +140,7 @@ function DeviceCard({ entity, hass, language, onLongPress, t }: EntityCardProps)
     <article
       aria-label={`${entity.name}: ${status}`}
       aria-pressed={TOGGLES.has(entity.domain) ? active : undefined}
-      className={`device-tile device-tile--tap ${wide ? `device-tile--wide device-tile--wide-${entity.domain}` : ""} ${active ? "device-tile--active" : ""} ${unavailable ? "device-tile--unavailable" : ""}`}
+      className={`device-tile device-tile--tap ${wide ? `device-tile--wide device-tile--wide-${entity.domain}` : ""} ${active ? "device-tile--active" : ""} ${state?.state === "cleaning" ? "device-tile--cleaning" : ""} ${unavailable ? "device-tile--unavailable" : ""}`}
       onClick={click}
       onContextMenu={(event) => { event.preventDefault(); cancelHold(); onLongPress(entity); }}
       onKeyDown={key}
@@ -142,7 +154,7 @@ function DeviceCard({ entity, hass, language, onLongPress, t }: EntityCardProps)
     >
       {busy && <span className="device-tile__busy" />}
       <div className="device-tile__top"><span className="device-tile__icon"><HDIcon name={domainIcon(entity.domain)} size={23} /></span></div>
-      <div className="device-tile__copy"><strong>{entity.name}</strong>{entity.domain !== "scene" && <span>{status}</span>}</div>
+      <div className="device-tile__copy"><strong>{entity.name}</strong>{entity.domain !== "scene" && !(SELECTS.has(entity.domain) && !wide) && <span>{status}</span>}</div>
 
       {wide && !unavailable && state && <div className="tile-wide"><WideControls entity={entity} hass={hass} language={language} state={state} t={t} /></div>}
 
@@ -156,6 +168,17 @@ function DeviceCard({ entity, hass, language, onLongPress, t }: EntityCardProps)
           <button aria-label={t("stopCover")} onClick={() => void run(() => hass.callService("cover", "stop_cover", { entity_id: entity.entity_id }))} type="button"><HDIcon name="stop" size={16} /></button>
           <button aria-label={t("closeCover")} onClick={() => void run(() => hass.callService("cover", "close_cover", { entity_id: entity.entity_id }))} type="button"><span className="rotate-down"><HDIcon name="chevron" size={20} /></span></button>
         </div>
+      )}
+
+      {!wide && entity.domain === "vacuum" && !unavailable && state && (() => {
+        const actions = vacuumActions(hass, state, t);
+        return <div className="device-controls device-controls--vacuum">
+          {[actions.main, actions.dock].map((action) => <button aria-label={action.label} key={action.label} onClick={() => void run(action.run)} type="button"><HDIcon name={action.icon} size={17} /></button>)}
+        </div>;
+      })()}
+
+      {!wide && SELECTS.has(entity.domain) && !unavailable && state && (
+        <HDSelect ariaLabel={`${t("chooseOption")}: ${entity.name}`} className="device-select" onChange={(option) => void run(() => selectOption(hass, entity.entity_id, option))} options={selectOptions(state).map((option) => ({ label: option, value: option }))} value={state.state} />
       )}
 
       {!wide && entity.domain === "climate" && !unavailable && target != null && (

@@ -44,6 +44,8 @@ on macOS). Your rooms, backgrounds and preferences are kept.
 - **Full weather forecast:** next hours and next 7 days, using your Home Assistant weather
   service, with Open-Meteo as a fallback for your home's location.
 - **Big cards** with brightness, colors, a vertical cover control and a climate ring.
+- **Cameras** with a live view, **vacuums** with their controls, and **scripts, buttons and
+  selects** (like a washing machine program) right on the dashboard.
 - **Spotify player**, screensaver, scene strip, and an option to hide the Home Assistant
   sidebar on a wall tablet.
 - **English, Portuguese and Spanish**, following Home Assistant's language.

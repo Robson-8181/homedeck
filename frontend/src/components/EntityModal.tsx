@@ -7,6 +7,7 @@ import { domainIcon, HDIcon } from "./HDIcon";
 import { SpotifyPlayer } from "./SpotifyPlayer";
 import { isSpotify } from "../spotify";
 import { usePlan } from "../plan";
+import { cameraSnapshot, cameraStream, RUNNABLE, SELECTS, runEntity, selectOption, selectOptions, vacuumActions, vacuumStatus } from "../devices";
 
 interface EntityModalProps {
   entity: DiscoveredEntity;
@@ -18,7 +19,7 @@ interface EntityModalProps {
 }
 
 const LIGHT_SWATCHES = ["#ffd9a0", "#ffffff", "#9fd3ff", "#7aa8ff", "#8a7bff", "#ff9ac1", "#ff6b5e", "#ffb36b", "#7be0a0"];
-const ACTIVE = new Set(["on", "open", "opening", "playing", "unlocked", "heat", "cool", "heat_cool", "auto", "dry", "fan_only"]);
+const ACTIVE = new Set(["on", "open", "opening", "playing", "unlocked", "heat", "cool", "heat_cool", "auto", "dry", "fan_only", "cleaning", "returning"]);
 const COMMIT_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"]);
 
 function num(value: unknown, fallback: number): number {
@@ -68,11 +69,12 @@ function EntityDetails({ entity, hass, language, onClose, roomName, t }: EntityM
     return () => window.removeEventListener("keydown", close);
   }, [onClose]);
 
-  const call = async (domain: string, service: string, data: Record<string, unknown> = {}) => {
+  const runOnce = async (action: () => Promise<unknown>) => {
     if (busy || unavailable) return;
     setBusy(true);
-    try { await hass.callService(domain, service, { entity_id: entity.entity_id, ...data }); } finally { setBusy(false); }
+    try { await action(); } finally { setBusy(false); }
   };
+  const call = (domain: string, service: string, data: Record<string, unknown> = {}) => runOnce(() => hass.callService(domain, service, { entity_id: entity.entity_id, ...data }));
 
   const domain = entity.domain;
   const on = Boolean(state && ACTIVE.has(state.state));
@@ -89,6 +91,11 @@ function EntityDetails({ entity, hass, language, onClose, roomName, t }: EntityM
     if (domain === "cover") return typeof attrs.current_position === "number" ? `${attrs.current_position}%` : state.state === "open" ? t("open") : t("closed");
     if (domain === "media_player") return state.state === "playing" ? String(attrs.media_title ?? t("on")) : state.state === "off" ? t("stateOff") : t("nothingPlaying");
     if (domain === "lock") return state.state === "locked" ? t("lock") : t("unlock");
+    if (domain === "camera") return t("cameraLive");
+    if (domain === "vacuum") return vacuumStatus(state, t);
+    if (domain === "script") return state.state === "on" ? t("scriptRunning") : t("runScript");
+    if (domain === "button" || domain === "input_button") return t("pressButton");
+    if (SELECTS.has(domain)) return state.state;
     if (state.state === "on") return t("stateOn");
     if (state.state === "off") return t("stateOff");
     return `${state.state.replaceAll("_", " ")}${unit}`;
@@ -102,6 +109,7 @@ function EntityDetails({ entity, hass, language, onClose, roomName, t }: EntityM
     if (domain === "lock") return { label: state.state === "locked" ? t("unlock") : t("lock"), run: () => call("lock", state.state === "locked" ? "unlock" : "lock") };
     if (domain === "scene") return { label: t("activate"), run: () => call("scene", "turn_on") };
     if (domain === "cover") return { label: state.state === "closed" ? t("openAction") : t("closeAction"), run: () => call("cover", state.state === "closed" ? "open_cover" : "close_cover") };
+    if (RUNNABLE.has(domain)) return { label: domain === "script" ? t("runScript") : t("pressButton"), run: () => runOnce(() => runEntity(hass, entity.entity_id)) };
     return null;
   })();
 
@@ -113,7 +121,7 @@ function EntityDetails({ entity, hass, language, onClose, roomName, t }: EntityM
   };
 
   return <div aria-labelledby="hd-detail-title" aria-modal="true" className="hd-sheet-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }} role="dialog">
-    <section className={`hd-sheet hd-detail ${busy ? "hd-detail--busy" : ""}`}>
+    <section className={`hd-sheet hd-detail ${domain === "camera" ? "hd-detail--camera" : ""} ${busy ? "hd-detail--busy" : ""}`}>
       <header className="hd-detail__header">
         <span className={on ? "hd-detail__icon hd-detail__icon--on" : "hd-detail__icon"}><HDIcon name={domainIcon(domain)} size={24} /></span>
         <div><span className="eyebrow">{roomName ?? domainLabel(domain, language)}</span><h2 id="hd-detail-title">{entity.name}</h2><p>{status}</p></div>
@@ -150,10 +158,38 @@ function EntityDetails({ entity, hass, language, onClose, roomName, t }: EntityM
 
         {domain === "fan" && typeof attrs.percentage === "number" && <Slider label={t("fanSpeed")} off={state?.state !== "on"} onCommit={(value) => void call("fan", "set_percentage", { percentage: value })} value={num(attrs.percentage, 0)} />}
 
+        {domain === "camera" && <CameraLive entity={entity} hass={hass} t={t} />}
+
+        {domain === "vacuum" && (() => {
+          const actions = vacuumActions(hass, state, t);
+          return <div className="hd-segment">{[actions.main, actions.stop, actions.dock].map((action) => <button key={action.label} onClick={() => void runOnce(action.run)} type="button">{action.label}</button>)}</div>;
+        })()}
+
+        {SELECTS.has(domain) && <div className="hd-options" role="group" aria-label={t("chooseOption")}>
+          {selectOptions(state).map((option) => <button aria-pressed={state.state === option} key={option} onClick={() => void runOnce(() => selectOption(hass, entity.entity_id, option))} type="button">{option}</button>)}
+        </div>}
+
         {["sensor", "binary_sensor"].includes(domain) && <div className="hd-detail__reading"><strong>{status}</strong><small>{t("lastChanged")} {new Intl.DateTimeFormat(language, { hour: "2-digit", minute: "2-digit" }).format(new Date(state.last_changed))}</small></div>}
       </div>}
 
-      {primary && <button className={on ? "hd-detail__primary" : "hd-detail__primary hd-detail__primary--off"} disabled={busy} onClick={() => void primary.run()} type="button"><HDIcon name={domain === "scene" ? "scene" : domain === "lock" ? "lock" : "power"} size={18} />{primary.label}</button>}
+      {primary && <button className={on ? "hd-detail__primary" : "hd-detail__primary hd-detail__primary--off"} disabled={busy} onClick={() => void primary.run()} type="button"><HDIcon name={domain === "scene" ? "scene" : domain === "lock" ? "lock" : RUNNABLE.has(domain) ? "play" : "power"} size={18} />{primary.label}</button>}
     </section>
+  </div>;
+}
+
+/** The camera's live MJPEG stream; if the camera can't stream, its still, refreshed every few seconds. */
+function CameraLive({ entity, hass, t }: { entity: DiscoveredEntity; hass: HomeAssistant; t: (key: TranslationKey) => string }) {
+  const state = hass.states[entity.entity_id];
+  const [still, setStill] = useState(false);
+  const [tick, setTick] = useState(() => Date.now());
+  useEffect(() => {
+    if (!still) return;
+    const timer = window.setInterval(() => setTick(Date.now()), 2000);
+    return () => window.clearInterval(timer);
+  }, [still]);
+  const stream = cameraStream(state);
+  const source = still || !stream ? cameraSnapshot(state, tick) : stream;
+  return <div className="hd-camera">
+    {source ? <img alt={entity.name} onError={() => setStill(true)} src={source} /> : <p>{t("cameraOffline")}</p>}
   </div>;
 }

@@ -418,4 +418,40 @@ export const themeExtras = String.raw`
 @media (max-width: 560px) {
   .app-shell .hd-forecast__days > div { grid-template-columns: calc(var(--u)*6) calc(var(--u)*3.2) calc(var(--u)*4.4) calc(var(--u)*4.2) minmax(0, 1fr) calc(var(--u)*4.2); gap: calc(var(--u)*.9); }
 }
+
+/* ---------- Cameras: the latest still fills the card; a tap opens the live view ---------- */
+.app-shell .camera-tile { padding: 0; border: 0; justify-content: flex-end; background: #0c0a0f; color: #fff; cursor: pointer; text-align: left; font: inherit; }
+.app-shell .camera-tile__image, .app-shell .camera-tile__empty { position: absolute; inset: 0; width: 100%; height: 100%; }
+.app-shell .camera-tile__image { object-fit: cover; }
+.app-shell .camera-tile__empty { display: grid; place-items: center; color: rgba(255,255,255,.35); background: rgba(255,255,255,.06); }
+.app-shell .camera-tile__shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.62), rgba(0,0,0,0) 55%); pointer-events: none; }
+.app-shell .camera-tile__badge { position: absolute; top: calc(var(--u)*1.4); left: calc(var(--u)*1.4); display: inline-flex; align-items: center; gap: calc(var(--u)*.6); padding: calc(var(--u)*.6) calc(var(--u)*1.2); border-radius: 99px; background: rgba(0,0,0,.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); font: 600 calc(var(--u)*1.4)/1 var(--f-body); letter-spacing: .02em; }
+.app-shell .camera-tile__name { position: relative; padding: calc(var(--u)*2); font: 600 calc(var(--u)*2)/1.2 var(--f-body); text-shadow: 0 1px 8px rgba(0,0,0,.5); }
+.app-shell .hd-detail--camera { width: min(960px, calc(100vw - var(--u)*6)); }
+.app-shell .hd-camera { overflow: hidden; border-radius: calc(var(--u)*2.4); background: #000; aspect-ratio: 16 / 9; display: grid; place-items: center; }
+.app-shell .hd-camera img { width: 100%; height: 100%; object-fit: contain; }
+.app-shell .hd-camera p { color: var(--ink-2); }
+
+/* ---------- Vacuums: the robot drives around its icon while it cleans ---------- */
+.app-shell .device-tile--cleaning .device-tile__icon { position: relative; overflow: visible; }
+.app-shell .device-tile--cleaning .device-tile__icon svg { animation: hd-vacuum-drive 3.6s ease-in-out infinite; }
+.app-shell .device-tile--cleaning .device-tile__icon::after { content: ""; position: absolute; inset: calc(var(--u)*-.6); border-radius: 50%; border: 2px solid var(--on); opacity: 0; animation: hd-vacuum-sweep 2.4s ease-out infinite; }
+@keyframes hd-vacuum-drive {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(3px, -2px) rotate(35deg); }
+  50% { transform: translate(0, 2px) rotate(110deg); }
+  75% { transform: translate(-3px, -1px) rotate(200deg); }
+}
+@keyframes hd-vacuum-sweep { 0% { opacity: .7; transform: scale(.85); } 100% { opacity: 0; transform: scale(1.35); } }
+@media (prefers-reduced-motion: reduce) { .app-shell .device-tile--cleaning .device-tile__icon svg, .app-shell .device-tile--cleaning .device-tile__icon::after { animation: none; } }
+
+/* ---------- Selects: the current option in the card; every option in the details ---------- */
+.app-shell .device-tile .device-select { position: relative; z-index: 2; min-height: calc(var(--u)*4.4); border-radius: 99px; font-size: calc(var(--u)*1.7); }
+.app-shell .device-tile--active .device-select { border-color: rgba(43,36,24,.16); background: rgba(43,36,24,.08); color: var(--paper-ink); }
+.app-shell .hd-options { display: flex; flex-wrap: wrap; gap: calc(var(--u)*.8); }
+.app-shell .hd-options button { flex: 1 1 calc(50% - var(--u)*.8); min-height: calc(var(--u)*5.2); padding: 0 calc(var(--u)*1.6); border: 1px solid rgba(255,255,255,.14); border-radius: calc(var(--u)*1.8); background: rgba(255,255,255,.08); color: var(--ink); font: 600 calc(var(--u)*1.8)/1.2 var(--f-body); cursor: pointer; }
+.app-shell .hd-options button[aria-pressed="true"] { border-color: transparent; background: var(--on); color: var(--on-ink, #2a2110); }
+.app-shell .tile-buttons--options { flex-wrap: wrap; }
+.app-shell .tile-buttons--options button { flex: 1 1 calc(33% - var(--u)*.8); }
+.app-shell .tile-buttons--options button[aria-pressed="true"] { background: var(--on); color: var(--on-ink, #2a2110); }
 `;

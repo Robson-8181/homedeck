@@ -10,7 +10,7 @@ import type { DiscoveredEntity, Room } from "../types/discovery";
 import { entityIndex, type ScreenProps } from "./types";
 import { usePlan } from "../plan";
 
-const DOMAIN_ORDER = ["light", "switch", "fan", "cover", "climate", "media_player", "scene", "lock", "binary_sensor", "sensor"];
+const DOMAIN_ORDER = ["light", "switch", "fan", "cover", "climate", "media_player", "vacuum", "select", "input_select", "script", "button", "input_button", "scene", "lock", "camera", "binary_sensor", "sensor"];
 
 export function RoomScreen(props: ScreenProps & { onSelectRoom: (roomId: string) => void; room: Room }) {
   const { allRooms, config, data, editing, hass, language, onLayout, onSelectRoom, room, t } = props;

@@ -102,7 +102,9 @@ export const theme = String.raw`
   display: grid; place-items: center; background: rgba(255,255,255,.17); color: inherit; cursor: pointer;
 }
 .app-shell :is(.room-card__power, .device-tile__power) svg { width: 48%; height: 48%; }
-.app-shell :is(.room-card--active .room-card__power, .device-tile--active .device-tile__power) { background: rgba(43,36,24,.12); }
+.app-shell .device-tile--active .device-tile__power { background: rgba(43,36,24,.12); }
+/* A room with a light on lights its power button in the highlight color: one tap turns them off. */
+.app-shell .room-card--active .room-card__power { background: var(--on); color: var(--on-ink, #2a2110); box-shadow: 0 0 calc(var(--u)*2.4) color-mix(in srgb, var(--on) 45%, transparent); }
 .app-shell .room-card__top, .app-shell .device-tile__top { display: flex; align-items: flex-start; justify-content: space-between; min-height: calc(var(--u)*5); }
 .app-shell .room-card__arrow { color: var(--ink-3); }
 .app-shell .room-card__content, .app-shell .device-tile__copy { margin-top: auto; min-width: 0; }

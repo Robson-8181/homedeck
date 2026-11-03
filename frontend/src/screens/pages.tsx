@@ -21,7 +21,7 @@ export type PageRef = { kind: "collection"; id: CollectionPage } | { kind: "cust
 const PAGE_DOMAINS: Record<CollectionPage, string[]> = {
   scenes: ["scene"],
   media: ["media_player"],
-  security: ["lock", "binary_sensor"],
+  security: ["camera", "lock", "binary_sensor"],
 };
 const ADD_LABELS: Record<CollectionPage, TranslationKey> = { scenes: "addScenes", media: "addMedia", security: "addSecurity" };
 
