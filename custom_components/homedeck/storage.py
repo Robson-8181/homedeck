@@ -233,6 +233,15 @@ def normalize_config(value: Any) -> HomeDeckConfig:
         if isinstance(todo_entity, str) and (todo_entity == "" or todo_entity.startswith("todo.")):
             config["agenda"]["todo_entity"] = todo_entity
 
+    cards = value.get("cards")
+    if isinstance(cards, dict):
+        for key, high in (("corners", 150), ("glass", 100)):
+            number = cards.get(key)
+            if isinstance(number, (int, float)) and not isinstance(number, bool):
+                config["cards"][key] = max(0, min(high, round(number)))
+        if isinstance(cards.get("frame"), bool):
+            config["cards"]["frame"] = cards["frame"]
+
     return config
 
 

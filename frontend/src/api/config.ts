@@ -1,4 +1,5 @@
 import type { HomeDeckConfig } from "../types/config";
+import { DEFAULT_CARDS } from "../plan";
 import type { HomeAssistant } from "../types/home-assistant";
 
 // Fields added in later versions get their defaults here, so a config saved by an
@@ -12,6 +13,7 @@ function withDefaults(config: HomeDeckConfig): HomeDeckConfig {
     view_mode: config.view_mode ?? "grid",
     highlight_color: config.highlight_color ?? "#ffc94d",
     screensaver: { enabled: false, delay: 180, ...(config.screensaver as Partial<HomeDeckConfig["screensaver"]> | undefined) },
+    cards: { ...DEFAULT_CARDS, ...(config.cards as Partial<HomeDeckConfig["cards"]> | undefined) },
     agenda: { show_calendar: true, calendars: [], show_todo: true, todo_entity: "", todo_no_date: false, ...(config.agenda as Partial<HomeDeckConfig["agenda"]> | undefined) },
   };
 }

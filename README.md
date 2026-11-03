@@ -55,7 +55,8 @@ on macOS). Your rooms, backgrounds and preferences are kept.
 - **Free:** up to 4 rooms and 10 controllable devices (lights, switches, fans, covers,
   climate, media and locks). Sensors and scenes don't count. Grid and List layouts.
 - **Pro:** unlimited rooms and devices, all four layouts, big cards, your own pages, the
-  Spotify player, the screensaver and every background and color. US$ 14.99 once or
+  Spotify player, the screensaver, every background and color, the style (corners, frame
+  and glass) and feedback straight to support. US$ 14.99 once or
   US$ 7.99 per year, per home (R$ 59.90 or R$ 29.90 per year in Brazil).
 
 Buy Pro from **Settings → Plan** in the dashboard. The license is checked locally and

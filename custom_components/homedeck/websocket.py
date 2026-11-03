@@ -19,6 +19,7 @@ from .license import (
     async_checkout,
     async_claim,
     async_deactivate,
+    async_feedback,
     async_is_pro,
     async_license_status,
     async_portal,
@@ -194,6 +195,30 @@ async def websocket_license_portal(
         connection.send_error(msg["id"], str(err), "The license server could not open the portal")
 
 
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): f"{DOMAIN}/feedback",
+        vol.Required("email"): vol.All(str, vol.Length(max=200)),
+        vol.Required("kind"): vol.In(["problem", "idea", "praise"]),
+        vol.Required("message"): vol.All(str, vol.Length(min=10, max=5000)),
+        vol.Optional("locale"): vol.All(str, vol.Length(max=12)),
+        vol.Optional("user_agent"): vol.All(str, vol.Length(max=300)),
+    }
+)
+@websocket_api.async_response
+async def websocket_feedback(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """E-mail the Pro feedback form to HomeDeck support through the license server."""
+    fields = {name: msg[name] for name in ("email", "kind", "message", "locale", "user_agent") if name in msg}
+    try:
+        connection.send_result(msg["id"], await async_feedback(hass, fields))
+    except LicenseError as err:
+        connection.send_error(msg["id"], str(err), "The feedback could not be sent")
+
+
 def async_register_websocket_commands(hass: HomeAssistant) -> None:
     """Register HomeDeck commands once per Home Assistant process."""
     domain_data = hass.data.setdefault(DOMAIN, {})
@@ -209,4 +234,5 @@ def async_register_websocket_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_license_checkout)
     websocket_api.async_register_command(hass, websocket_license_claim)
     websocket_api.async_register_command(hass, websocket_license_portal)
+    websocket_api.async_register_command(hass, websocket_feedback)
     domain_data[_COMMANDS_REGISTERED] = True

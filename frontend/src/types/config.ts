@@ -116,5 +116,13 @@ export interface HomeDeckConfig {
     enabled: boolean;
     delay: number;
   };
+  /** Pro: how cards look. corners 0-150 (% of the default roundness), glass 0 (solid) to 100 (see-through). */
+  cards: HomeDeckCardStyle;
+}
+
+export interface HomeDeckCardStyle {
+  corners: number;
+  frame: boolean;
+  glass: number;
 }
 

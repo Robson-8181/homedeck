@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import type { HomeDeckConfig } from "../types/config";
+import type { HomeDeckCardStyle, HomeDeckConfig } from "../types/config";
 import type { DiscoveryResponse } from "../types/discovery";
 import type { HomeAssistant } from "../types/home-assistant";
 
@@ -62,6 +62,32 @@ function mixColor(from: string, to: string, amount: number): string {
   return `#${a.map((value, index) => Math.round(value + (b[index] - value) * amount).toString(16).padStart(2, "0")).join("")}`;
 }
 
+/** The card glass: 50 is the classic frosted look, lower blends toward a solid card in the background's
+ * tone, higher lets more of the background through. */
+function glassColor(glass: number, tint: number, solid: string): string {
+  if (glass >= 50) return `rgba(255,255,255,${(tint - ((glass - 50) / 50) * (tint / 2)).toFixed(3)})`;
+  const amount = (50 - glass) / 50;
+  const alpha = tint + (0.94 - tint) * amount;
+  const rgb = hexToRgb(solid).map((value) => Math.round((255 * tint * (1 - amount) + value * 0.94 * amount) / alpha));
+  return `rgba(${rgb.join(",")},${alpha.toFixed(3)})`;
+}
+
+function cardVars(cards: HomeDeckCardStyle, palette: Palette): Record<string, string> {
+  const glass = Math.max(0, Math.min(100, cards.glass));
+  const solid = mixColor(palette[1], "#26252b", 0.45);
+  const corners = Math.max(0, Math.min(150, cards.corners)) / 100;
+  // Pills and circles are already as round as they get; below the default they square off with the rest.
+  const round: Record<string, string> = corners >= 1 ? {} : { "--hd-pill": `calc(var(--u)*${(2.6 * corners).toFixed(2)})`, "--hd-round": `${(50 * corners).toFixed(1)}%` };
+  return {
+    "--hd-r": corners.toFixed(2),
+    ...round,
+    "--hd-blur": `${(glass < 50 ? (22 * glass) / 50 : 22 + (glass - 50) * 0.36).toFixed(1)}px`,
+    "--glass": glassColor(glass, 0.14, solid),
+    "--glass-strong": glassColor(glass, 0.18, solid),
+    ...(cards.frame ? {} : { "--hd-frame": "transparent" }),
+  };
+}
+
 function paletteAt(stops: Stop[], level: number): Palette {
   let index = 0;
   while (index < stops.length - 2 && level > stops[index + 1][0]) index += 1;
@@ -107,6 +133,7 @@ export function DynamicShell({ children, config, data, hass, mode = "grid" }: { 
     "--on": highlight,
     "--on-deep": mixColor(highlight, "#000000", 0.12),
     "--on-ink": contrastColor(highlight) === "#ffffff" ? "#ffffff" : "#2a2110",
+    ...cardVars(config.cards, palette),
   } as CSSProperties;
   return (
     <div className={`app-shell theme-${config.theme} view-${mode} ${config.background.animated ? "ambient-animated" : "ambient-still"}`} data-activity={level.toFixed(2)} style={style}>

@@ -20,13 +20,14 @@ import aiohttp
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
+from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import instance_id
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.storage import Store
 
-from .const import DOMAIN
+from .const import DOMAIN, VERSION
 
 PREFIX = "HD1"
 # Signing keys by id. "live1" signs the licenses sold by the license server; "dev" signs
@@ -232,6 +233,18 @@ async def async_portal(hass: HomeAssistant, return_url: str | None) -> dict[str,
     if not stored.get("key"):
         raise LicenseError("invalid")
     return {"url": (await _server(hass, "portal", {"key": stored["key"], "return_url": return_url}))["url"]}
+
+
+async def async_feedback(hass: HomeAssistant, message: dict[str, Any]) -> dict[str, Any]:
+    """Send the Pro feedback form to support; the server checks the key and limits how often."""
+    stored = await _store(hass).async_load() or {}
+    if not stored.get("key") or not await async_is_pro(hass):
+        raise LicenseError("not_pro")
+    return await _server(
+        hass,
+        "feedback",
+        {**message, "key": stored["key"], "version": VERSION, "ha_version": HA_VERSION},
+    )
 
 
 async def async_refresh(hass: HomeAssistant, force: bool = False) -> None:

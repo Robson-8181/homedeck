@@ -3,7 +3,7 @@ import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from
 import { HDIcon, roomIcon, type IconName } from "../components/HDIcon";
 import { HDSegmented, HDSelect } from "../components/HDSelect";
 import type { TranslationKey } from "../i18n";
-import type { HomeDeckBackgroundPreset, HomeDeckConfig, HomeDeckPageType } from "../types/config";
+import type { HomeDeckBackgroundPreset, HomeDeckCardStyle, HomeDeckConfig, HomeDeckPageType } from "../types/config";
 import type { Room } from "../types/discovery";
 import type { HomeAssistant } from "../types/home-assistant";
 import { hideSidebarPreferred, setHideSidebarPreferred } from "../sidebar";
@@ -11,9 +11,10 @@ import { deactivateLicense, getLicense, openPortal, type LicenseStatus } from ".
 import { LICENSE_ERRORS } from "../components/ProSheet";
 import { getDefaultPanel, setSystemDefault, setUserDefault, type DefaultPanelState } from "../api/defaultPanel";
 import { EntityPicker } from "../components/EntityPicker";
+import { FeedbackSheet } from "../components/FeedbackSheet";
 import { LayoutPicker } from "../components/LayoutPicker";
 import { OPEN_METEO } from "../weather";
-import { DEFAULT_ACCENT, DEFAULT_HIGHLIGHT, FREE_BACKGROUNDS, FREE_VIEW_MODES, freeDevices, freeRoomIds, freeUsage, isControllable, SUPPORT_EMAIL, usePlan } from "../plan";
+import { DEFAULT_ACCENT, DEFAULT_CARDS, DEFAULT_HIGHLIGHT, FREE_BACKGROUNDS, FREE_VIEW_MODES, freeDevices, freeRoomIds, freeUsage, isControllable, SUPPORT_EMAIL, usePlan } from "../plan";
 
 type Section = "layout" | "appearance" | "home" | "rooms" | "navigation" | "plan" | "system";
 
@@ -74,6 +75,7 @@ function Switch({ checked, label, onChange }: { checked: boolean; label: string;
 export function SettingsScreen({ config, hass, language, onClose, onDraft, onLicense, onReload, onSave, rooms, t, version }: SettingsScreenProps) {
   const plan = usePlan();
   const [managing, setManaging] = useState(false);
+  const [feedback, setFeedback] = useState(false);
   const [hideHaSidebar, setHideHaSidebar] = useState(hideSidebarPreferred);
   // Pro-only options stay visible with a lock; choosing one opens the Pro sheet.
   const locked = (condition: boolean) => !plan.pro && condition;
@@ -191,6 +193,7 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
               <div className="st-swatches st-swatches--vivid">{HIGHLIGHTS.map((color) => <button aria-label={`${t("highlightColor")} ${color}`} aria-pressed={draft.highlight_color === color} key={color} onClick={() => (locked(color !== DEFAULT_HIGHLIGHT) ? plan.upsell("feature") : update({ highlight_color: color }))} style={{ background: color }} type="button">{draft.highlight_color === color ? <HDIcon name="check" size={16} /> : locked(color !== DEFAULT_HIGHLIGHT) && <Lock />}</button>)}</div>
             </div>
           </section>
+          <CardStylePanel cards={draft.cards} locked={!plan.pro} onChange={(cards) => update({ cards })} onUpsell={() => plan.upsell("feature")} t={t} />
           <section className="st-panel">
             <h2>{t("background")}</h2><p>{t("lightsOnly")}</p>
             <div className="st-backgrounds">{BACKGROUNDS.map(([preset, label, preview]) => <button aria-pressed={draft.background.preset === preset} key={preset} onClick={() => (locked(!FREE_BACKGROUNDS.includes(preset)) ? plan.upsell("feature") : update({ background: { ...draft.background, preset } }))} type="button"><i style={{ background: preview }}>{locked(!FREE_BACKGROUNDS.includes(preset)) && <Lock />}</i><b>{t(label)}</b><small>{locked(!FREE_BACKGROUNDS.includes(preset)) ? "Pro" : preset.startsWith("adaptive_") ? t("automatic") : t("fixedBackground")}</small></button>)}</div>
@@ -281,6 +284,7 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
             <Row description={t("manageDevicesDescription")} label={t("gateDevices")}><button className="hd-pill" onClick={() => setManaging(true)} type="button">{t("manageDevices")}</button></Row>
             <div className="st-actions"><button className="hd-pill hd-pill--solid" onClick={() => plan.upsell("general")} type="button"><HDIcon name="star" size={16} />{t("proSeePro")}</button></div>
           </>}
+          <Row description={t("feedbackDescription")} label={t("feedback")}>{plan.pro ? <button className="hd-pill hd-pill--solid" onClick={() => setFeedback(true)} type="button"><HDIcon name="check" size={16} />{t("feedbackOpen")}</button> : <button className="hd-pill" onClick={() => plan.upsell("feature")} type="button"><HDIcon name="lock" size={14} />Pro</button>}</Row>
           <Row description={t("supportDescription")} label={t("support")}><a className="hd-pill" href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a></Row>
           <Row description={t("installationIdDescription")} label={t("installationId")}><code className="st-code">{plan.license?.installation_id ?? "—"}</code></Row>
         </section>}
@@ -296,6 +300,7 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
         </section>}
       </section>
     </div>
+    {feedback && <FeedbackSheet hass={hass} language={language} onClose={() => setFeedback(false)} t={t} />}
     {managing && <EntityPicker filter={isControllable} language={language} onClose={() => setManaging(false)} onToggle={(id) => {
       const current = freeDevices(draft, rooms);
       if (current.includes(id)) update({ free_devices: current.filter((item) => item !== id) });
@@ -303,6 +308,28 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
       else update({ free_devices: [...current, id] });
     }} rooms={rooms.filter((room) => freeRoomIds(draft, rooms).includes(room.id))} selected={freeDevices(draft, rooms)} t={t} title={`${t("gateDevices")} · ${freeUsage(draft, rooms).devices} ${t("of")} ${plan.limits.devices}`} />}
   </main>;
+}
+
+function Range({ label, max, onChange, value, ends }: { label: string; max: number; onChange: (value: number) => void; value: number; ends: [string, string] }) {
+  return <div className="st-range">
+    <input aria-label={label} max={max} min={0} onChange={(event) => onChange(Number(event.currentTarget.value))} step={5} style={{ "--value": `${(value / max) * 100}%` } as CSSProperties} type="range" value={value} />
+    <span><small>{ends[0]}</small><small>{ends[1]}</small></span>
+  </div>;
+}
+
+/** Pro: corners, frame and glass, previewed live on the panel behind the settings. */
+function CardStylePanel({ cards, locked, onChange, onUpsell, t }: { cards: HomeDeckCardStyle; locked: boolean; onChange: (cards: HomeDeckCardStyle) => void; onUpsell: () => void; t: (key: TranslationKey) => string }) {
+  const changed = JSON.stringify(cards) !== JSON.stringify(DEFAULT_CARDS);
+  return <section className={`st-panel st-cards ${locked ? "st-cards--locked" : ""}`}>
+    <h2>{t("cardStyle")}</h2><p>{t("cardStyleDescription")}</p>
+    {locked && <div className="st-actions"><button className="hd-pill" onClick={onUpsell} type="button"><HDIcon name="lock" size={14} />{t("proStyleLocked")}</button></div>}
+    <div className="st-cards__body"><fieldset disabled={locked}>
+      <Row label={t("corners")}><Range ends={[t("cornersSquare"), t("cornersRound")]} label={t("corners")} max={150} onChange={(corners) => onChange({ ...cards, corners })} value={cards.corners} /></Row>
+      <Row label={t("glass")}><Range ends={[t("glassSolid"), t("glassClear")]} label={t("glass")} max={100} onChange={(glass) => onChange({ ...cards, glass })} value={cards.glass} /></Row>
+      <Row description={t("frameDescription")} label={t("frame")}><Switch checked={cards.frame} label={t("frame")} onChange={(frame) => onChange({ ...cards, frame })} /></Row>
+    </fieldset>{locked && <button aria-label={t("proStyleLocked")} className="st-cards__lock" onClick={onUpsell} type="button" />}</div>
+    {!locked && changed && <div className="st-actions"><button className="hd-pill" onClick={() => onChange(DEFAULT_CARDS)} type="button"><HDIcon name="refresh" size={16} />{t("restoreDefaults")}</button></div>}
+  </section>;
 }
 
 /** Makes HomeDeck the screen Home Assistant opens; applied at once, stored by Home Assistant. */

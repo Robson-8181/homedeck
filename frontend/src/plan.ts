@@ -1,12 +1,13 @@
 import { createContext, useContext } from "react";
 import type { LicenseStatus } from "./api/license";
-import type { HomeDeckBackgroundPreset, HomeDeckConfig, HomeDeckViewMode } from "./types/config";
+import type { HomeDeckBackgroundPreset, HomeDeckCardStyle, HomeDeckConfig, HomeDeckViewMode } from "./types/config";
 import type { DiscoveredEntity, Room } from "./types/discovery";
 
 export const FREE_BACKGROUNDS: HomeDeckBackgroundPreset[] = ["adaptive_ember", "fixed_night", "fixed_graphite"];
 export const FREE_VIEW_MODES: HomeDeckViewMode[] = ["grid", "list"];
 export const DEFAULT_ACCENT = "#f4edd9";
 export const DEFAULT_HIGHLIGHT = "#ffc94d";
+export const DEFAULT_CARDS: HomeDeckCardStyle = { corners: 100, frame: true, glass: 50 };
 export const SUPPORT_EMAIL = "suporte@homedeck.pro";
 const CONTROLLABLE = new Set(["light", "switch", "fan", "cover", "climate", "media_player", "lock"]);
 
@@ -91,6 +92,7 @@ export function effectiveConfig(config: HomeDeckConfig, pro: boolean): HomeDeckC
     background: { ...config.background, preset: FREE_BACKGROUNDS.includes(config.background.preset) ? config.background.preset : "adaptive_ember" },
     view_mode: FREE_VIEW_MODES.includes(config.view_mode) ? config.view_mode : "grid",
     screensaver: { ...config.screensaver, enabled: false },
+    cards: DEFAULT_CARDS,
     pages: [],
     layouts: Object.fromEntries(Object.entries(config.layouts).map(([screen, layout]) => [screen, { ...layout, wide: [] }])),
   };

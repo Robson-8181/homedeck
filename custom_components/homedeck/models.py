@@ -121,6 +121,14 @@ class HomeDeckAgendaConfig(TypedDict):
     todo_no_date: bool
 
 
+class HomeDeckCardStyle(TypedDict):
+    """Pro: corners (0-150 % of the default roundness), frame, and glass (0 solid to 100 see-through)."""
+
+    corners: int
+    frame: bool
+    glass: int
+
+
 class HomeDeckConfig(TypedDict):
     """Persisted HomeDeck configuration."""
 
@@ -150,6 +158,7 @@ class HomeDeckConfig(TypedDict):
     layouts: dict[str, HomeDeckScreenLayout]
     screensaver: HomeDeckScreensaverConfig
     agenda: HomeDeckAgendaConfig
+    cards: HomeDeckCardStyle
 
 
 def default_config() -> HomeDeckConfig:
@@ -232,6 +241,11 @@ def default_config() -> HomeDeckConfig:
             "show_todo": True,
             "todo_entity": "",
             "todo_no_date": False,
+        },
+        "cards": {
+            "corners": 100,
+            "frame": True,
+            "glass": 50,
         },
     }
 

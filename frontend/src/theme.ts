@@ -33,8 +33,8 @@ export const theme = String.raw`
 /* Shared surfaces */
 /* :where keeps this at the specificity of .app-shell alone, so state rules below always win. */
 .app-shell :where(.room-card, .device-tile, .widget-card, .weather-chip, .navigation-dock, .round-action, .global-actions > button, .room-actions > button, .scene-strip .hd-item > button:first-child, .empty-state) {
-  background: var(--glass); border: 1px solid var(--line);
-  backdrop-filter: blur(22px) saturate(1.3); -webkit-backdrop-filter: blur(22px) saturate(1.3);
+  background: var(--glass); border: 1px solid var(--hd-frame,var(--line));
+  backdrop-filter: blur(var(--hd-blur,22px)) saturate(1.3); -webkit-backdrop-filter: blur(var(--hd-blur,22px)) saturate(1.3);
   box-shadow: none;
 }
 .app-shell .eyebrow, .app-shell .operational-heading span, .app-shell .widget-card__label {
@@ -48,7 +48,7 @@ export const theme = String.raw`
 .app-shell .context-header__clock span { font: 600 calc(var(--u)*1.9)/1.2 var(--f-body); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); }
 .app-shell .context-header__clock strong { font: 300 calc(var(--u)*6.4)/1 var(--f-display); letter-spacing: -.01em; margin-top: calc(var(--u)*.6); font-variant-numeric: tabular-nums; color: var(--ink); }
 .app-shell .context-header__right { display: flex; align-items: center; gap: calc(var(--u)*1.6); }
-.app-shell .weather-chip { display: flex; align-items: center; gap: calc(var(--u)*1.2); height: auto; border-radius: 99px; padding: calc(var(--u)*.9) calc(var(--u)*2) calc(var(--u)*.9) calc(var(--u)*1.4); color: var(--ink); cursor: pointer; }
+.app-shell .weather-chip { display: flex; align-items: center; gap: calc(var(--u)*1.2); height: auto; border-radius: var(--hd-pill,99px); padding: calc(var(--u)*.9) calc(var(--u)*2) calc(var(--u)*.9) calc(var(--u)*1.4); color: var(--ink); cursor: pointer; }
 .app-shell .weather-chip svg { width: calc(var(--u)*3.4); height: calc(var(--u)*3.4); }
 .app-shell .weather-chip b { font: 500 calc(var(--u)*2.8)/1 var(--f-display); }
 .app-shell .weather-chip small { color: var(--ink-2); font: 500 calc(var(--u)*1.8)/1 var(--f-body); white-space: nowrap; }
@@ -57,7 +57,7 @@ export const theme = String.raw`
 .app-shell .presence-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 .app-shell .presence-avatar::after { content: ""; position: absolute; right: -1px; bottom: -1px; width: 28%; height: 28%; border-radius: 50%; background: #8c8c8c; border: 2px solid #1b1514; }
 .app-shell .presence-avatar--home::after { background: var(--ok); }
-.app-shell .round-action { width: calc(var(--u)*5.4); height: calc(var(--u)*5.4); border-radius: 99px; display: grid; place-items: center; padding: 0; color: var(--ink); cursor: pointer; }
+.app-shell .round-action { width: calc(var(--u)*5.4); height: calc(var(--u)*5.4); border-radius: var(--hd-pill,99px); display: grid; place-items: center; padding: 0; color: var(--ink); cursor: pointer; }
 .app-shell .round-action svg { width: calc(var(--u)*2.6); height: calc(var(--u)*2.6); }
 
 /* Home status line: "CASA / 6 luzes acesas em casa" with pill actions */
@@ -69,7 +69,7 @@ export const theme = String.raw`
 .app-shell :is(.home-status, .room-operational-header, .collection-header) p { display: none; }
 .app-shell :is(.global-actions, .room-actions) { display: flex; gap: calc(var(--u)*1); flex-wrap: wrap; }
 .app-shell :is(.global-actions, .room-actions) > button {
-  border-radius: 99px; height: auto; min-height: 0; padding: calc(var(--u)*1) calc(var(--u)*2.2);
+  border-radius: var(--hd-pill,99px); height: auto; min-height: 0; padding: calc(var(--u)*1) calc(var(--u)*2.2);
   font: 600 calc(var(--u)*1.8)/1.2 var(--f-body); color: var(--ink); display: inline-flex; align-items: center; gap: calc(var(--u)*.8); white-space: nowrap; cursor: pointer;
 }
 .app-shell :is(.global-actions > button:last-child, .room-actions__primary) { background: rgba(255,255,255,.92); color: #1d1a17; border-color: transparent; }
@@ -83,7 +83,7 @@ export const theme = String.raw`
 /* Tiles */
 .app-shell :is(.room-card, .device-tile, .widget-card) {
   position: relative; min-width: 0; min-height: calc(var(--u)*18); overflow: hidden;
-  border-radius: calc(var(--u)*3.4); padding: calc(var(--u)*2); color: var(--ink);
+  border-radius: calc(var(--u)*3.4*var(--hd-r,1)); padding: calc(var(--u)*2); color: var(--ink);
   display: flex; flex-direction: column; justify-content: space-between; gap: calc(var(--u)*1.4);
   transition: background .25s, color .25s, opacity .25s, transform .16s ease;
 }
@@ -91,14 +91,14 @@ export const theme = String.raw`
 .app-shell :is(.room-card--unavailable, .device-tile--unavailable) { opacity: .4; }
 .app-shell :is(.room-card__icon, .device-tile__icon, .widget-card__icon) {
   position: static; inset: auto; margin: 0;
-  width: calc(var(--u)*5); height: calc(var(--u)*5); border-radius: 50%; display: grid; place-items: center; flex: none;
+  width: calc(var(--u)*5); height: calc(var(--u)*5); border-radius: var(--hd-round,50%); display: grid; place-items: center; flex: none;
   background: rgba(255,255,255,.17); color: inherit; transition: background .25s, color .25s;
 }
 .app-shell :is(.room-card__icon, .device-tile__icon, .widget-card__icon) svg { width: 56%; height: 56%; }
 .app-shell :is(.room-card--active .room-card__icon, .device-tile--active .device-tile__icon) { background: var(--lc, var(--on)); color: var(--on-ink, #2a2110); }
 .app-shell :is(.room-card__power, .device-tile__power) {
   position: absolute; top: calc(var(--u)*1.4); right: calc(var(--u)*1.4); z-index: 2;
-  width: calc(var(--u)*6.4); height: calc(var(--u)*6.4); border-radius: 50%; border: 0; padding: 0;
+  width: calc(var(--u)*6.4); height: calc(var(--u)*6.4); border-radius: var(--hd-round,50%); border: 0; padding: 0;
   display: grid; place-items: center; background: rgba(255,255,255,.17); color: inherit; cursor: pointer;
 }
 .app-shell :is(.room-card__power, .device-tile__power) svg { width: 48%; height: 48%; }
@@ -120,23 +120,23 @@ export const theme = String.raw`
 .app-shell .room-card__footer { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u)*1); margin-top: calc(var(--u)*-.6); font: 500 calc(var(--u)*1.75)/1 var(--f-body); color: var(--ink-2); border: 0; padding: 0; }
 .app-shell .room-card--active .room-card__footer { color: var(--paper-ink-2); }
 .app-shell .light-pips { display: flex; gap: calc(var(--u)*.5); flex-wrap: wrap; }
-.app-shell .light-pip { width: calc(var(--u)*1.1); height: calc(var(--u)*1.1); border-radius: 50%; background: rgba(255,255,255,.28); box-shadow: none; }
+.app-shell .light-pip { width: calc(var(--u)*1.1); height: calc(var(--u)*1.1); border-radius: var(--hd-round,50%); background: rgba(255,255,255,.28); box-shadow: none; }
 .app-shell .room-card--active .light-pip { background: rgba(43,36,24,.16); }
 .app-shell .room-card--active .light-pip--active { background: var(--on-deep); }
 
 /* Device tiles */
 .app-shell .device-tile__more {
   position: absolute; top: calc(var(--u)*1.4); right: calc(var(--u)*8.6); z-index: 2;
-  width: calc(var(--u)*4.4); height: calc(var(--u)*4.4); border-radius: 50%; border: 0; padding: 0;
+  width: calc(var(--u)*4.4); height: calc(var(--u)*4.4); border-radius: var(--hd-round,50%); border: 0; padding: 0;
   background: transparent; color: var(--ink-3); font: 700 calc(var(--u)*1.6)/1 var(--f-body); letter-spacing: .05em; cursor: pointer;
 }
 .app-shell .device-tile:not(:has(.device-tile__power)) .device-tile__more { right: calc(var(--u)*1.4); }
 .app-shell .device-tile--active .device-tile__more { color: var(--paper-ink-2); }
 /* Brightness, like the main dashboard: a rounded fill with its marker set a little inside the end */
-.app-shell .device-dimmer { position: relative; display: block; margin: 0; height: calc(var(--u)*3.6); border-radius: 99px; overflow: hidden; background: rgba(255,255,255,.16); }
+.app-shell .device-dimmer { position: relative; display: block; margin: 0; height: calc(var(--u)*3.6); border-radius: var(--hd-pill,99px); overflow: hidden; background: rgba(255,255,255,.16); }
 .app-shell .device-tile--active .device-dimmer { background: rgba(43,36,24,.1); }
 .app-shell .device-dimmer b, .app-shell .tile-slider__track b { position: absolute; left: 0; top: 0; bottom: 0; width: max(var(--value, 0%), calc(var(--u)*3.6)); border-radius: inherit; background: rgba(255,255,255,.55); pointer-events: none; }
-.app-shell .device-dimmer b::after, .app-shell .tile-slider__track b::after { content: ""; position: absolute; right: calc(var(--u)*.9); top: 25%; bottom: 25%; width: 3px; border-radius: 3px; background: rgba(255,255,255,.95); }
+.app-shell .device-dimmer b::after, .app-shell .tile-slider__track b::after { content: ""; position: absolute; right: calc(var(--u)*.9); top: 25%; bottom: 25%; width: 3px; border-radius: calc(3px*var(--hd-r,1)); background: rgba(255,255,255,.95); }
 .app-shell .device-tile--active .device-dimmer b { background: var(--lc, var(--on)); }
 .app-shell .device-tile--active .device-dimmer b::after { background: rgba(43,36,24,.55); }
 .app-shell .device-dimmer--off b { display: none; }
@@ -144,7 +144,7 @@ export const theme = String.raw`
 .app-shell .device-dimmer:has(input:focus-visible), .app-shell .tile-slider__track:has(input:focus-visible) { outline: 2px solid currentColor; outline-offset: 2px; }
 .app-shell :is(.device-controls, .climate-quick-control > div) { display: flex; gap: calc(var(--u)*1); }
 .app-shell :is(.device-controls, .climate-quick-control > div) button {
-  flex: 1; height: calc(var(--u)*4.4); border-radius: 99px; border: 0; padding: 0;
+  flex: 1; height: calc(var(--u)*4.4); border-radius: var(--hd-pill,99px); border: 0; padding: 0;
   display: grid; place-items: center; background: rgba(255,255,255,.18); color: inherit; font: 400 calc(var(--u)*2.8)/1 var(--f-display); cursor: pointer;
 }
 .app-shell .device-tile--active :is(.device-controls, .climate-quick-control > div) button { background: rgba(43,36,24,.1); }
@@ -166,7 +166,7 @@ export const theme = String.raw`
 .app-shell .widget-card--playing .widget-card__icon { background: var(--green, #1fd36b); color: #08210f; }
 .app-shell .widget-card > button {
   position: absolute; top: calc(var(--u)*1.4); right: calc(var(--u)*1.4); width: calc(var(--u)*6.4); height: calc(var(--u)*6.4);
-  border-radius: 50%; border: 0; padding: 0; display: grid; place-items: center; background: rgba(255,255,255,.17); color: inherit; cursor: pointer;
+  border-radius: var(--hd-round,50%); border: 0; padding: 0; display: grid; place-items: center; background: rgba(255,255,255,.17); color: inherit; cursor: pointer;
 }
 .app-shell .widget-card--playing > button { background: rgba(43,36,24,.12); }
 
@@ -175,18 +175,18 @@ export const theme = String.raw`
 .app-shell .operational-heading { display: flex; align-items: center; gap: calc(var(--u)*1); margin: 0; }
 .app-shell .operational-heading i { font: 600 calc(var(--u)*1.5)/1 var(--f-body); font-style: normal; color: var(--ink-3); }
 .app-shell .scene-strip { display: flex; gap: calc(var(--u)*1); flex-wrap: wrap; overflow: visible; }
-.app-shell .scene-strip .hd-item > button:first-child { display: inline-flex; align-items: center; gap: calc(var(--u)*.9); border-radius: 99px; padding: calc(var(--u)*1.1) calc(var(--u)*2.2); color: var(--ink); font: 600 calc(var(--u)*1.8)/1.2 var(--f-body); cursor: pointer; min-height: 0; }
+.app-shell .scene-strip .hd-item > button:first-child { display: inline-flex; align-items: center; gap: calc(var(--u)*.9); border-radius: var(--hd-pill,99px); padding: calc(var(--u)*1.1) calc(var(--u)*2.2); color: var(--ink); font: 600 calc(var(--u)*1.8)/1.2 var(--f-body); cursor: pointer; min-height: 0; }
 .app-shell .scene-strip .hd-item > button:first-child svg { width: calc(var(--u)*2.4); height: calc(var(--u)*2.4); }
 
 /* Navigation dock */
 .app-shell .navigation-dock {
   position: fixed; left: 50%; right: auto; bottom: calc(var(--u)*2.4 + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 20;
-  width: auto; max-width: calc(100% - var(--u)*4); display: flex; gap: calc(var(--u)*.6); padding: calc(var(--u)*.8); border-radius: 99px;
+  width: auto; max-width: calc(100% - var(--u)*4); display: flex; gap: calc(var(--u)*.6); padding: calc(var(--u)*.8); border-radius: var(--hd-pill,99px);
   overflow-x: auto; scrollbar-width: none; box-shadow: 0 calc(var(--u)*1.2) calc(var(--u)*4) rgba(0,0,0,.35);
 }
 .app-shell .navigation-dock::-webkit-scrollbar { display: none; }
 .app-shell .navigation-dock button {
-  flex: none; display: flex; align-items: center; gap: calc(var(--u)*.9); min-height: 0; height: auto; border: 0; border-radius: 99px;
+  flex: none; display: flex; align-items: center; gap: calc(var(--u)*.9); min-height: 0; height: auto; border: 0; border-radius: var(--hd-pill,99px);
   padding: calc(var(--u)*1.1) calc(var(--u)*2.2); background: none; color: var(--ink-2); font: 600 calc(var(--u)*1.9)/1.2 var(--f-body); white-space: nowrap; cursor: pointer;
 }
 .app-shell .navigation-dock button span { display: inline; font: inherit; }
@@ -198,13 +198,13 @@ export const theme = String.raw`
 .app-shell .room-selector { position: sticky; top: calc(var(--u)*2); min-width: 0; padding: 0; background: none; border: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
 .app-shell .room-selector__list { display: flex; flex-direction: column; gap: calc(var(--u)*.6); max-height: none; overflow: visible; padding: 0; }
 .app-shell .room-selector__list > button {
-  display: flex; align-items: center; gap: calc(var(--u)*1.4); min-height: 0; width: 100%; border: 0; border-radius: calc(var(--u)*1.6);
+  display: flex; align-items: center; gap: calc(var(--u)*1.4); min-height: 0; width: 100%; border: 0; border-radius: calc(var(--u)*1.6*var(--hd-r,1));
   padding: calc(var(--u)*1.1) calc(var(--u)*1.2); background: none; color: var(--ink-2); font: 500 calc(var(--u)*1.9)/1.2 var(--f-body); text-align: left; cursor: pointer;
 }
 .app-shell .room-selector__list > button > span:not(.room-selector__icon) { font: inherit; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.app-shell .room-selector__icon { width: calc(var(--u)*3.6); height: calc(var(--u)*3.6); border-radius: 50%; display: grid; place-items: center; flex: none; background: rgba(255,255,255,.12); color: inherit; }
+.app-shell .room-selector__icon { width: calc(var(--u)*3.6); height: calc(var(--u)*3.6); border-radius: var(--hd-round,50%); display: grid; place-items: center; flex: none; background: rgba(255,255,255,.12); color: inherit; }
 .app-shell .room-selector__icon svg { width: 55%; height: 55%; }
-.app-shell .room-selector__list > button i { min-width: calc(var(--u)*2.6); height: calc(var(--u)*2.6); padding: 0 calc(var(--u)*.7); border-radius: 99px; display: grid; place-items: center; background: var(--on); color: var(--on-ink, #2a2110); font: 700 calc(var(--u)*1.4)/1 var(--f-body); font-style: normal; }
+.app-shell .room-selector__list > button i { min-width: calc(var(--u)*2.6); height: calc(var(--u)*2.6); padding: 0 calc(var(--u)*.7); border-radius: var(--hd-pill,99px); display: grid; place-items: center; background: var(--on); color: var(--on-ink, #2a2110); font: 700 calc(var(--u)*1.4)/1 var(--f-body); font-style: normal; }
 .app-shell .room-selector__list > button[aria-selected="true"] { background: rgba(255,255,255,.92); color: #1d1a17; font-weight: 600; }
 .app-shell .room-selector__list > button[aria-selected="true"] .room-selector__icon { background: rgba(29,26,23,.08); }
 .app-shell .room-pane { min-width: 0; display: flex; flex-direction: column; gap: calc(var(--u)*2); }
@@ -212,7 +212,7 @@ export const theme = String.raw`
 /* Pages use the whole width, like Home (the old styles stopped them at 1180px). */
 .app-shell .collection-grid { max-width: none; }
 .app-shell .collection-header { align-items: center; justify-content: flex-start; }
-.app-shell .empty-state { border-radius: calc(var(--u)*3.4); padding: calc(var(--u)*4); color: var(--ink-2); text-align: center; }
+.app-shell .empty-state { border-radius: calc(var(--u)*3.4*var(--hd-r,1)); padding: calc(var(--u)*4); color: var(--ink-2); text-align: center; }
 
 /* Phones and narrow panels */
 @media (max-width: 720px) {
