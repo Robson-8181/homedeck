@@ -31,6 +31,7 @@ _MAX_LAYOUTS = 300
 _MAX_LAYOUT_ITEMS = 500
 _MAX_KEY_LENGTH = 300
 _MAX_SECTIONS = 50
+_MAX_NAME_LENGTH = 60
 _SCREENSAVER_DELAYS = {30, 60, 120, 180, 300, 600, 900, 1800}
 
 
@@ -57,6 +58,44 @@ def _normalize_sections(value: Any) -> dict[str, str]:
         and len(key) <= _MAX_KEY_LENGTH
         and isinstance(title, str)
         and title.strip()
+    }
+
+
+def _normalize_rooms(value: Any) -> dict[str, dict[str, str]]:
+    """Per room: its name in HomeDeck, and the icon and temperature sensor chosen in Edit mode."""
+    if not isinstance(value, dict):
+        return {}
+    rooms: dict[str, dict[str, str]] = {}
+    for room_id, options in list(value.items())[:_MAX_LAYOUTS]:
+        if not isinstance(room_id, str) or not room_id or len(room_id) > _MAX_KEY_LENGTH or not isinstance(options, dict):
+            continue
+        clean: dict[str, str] = {}
+        name = options.get("name")
+        if isinstance(name, str) and name.strip():
+            clean["name"] = name.strip()[:_MAX_NAME_LENGTH]
+        icon = options.get("icon")
+        if isinstance(icon, str) and icon and len(icon) <= 60:
+            clean["icon"] = icon
+        temperature = options.get("temperature")
+        if isinstance(temperature, str) and temperature.startswith("sensor.") and len(temperature) <= _MAX_KEY_LENGTH:
+            clean["temperature"] = temperature
+        if clean:
+            rooms[room_id] = clean
+    return rooms
+
+
+def _normalize_names(value: Any) -> dict[str, str]:
+    """Device nicknames given in HomeDeck, by entity id."""
+    if not isinstance(value, dict):
+        return {}
+    return {
+        entity_id: name.strip()[:_MAX_NAME_LENGTH]
+        for entity_id, name in list(value.items())[:_MAX_LAYOUT_ITEMS]
+        if isinstance(entity_id, str)
+        and "." in entity_id
+        and len(entity_id) <= _MAX_KEY_LENGTH
+        and isinstance(name, str)
+        and name.strip()
     }
 
 
@@ -146,9 +185,8 @@ def normalize_config(value: Any) -> HomeDeckConfig:
     if value.get("view_mode") in _ALLOWED_VIEW_MODES:
         config["view_mode"] = value["view_mode"]
 
-    rooms = value.get("rooms")
-    if isinstance(rooms, dict):
-        config["rooms"] = deepcopy(rooms)
+    config["rooms"] = _normalize_rooms(value.get("rooms"))
+    config["names"] = _normalize_names(value.get("names"))
 
     dashboard = value.get("dashboard")
     if isinstance(dashboard, dict):

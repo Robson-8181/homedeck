@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { HDIcon, domainIcon, roomIcon } from "../components/HDIcon";
+import { HDIcon, RoomIcon, domainIcon } from "../components/HDIcon";
 import { domainLabel, type TranslationKey } from "../i18n";
 import { freeDevices, freeRoomIds, isControllable, proPrice, usePlan } from "../plan";
 import type { HomeDeckConfig } from "../types/config";
@@ -66,7 +66,7 @@ export function PlanGateScreen({ config, language, onSave, rooms, t }: PlanGateP
           const on = chosenRooms.includes(room.id);
           return <button aria-pressed={on} className={`st-item st-item__main ${on ? "st-item--on" : ""} ${!on && roomsFull ? "st-item--locked" : ""}`} key={room.id} onClick={() => toggleRoom(room.id)} type="button">
             <span className="st-check">{on ? <HDIcon name="check" size={14} /> : !on && roomsFull ? <HDIcon name="lock" size={12} /> : null}</span>
-            <HDIcon name={roomIcon(room.name)} size={18} /><b>{room.id === "__unassigned__" ? t("unassigned") : room.name}</b>
+            <RoomIcon room={room} size={18} /><b>{room.id === "__unassigned__" ? t("unassigned") : room.name}</b>
           </button>;
         })}</div>
       </section>

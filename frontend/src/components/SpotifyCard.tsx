@@ -14,7 +14,7 @@ interface SpotifyCardProps {
   t: (key: TranslationKey) => string;
 }
 
-/** Home card for Spotify; tapping it opens the full player. Only the double-size card shows the artwork. */
+/** Home card for Spotify; tapping it opens the full player (with the volume). Only the double-size card shows the artwork. */
 export function SpotifyCard({ entity, hass, onOpen, t }: SpotifyCardProps) {
   const wide = useWideTile();
   const state = hass.states[entity.entity_id];
@@ -22,7 +22,6 @@ export function SpotifyCard({ entity, hass, onOpen, t }: SpotifyCardProps) {
   const playing = state?.state === "playing";
   const idle = !attrs.media_title || !["playing", "paused"].includes(state?.state ?? "");
   const picture = typeof attrs.entity_picture === "string" ? attrs.entity_picture : "";
-  const volume = typeof attrs.volume_level === "number" ? Math.round(attrs.volume_level * 100) : null;
   const [position, duration] = mediaSeconds(state);
   usePlaybackClock(playing);
   const call = (service: string, data: Record<string, unknown> = {}) => void hass.callService("media_player", service, { entity_id: entity.entity_id, ...data });
@@ -45,10 +44,6 @@ export function SpotifyCard({ entity, hass, onOpen, t }: SpotifyCardProps) {
         <button aria-label={playing ? t("pause") : t("play")} className="spotify-card__pp" onClick={() => call("media_play_pause")} type="button"><HDIcon name={playing ? "pause" : "play"} size={18} /></button>
         <button aria-label={t("next")} onClick={() => call("media_next_track")} type="button"><HDIcon name="next" size={18} /></button>
         {wide && repeat && <button aria-label={t("repeat")} aria-pressed={repeat !== "off"} className={repeat !== "off" ? "spotify-card__toggle spotify-card__toggle--on" : "spotify-card__toggle"} onClick={() => call("repeat_set", { repeat: REPEAT_NEXT[repeat] ?? "off" })} type="button"><HDIcon name={repeat === "one" ? "repeat1" : "repeat"} size={16} /></button>}
-        {volume != null && <span className="spotify-card__volume">
-          <button aria-label={t("volumeDown")} onClick={() => call("volume_set", { volume_level: Math.max(0, volume - 5) / 100 })} type="button"><HDIcon name="minus" size={14} /></button>
-          <button aria-label={t("volumeUp")} onClick={() => call("volume_set", { volume_level: Math.min(100, volume + 5) / 100 })} type="button"><HDIcon name="plus" size={14} /></button>
-        </span>}
       </span>
     </div>
   </div>;

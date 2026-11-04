@@ -8,12 +8,12 @@ import { domainIcon, HDIcon } from "./HDIcon";
 import { WideControls } from "./WideControls";
 import { CameraCard } from "./CameraCard";
 import { HDSelect } from "./HDSelect";
-import { RUNNABLE, SELECTS, mediaArt, runEntity, selectOption, selectOptions, vacuumActions, vacuumStatus } from "../devices";
+import { ALARM_ARMED, RUNNABLE, SELECTS, alarmStatus, mediaArt, plantStatus, runEntity, selectOption, selectOptions, vacuumActions, vacuumStatus } from "../devices";
 import { SpotifyCard } from "./SpotifyCard";
 import { usePlan } from "../plan";
 import { isSpotify } from "../spotify";
 
-const ACTIVE_STATES = new Set(["on", "open", "opening", "playing", "paused", "heat", "cool", "heat_cool", "auto", "dry", "fan_only", "unlocked", "cleaning", "returning"]);
+const ACTIVE_STATES = new Set(["on", "open", "opening", "playing", "paused", "heat", "cool", "heat_cool", "auto", "dry", "fan_only", "unlocked", "cleaning", "returning", ...ALARM_ARMED]);
 export const TOGGLES = new Set(["light", "switch", "fan", "input_boolean", "automation"]);
 const HOLD_MS = 520;
 
@@ -35,6 +35,8 @@ export function displayState(state: HassEntity | undefined, entity: DiscoveredEn
   }
   if (entity.domain === "lock") return state.state === "locked" ? t("lock") : t("unlock");
   if (entity.domain === "vacuum") return vacuumStatus(state, t);
+  if (entity.domain === "alarm_control_panel") return alarmStatus(state, t);
+  if (entity.domain === "plant") return plantStatus(state, t);
   if (entity.domain === "camera") return t("cameraTapLive");
   if (entity.domain === "script") return state.state === "on" ? t("scriptRunning") : t("runScript");
   if (entity.domain === "button" || entity.domain === "input_button") return t("pressButton");
@@ -140,7 +142,7 @@ function DeviceCard({ entity, hass, language, onLongPress, t }: EntityCardProps)
     <article
       aria-label={`${entity.name}: ${status}`}
       aria-pressed={TOGGLES.has(entity.domain) ? active : undefined}
-      className={`device-tile device-tile--tap ${wide ? `device-tile--wide device-tile--wide-${entity.domain}` : ""} ${active ? "device-tile--active" : ""} ${state?.state === "cleaning" ? "device-tile--cleaning" : ""} ${unavailable ? "device-tile--unavailable" : ""}`}
+      className={`device-tile device-tile--tap ${wide ? `device-tile--wide device-tile--wide-${entity.domain}` : ""} ${active ? "device-tile--active" : ""} ${state?.state === "cleaning" ? "device-tile--cleaning" : ""} ${state?.state === "triggered" || (entity.domain === "plant" && state?.state === "problem") ? "device-tile--alert" : ""} ${unavailable ? "device-tile--unavailable" : ""}`}
       onClick={click}
       onContextMenu={(event) => { event.preventDefault(); cancelHold(); onLongPress(entity); }}
       onKeyDown={key}

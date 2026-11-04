@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import type { CSSProperties, KeyboardEvent } from "react";
 import { domainLabel, hvacLabel, type TranslationKey } from "../i18n";
 import type { DiscoveredEntity } from "../types/discovery";
-import type { HomeAssistant } from "../types/home-assistant";
+import type { HassEntity, HomeAssistant } from "../types/home-assistant";
 import { domainIcon, HDIcon } from "./HDIcon";
 import { VolumeButtons } from "./WideControls";
 import { SpotifyPlayer } from "./SpotifyPlayer";
 import { isSpotify } from "../spotify";
 import { usePlan } from "../plan";
-import { cameraSnapshot, cameraStream, mediaArt, mediaSources, RUNNABLE, SELECTS, runEntity, selectOption, selectOptions, vacuumActions, vacuumStatus } from "../devices";
+import { MAX_NAME, useCustomize } from "../personalize";
+import { ALARM_ARMED, alarmCall, alarmCodeFormat, alarmModes, alarmStatus, cameraSnapshot, cameraStream, mediaArt, mediaSources, plantReadings, plantStatus, RUNNABLE, SELECTS, runEntity, selectOption, selectOptions, vacuumActions, vacuumStatus } from "../devices";
 
 interface EntityModalProps {
   entity: DiscoveredEntity;
@@ -20,7 +21,7 @@ interface EntityModalProps {
 }
 
 const LIGHT_SWATCHES = ["#ffd9a0", "#ffffff", "#9fd3ff", "#7aa8ff", "#8a7bff", "#ff9ac1", "#ff6b5e", "#ffb36b", "#7be0a0"];
-const ACTIVE = new Set(["on", "open", "opening", "playing", "unlocked", "heat", "cool", "heat_cool", "auto", "dry", "fan_only", "cleaning", "returning"]);
+const ACTIVE = new Set(["on", "open", "opening", "playing", "unlocked", "heat", "cool", "heat_cool", "auto", "dry", "fan_only", "cleaning", "returning", ...ALARM_ARMED]);
 const COMMIT_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"]);
 
 function num(value: unknown, fallback: number): number {
@@ -94,6 +95,8 @@ function EntityDetails({ entity, hass, language, onClose, roomName, t }: EntityM
     if (domain === "lock") return state.state === "locked" ? t("lock") : t("unlock");
     if (domain === "camera") return t("cameraLive");
     if (domain === "vacuum") return vacuumStatus(state, t);
+    if (domain === "alarm_control_panel") return alarmStatus(state, t);
+    if (domain === "plant") return plantStatus(state, t);
     if (domain === "script") return state.state === "on" ? t("scriptRunning") : t("runScript");
     if (domain === "button" || domain === "input_button") return t("pressButton");
     if (SELECTS.has(domain)) return state.state;
@@ -125,7 +128,7 @@ function EntityDetails({ entity, hass, language, onClose, roomName, t }: EntityM
     <section className={`hd-sheet hd-detail ${domain === "camera" ? "hd-detail--camera" : ""} ${busy ? "hd-detail--busy" : ""}`}>
       <header className="hd-detail__header">
         <span className={on ? "hd-detail__icon hd-detail__icon--on" : "hd-detail__icon"}><HDIcon name={domainIcon(domain)} size={24} /></span>
-        <div><span className="eyebrow">{roomName ?? domainLabel(domain, language)}</span><h2 id="hd-detail-title">{entity.name}</h2><p>{status}</p></div>
+        <div><span className="eyebrow">{roomName ?? domainLabel(domain, language)}</span><EntityName entity={entity} t={t} /><p>{status}</p></div>
         <button aria-label={t("close")} className="hd-close" onClick={onClose} type="button"><HDIcon name="close" size={20} /></button>
       </header>
 
@@ -171,6 +174,10 @@ function EntityDetails({ entity, hass, language, onClose, roomName, t }: EntityM
           return <div className="hd-segment">{[actions.main, actions.stop, actions.dock].map((action) => <button key={action.label} onClick={() => void runOnce(action.run)} type="button">{action.label}</button>)}</div>;
         })()}
 
+        {domain === "alarm_control_panel" && <AlarmPanel busy={busy} hass={hass} run={runOnce} state={state} t={t} />}
+
+        {domain === "plant" && <PlantPanel hass={hass} state={state} t={t} />}
+
         {SELECTS.has(domain) && <div className="hd-options" role="group" aria-label={t("chooseOption")}>
           {selectOptions(state).map((option) => <button aria-pressed={state.state === option} key={option} onClick={() => void runOnce(() => selectOption(hass, entity.entity_id, option))} type="button">{option}</button>)}
         </div>}
@@ -180,6 +187,54 @@ function EntityDetails({ entity, hass, language, onClose, roomName, t }: EntityM
 
       {primary && <button className={on ? "hd-detail__primary" : "hd-detail__primary hd-detail__primary--off"} disabled={busy} onClick={() => void primary.run()} type="button"><HDIcon name={domain === "scene" ? "scene" : domain === "lock" ? "lock" : RUNNABLE.has(domain) ? "play" : "power"} size={18} />{primary.label}</button>}
     </section>
+  </div>;
+}
+
+/** Arm in the modes the panel supports, or disarm; the code field appears when the panel asks for
+ * a code, and is cleared after each command. */
+function AlarmPanel({ busy, hass, run, state, t }: { busy: boolean; hass: HomeAssistant; run: (action: () => Promise<unknown>) => Promise<void>; state: HassEntity; t: (key: TranslationKey) => string }) {
+  const [code, setCode] = useState("");
+  const armed = ALARM_ARMED.has(state.state) || ["arming", "pending", "triggered"].includes(state.state);
+  // Many panels arm without a code and only ask for it to disarm.
+  const format = armed || state.attributes.code_arm_required !== false ? alarmCodeFormat(state) : null;
+  const send = (service: string) => void run(async () => { try { await alarmCall(hass, state, service, code); } finally { setCode(""); } });
+  return <div className="hd-alarm">
+    {format && <input aria-label={t("alarmCode")} autoComplete="off" className="hd-alarm__code" inputMode={format === "number" ? "numeric" : "text"} onChange={(event) => setCode(event.target.value)} placeholder={t("alarmCode")} type="password" value={code} />}
+    {armed
+      ? <button className="hd-detail__primary" disabled={busy || (format != null && !code)} onClick={() => send("alarm_disarm")} type="button"><HDIcon name="lock" size={18} />{t("alarmDisarm")}</button>
+      : <div className="hd-options" role="group" aria-label={t("alarmArm")}>{alarmModes(state, t).map((mode) => <button disabled={busy || (format != null && !code)} key={mode.service} onClick={() => send(mode.service)} type="button">{mode.label}</button>)}</div>}
+  </div>;
+}
+
+/** A plant's readings, with the ones out of range marked. */
+function PlantPanel({ hass, state, t }: { hass: HomeAssistant; state: HassEntity; t: (key: TranslationKey) => string }) {
+  const readings = plantReadings(hass, state);
+  const picture = typeof state.attributes.entity_picture === "string" ? state.attributes.entity_picture : null;
+  const species = typeof state.attributes.species === "string" ? state.attributes.species : null;
+  return <div className="hd-plant">
+    {(picture || species) && <div className="hd-plant__head">{picture && <img alt="" src={picture} />}{species && <span>{species}</span>}</div>}
+    {readings.length > 0
+      ? <ul className="hd-plant__readings">{readings.map((reading) => <li className={reading.problem ? "hd-plant__reading--problem" : undefined} key={reading.key}><span>{t(reading.label)}</span><b>{reading.value}</b>{reading.problem && <i>{t("plantCheck")}</i>}</li>)}</ul>
+      : <p className="hd-detail__meta">{t("plantNoReadings")}</p>}
+  </div>;
+}
+
+/** The device's name, with a pencil to give it a nickname inside HomeDeck (Home Assistant keeps its
+ * own name). An empty name goes back to the one from Home Assistant. */
+function EntityName({ entity: opened, t }: { entity: DiscoveredEntity; t: (key: TranslationKey) => string }) {
+  const customize = useCustomize();
+  const entity = customize?.lookup(opened.entity_id) ?? opened;
+  const original = entity.original_name ?? entity.name;
+  const [draft, setDraft] = useState<string | null>(null);
+  if (!customize) return <h2 id="hd-detail-title">{entity.name}</h2>;
+  if (draft == null) {
+    return <h2 className="hd-detail__name" id="hd-detail-title">{entity.name}<button aria-label={`${t("renameDevice")}: ${entity.name}`} className="hd-detail__rename" onClick={() => setDraft(entity.name)} type="button"><HDIcon name="pencil" size={14} /></button></h2>;
+  }
+  const save = () => { customize.rename(entity.entity_id, draft, original); setDraft(null); };
+  return <div className="hd-detail__naming">
+    <input aria-label={t("renameDevice")} autoFocus id="hd-detail-title" onFocus={(event) => event.currentTarget.select()} maxLength={MAX_NAME} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") save(); if (event.key === "Escape") { event.stopPropagation(); setDraft(null); } }} placeholder={original} value={draft} />
+    <button aria-label={t("save")} onClick={save} type="button"><HDIcon name="check" size={16} /></button>
+    {entity.original_name && <small>{t("nameInHomeAssistant")}: {original}</small>}
   </div>;
 }
 

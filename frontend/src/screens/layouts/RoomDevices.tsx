@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { EditableGrid } from "../../components/EditableGrid";
 import { EntityPicker } from "../../components/EntityPicker";
+import { RoomOptions } from "../../components/RoomOptions";
 import { HOME_SCREEN, keyId, roomKey } from "../../layout";
 import { usePlan } from "../../plan";
 import type { DiscoveredEntity, Room } from "../../types/discovery";
@@ -19,13 +20,14 @@ interface RoomDevicesProps {
 
 /** A room's devices in any layout: drag, hide and add in edit mode, saved on the room's screen. */
 export function RoomDevices({ className, props, render, room, sizable = false }: RoomDevicesProps) {
-  const { allRooms, catalogRooms, config, editing, language, onLayout, t } = props;
+  const { allRooms, catalogRooms, config, editing, hass, language, onLayout, t } = props;
   const [picking, setPicking] = useState(false);
   const plan = usePlan();
   const { screen, layout, own, added, byKey, visible, hidden } = roomItems(config, room, allRooms);
   const setAdded = (ids: string[]) => onLayout(screen, { ...layout, added: ids });
 
   return <>
+    {editing && <RoomOptions allRooms={allRooms} hass={hass} room={room} t={t} />}
     <EditableGrid
       addLabel={t("addDevices")}
       className={className}

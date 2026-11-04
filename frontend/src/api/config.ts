@@ -8,6 +8,8 @@ function withDefaults(config: HomeDeckConfig): HomeDeckConfig {
   return {
     ...config,
     layouts: config.layouts ?? {},
+    rooms: config.rooms ?? {},
+    names: config.names ?? {},
     free_devices: config.free_devices ?? [],
     free_rooms: config.free_rooms ?? [],
     view_mode: config.view_mode ?? "grid",

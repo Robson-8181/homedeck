@@ -7,6 +7,8 @@ export interface DiscoveredEntity {
   device_class: string | null;
   icon: string | null;
   platform?: string | null;
+  /** Name in Home Assistant, when a nickname was given in HomeDeck. */
+  original_name?: string;
 }
 
 export interface Room {
@@ -17,6 +19,12 @@ export interface Room {
   floor_id: string | null;
   device_count: number;
   entities: DiscoveredEntity[];
+  /** Name in Home Assistant, when the room was renamed in HomeDeck. */
+  original_name?: string;
+  /** Icon chosen in Edit mode: an HomeDeck icon name, "ha" (the area's icon) or none (from the name). */
+  display_icon?: string;
+  /** Sensor chosen for the room's temperature; none: the climate device, as before. */
+  temperature_entity?: string;
 }
 
 export interface DiscoveryResponse {

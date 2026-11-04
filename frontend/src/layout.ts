@@ -48,13 +48,23 @@ export function withLayout(config: HomeDeckConfig, screen: string, layout: Scree
   return { ...config, layouts: { ...config.layouts, [screen]: layout } };
 }
 
-/** Saved order first, then any item the user has not placed yet, in its natural order. */
-export function arrange(keys: string[], layout: ScreenLayout): { visible: string[]; hidden: string[] } {
+/** Devices that only appear once added in Edit mode (from the hidden tray or the picker), so an
+ * update never puts an alarm panel or a plant on a screen that was already arranged. */
+export const OPT_IN_DOMAINS = new Set(["alarm_control_panel", "plant"]);
+
+function waitsForOptIn(key: string, layout: ScreenLayout): boolean {
+  return key.startsWith("entity:") && OPT_IN_DOMAINS.has(keyId(key).split(".")[0])
+    && !layout.order.includes(key) && !(layout.added ?? []).includes(keyId(key));
+}
+
+/** Saved order first, then any item the user has not placed yet, in its natural order. With `optIn`,
+ * alarm panels and plants stay hidden until shown in Edit mode. */
+export function arrange(keys: string[], layout: ScreenLayout, optIn = false): { visible: string[]; hidden: string[] } {
   const available = new Set(keys);
   const placed = layout.order.filter((key) => available.has(key));
   const placedSet = new Set(placed);
   const ordered = [...placed, ...keys.filter((key) => !placedSet.has(key))];
-  const hidden = new Set(layout.hidden);
+  const hidden = new Set([...layout.hidden, ...(optIn ? keys.filter((key) => waitsForOptIn(key, layout)) : [])]);
   return {
     visible: ordered.filter((key) => !hidden.has(key)),
     hidden: ordered.filter((key) => hidden.has(key)),
@@ -63,6 +73,13 @@ export function arrange(keys: string[], layout: ScreenLayout): { visible: string
 
 export function setHidden(layout: ScreenLayout, key: string, hidden: boolean): ScreenLayout {
   return { ...layout, hidden: hidden ? [...new Set([...layout.hidden, key])] : layout.hidden.filter((item) => item !== key) };
+}
+
+/** Shows a hidden item at the end of the screen; `shown` is the current order on screen. Placing it in
+ * the order also confirms an opt-in device. */
+export function showItem(layout: ScreenLayout, key: string, shown: string[]): ScreenLayout {
+  const order = layout.order.includes(key) ? layout.order : [...shown.filter((item) => item !== key), key, ...layout.order.filter((item) => item !== key && !shown.includes(item))];
+  return { ...layout, order, hidden: layout.hidden.filter((item) => item !== key) };
 }
 
 export function toggleWide(layout: ScreenLayout, key: string): ScreenLayout {

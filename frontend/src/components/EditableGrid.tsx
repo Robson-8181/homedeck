@@ -4,7 +4,7 @@ import type { TranslationKey } from "../i18n";
 import type { ScreenLayout } from "../types/config";
 import { HDIcon } from "./HDIcon";
 import { usePlan } from "../plan";
-import { isSectionKey, SECTION_PREFIX, withSections } from "../layout";
+import { isSectionKey, SECTION_PREFIX, showItem, withSections } from "../layout";
 
 /** True inside a double-size tile, so cards can offer more controls there. */
 const WideTile = createContext(false);
@@ -223,7 +223,7 @@ export function EditableGrid({ addLabel, className, editing, hiddenItems = [], i
       </div>}
     {editing && hiddenItems.length > 0 && <section className="hd-hidden-tray" aria-label={t("hiddenItems")}>
       <span className="eyebrow">{t("hiddenItems")}</span>
-      <div>{hiddenItems.map((item) => <button key={item.key} onClick={() => onLayout({ ...layout, hidden: layout.hidden.filter((key) => key !== item.key) })} type="button"><HDIcon name="plus" size={14} />{item.label}</button>)}</div>
+      <div>{hiddenItems.map((item) => <button key={item.key} onClick={() => onLayout(showItem(layout, item.key, keys))} type="button"><HDIcon name="plus" size={14} />{item.label}</button>)}</div>
     </section>}
   </>;
 }

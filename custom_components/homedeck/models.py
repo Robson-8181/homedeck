@@ -145,6 +145,7 @@ class HomeDeckConfig(TypedDict):
     rooms: dict[str, dict[str, Any]]
     dashboard: dict[str, Any]
     favorites: list[str]
+    names: dict[str, str]
     free_devices: list[str]
     free_rooms: list[str]
     view_mode: str
@@ -177,6 +178,7 @@ def default_config() -> HomeDeckConfig:
         "rooms": {},
         "dashboard": {},
         "favorites": [],
+        "names": {},
         "free_devices": [],
         "free_rooms": [],
         "view_mode": "grid",

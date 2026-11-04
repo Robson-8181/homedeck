@@ -4,7 +4,7 @@ import { EditableGrid } from "../components/EditableGrid";
 import { EntityPicker } from "../components/EntityPicker";
 import { HDIcon } from "../components/HDIcon";
 import type { TranslationKey } from "../i18n";
-import { arrange, entityKey, getLayout, keyId, pageScreen, setHidden } from "../layout";
+import { arrange, entityKey, getLayout, keyId, pageScreen, setHidden, showItem } from "../layout";
 import { usePlan } from "../plan";
 import { isSecurityEntity } from "../security";
 import type { HomeDeckPageConfig } from "../types/config";
@@ -21,7 +21,7 @@ export type PageRef = { kind: "collection"; id: CollectionPage } | { kind: "cust
 const PAGE_DOMAINS: Record<CollectionPage, string[]> = {
   scenes: ["scene"],
   media: ["media_player"],
-  security: ["camera", "lock", "binary_sensor"],
+  security: ["alarm_control_panel", "camera", "lock", "binary_sensor"],
 };
 const ADD_LABELS: Record<CollectionPage, TranslationKey> = { scenes: "addScenes", media: "addMedia", security: "addSecurity" };
 
@@ -56,19 +56,19 @@ function useCollection(props: ScreenProps, page: CollectionPage): PageContent {
   const plan = usePlan();
   const layout = getLayout(config, page);
   // Only entities of this screen's kind, both in the list and in the picker.
-  const belongs = (entity: DiscoveredEntity) => PAGE_DOMAINS[page].includes(entity.domain) && (page !== "security" || isSecurityEntity(entity, hass.states[entity.entity_id]));
+  const belongs = (entity: DiscoveredEntity) => PAGE_DOMAINS[page].includes(entity.domain) && (page !== "security" || entity.domain === "alarm_control_panel" || isSecurityEntity(entity, hass.states[entity.entity_id]));
   const native = entityIndex(data.rooms);
   const nativeIds = [...native.byId.values()].filter(belongs).map((entity) => entity.entity_id);
   const nativeSet = new Set(nativeIds);
   // Added from rooms that are not in the panel (or from no room at all).
   const added = (layout.added ?? []).filter((id) => !nativeSet.has(id) && everywhere.byId.has(id) && belongs(everywhere.byId.get(id)!));
-  const { visible, hidden } = arrange([...nativeIds, ...added].map(entityKey), layout);
+  const { visible, hidden } = arrange([...nativeIds, ...added].map(entityKey), layout, true);
   const shown = visible.map(keyId);
 
   // In the picker a check means "on this screen": native items are hidden or shown, others added or removed.
   const toggle = (id: string) => {
     const key = entityKey(id);
-    if (nativeSet.has(id)) onLayout(page, setHidden(layout, key, shown.includes(id)));
+    if (nativeSet.has(id)) onLayout(page, shown.includes(id) ? setHidden(layout, key, true) : showItem(layout, key, visible));
     else if (added.includes(id)) onLayout(page, { ...layout, added: added.filter((item) => item !== id) });
     else if (plan.allow(id)) onLayout(page, { ...setHidden(layout, key, false), added: [...added, id] });
   };

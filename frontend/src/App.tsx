@@ -15,6 +15,7 @@ import { createTranslator } from "./i18n";
 import { migrateLayouts, withLayout } from "./layout";
 import { effectiveConfig, freeDevices, isControllable, overFreeLimits, panelRoomIds, PlanContext, restrictRooms, type PlanState, type UpsellReason } from "./plan";
 import { availableSections } from "./security";
+import { CustomizeContext, personalize, withNickname, withRoomOptions } from "./personalize";
 import { PageScreen } from "./screens/PageScreen";
 import { pageId, type PageRef } from "./screens/pages";
 import { HomeScreen } from "./screens/HomeScreen";
@@ -30,7 +31,7 @@ import type { HomeAssistant } from "./types/home-assistant";
 const DEFAULT_LIMITS = { rooms: 4, devices: 10 };
 
 export function App({ hass, version }: { hass: HomeAssistant; version?: string }) {
-  const [data, setData] = useState<DiscoveryResponse | null>(null);
+  const [rawData, setData] = useState<DiscoveryResponse | null>(null);
   const [config, setConfig] = useState<HomeDeckConfig | null>(null);
   const [license, setLicense] = useState<LicenseStatus | null>(null);
   // An integration that predates licenses (not restarted after an update) has no license command.
@@ -49,6 +50,8 @@ export function App({ hass, version }: { hass: HomeAssistant; version?: string }
   const language = hass.locale?.language ?? hass.language;
   const t = useMemo(() => createTranslator(language), [language]);
   configRef.current = config;
+  // Nicknames and room options apply to every screen through the discovery data.
+  const data = useMemo(() => (rawData ? personalize(rawData, config?.names, config?.rooms) : null), [rawData, config?.names, config?.rooms]);
 
   const load = useCallback(async () => {
     setError(false);
@@ -145,6 +148,15 @@ export function App({ hass, version }: { hass: HomeAssistant; version?: string }
     },
   }), [pro, license, limits, allowed, data, updateConfig]);
 
+  const customize = useMemo(() => {
+    const byId = new Map((data?.rooms ?? []).flatMap((room) => room.entities).map((entity) => [entity.entity_id, entity]));
+    return {
+    lookup: (entityId: string) => byId.get(entityId),
+    rename: (entityId: string, name: string, original: string) => void updateConfig((current) => withNickname(current, entityId, name, original)),
+    setRoom: (roomId: string, change: { icon?: string; temperature?: string }) => void updateConfig((current) => withRoomOptions(current, roomId, change)),
+    };
+  }, [data, updateConfig]);
+
   // Screensaver: any touch, click, scroll or key counts as activity.
   const saver = view?.screensaver;
   useEffect(() => {
@@ -196,10 +208,10 @@ export function App({ hass, version }: { hass: HomeAssistant; version?: string }
     setLicense(await activateLicense(hass, key));
     setUpsellReason(null);
   };
-  const withPlan = (node: ReactNode) => <PlanContext.Provider value={plan}>
+  const withPlan = (node: ReactNode) => <PlanContext.Provider value={plan}><CustomizeContext.Provider value={customize}>
     {node}
     {upsellReason && <div className="app-shell app-shell--overlay" style={{ "--hd-accent": "#f4edd9" } as CSSProperties}><ProSheet hass={hass} language={language} license={license} onActivate={activate} onClose={() => setUpsellReason(null)} onLicense={setLicense} reason={upsellReason} t={t} /></div>}
-  </PlanContext.Provider>;
+  </CustomizeContext.Provider></PlanContext.Provider>;
 
   if (error) {
     return (

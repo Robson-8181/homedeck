@@ -4,7 +4,7 @@ from typing import Final
 
 DOMAIN: Final = "homedeck"
 NAME: Final = "HomeDeck"
-VERSION: Final = "0.14.1"
+VERSION: Final = "0.15.0"
 
 PANEL_URL: Final = "/homedeck_static"
 PANEL_PATH: Final = "homedeck"
@@ -13,6 +13,7 @@ PANEL_ICON: Final = "mdi:view-dashboard-variant"
 PANEL_ELEMENT: Final = "homedeck-panel"
 
 SUPPORTED_DOMAINS: Final = {
+    "alarm_control_panel",
     "binary_sensor",
     "button",
     "camera",
@@ -24,6 +25,7 @@ SUPPORTED_DOMAINS: Final = {
     "light",
     "lock",
     "media_player",
+    "plant",
     "scene",
     "script",
     "select",

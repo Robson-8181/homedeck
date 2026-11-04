@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.15.0
+
+Everything is optional: if you don't change anything, the panel looks exactly as before.
+
+- Nicknames: in a device's details, the pencil beside the name renames it in HomeDeck only (Home Assistant keeps its own name). It applies to every screen and layout; leaving it empty goes back to the Home Assistant name, shown right under the field.
+- Rename rooms in Settings → Rooms: the pencil beside each one gives it another name in HomeDeck only (the area's name in Home Assistant shows beside it, in gray). It applies to every screen and layout once saved.
+- Room options in Edit mode: pick the icon (Automatic, as before, the area's icon from Home Assistant, or one of HomeDeck's icons, with new ones for dining, laundry, pool, games, stairs and plants) and the sensor that gives the temperature on the room card (Automatic still uses the climate device).
+- Alarm panels (`alarm_control_panel`): a card with the state (disarmed, armed home, away, night, triggered…), lit while armed; in the details, arm in the modes the panel supports and disarm, with a code field when the panel asks for one. It never shows up on its own: it waits under Hidden in the room's and the Security page's Edit mode until you add it.
+- Plants (`plant`, from the Plant integration and Plant Monitor/OpenPlantbook): a card that says "Doing well" or "Needs attention" (red); in the details and at double size, soil moisture, temperature, light and fertility, with out-of-range readings marked. It also shows up only once added.
+- Alarm panels and plants don't count toward the free plan's limit.
+- Player cards (Spotify and others at double size) no longer show volume buttons: the volume lives in the details, one tap away.
+
 ## 0.14.1
 
 - The Spotify card now just says "Spotify": a speaker name on two lines made the row taller and pushed the cards against the bottom bar (the name still shows in the player).

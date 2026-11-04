@@ -482,4 +482,37 @@ export const themeExtras = String.raw`
 .app-shell .tile-buttons--options { flex-wrap: wrap; }
 .app-shell .tile-buttons--options button { flex: 1 1 calc(33% - var(--u)*.8); }
 .app-shell .tile-buttons--options button[aria-pressed="true"] { background: var(--on); color: var(--on-ink, #2a2110); }
+
+/* 0.15: room options in Edit mode, nicknames, alarm panels and plants. */
+.app-shell .room-options { display: grid; gap: calc(var(--u)*1.4); margin: 0 0 calc(var(--u)*2); padding: calc(var(--u)*1.6); border: 1px dashed rgba(255,255,255,.22); border-radius: calc(var(--u)*2.2*var(--hd-r,1)); background: rgba(255,255,255,.05); }
+.app-shell .room-options__row { display: grid; gap: calc(var(--u)*.8); min-width: 0; }
+.app-shell .room-options__icons { display: flex; gap: calc(var(--u)*.7); overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.app-shell .room-options__icons::-webkit-scrollbar { display: none; }
+.app-shell .room-options__icons button { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: calc(var(--u)*.7); min-width: calc(var(--u)*4.6); height: calc(var(--u)*4.6); padding: 0 calc(var(--u)*1.1); border: 1px solid rgba(255,255,255,.14); border-radius: calc(var(--u)*1.6*var(--hd-r,1)); background: rgba(255,255,255,.07); color: var(--ink); font: 600 calc(var(--u)*1.6)/1 var(--f-body); cursor: pointer; }
+.app-shell .room-options__icons button[aria-checked="true"] { border-color: transparent; background: var(--on); color: var(--on-ink, #2a2110); }
+.app-shell .room-options__select { max-width: calc(var(--u)*44); }
+.app-shell .hd-ha-icon { color: inherit; }
+.app-shell .hd-detail__name { display: flex; align-items: center; gap: calc(var(--u)*.8); }
+.app-shell .hd-detail__rename { flex: none; display: inline-grid; place-items: center; width: calc(var(--u)*3.4); height: calc(var(--u)*3.4); border: 0; border-radius: 50%; background: rgba(255,255,255,.1); color: var(--ink-2); cursor: pointer; }
+.app-shell .hd-detail__naming { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: calc(var(--u)*.8); align-items: center; margin-top: calc(var(--u)*.3); }
+.app-shell .hd-detail__naming input { min-width: 0; height: calc(var(--u)*4.6); padding: 0 calc(var(--u)*1.4); border: 1px solid rgba(255,255,255,.22); border-radius: calc(var(--u)*1.4*var(--hd-r,1)); background: rgba(0,0,0,.18); color: var(--ink); font: 500 calc(var(--u)*2.2)/1 var(--f-body); }
+.app-shell .hd-detail__naming button { width: calc(var(--u)*4.6); height: calc(var(--u)*4.6); border: 0; border-radius: calc(var(--u)*1.4*var(--hd-r,1)); background: var(--on); color: var(--on-ink, #2a2110); cursor: pointer; display: grid; place-items: center; }
+.app-shell .hd-detail__naming small { grid-column: 1 / -1; color: var(--ink-2); font: 500 calc(var(--u)*1.5)/1.3 var(--f-body); }
+.app-shell .hd-alarm { display: grid; gap: calc(var(--u)*1.2); }
+.app-shell .hd-alarm__code { height: calc(var(--u)*5.6); padding: 0 calc(var(--u)*1.6); border: 1px solid rgba(255,255,255,.22); border-radius: calc(var(--u)*1.8*var(--hd-r,1)); background: rgba(0,0,0,.18); color: var(--ink); font: 600 calc(var(--u)*2.4)/1 var(--f-body); letter-spacing: .3em; text-align: center; }
+.app-shell .hd-alarm .hd-detail__primary { margin: 0; }
+.app-shell .device-tile--alert { border-color: rgba(255,107,94,.5); background: rgba(255,107,94,.2); }
+.app-shell .device-tile--alert .device-tile__icon { background: var(--bad); color: #fff; }
+.app-shell .hd-plant { display: grid; gap: calc(var(--u)*1.2); }
+.app-shell .hd-plant__head { display: flex; align-items: center; gap: calc(var(--u)*1.2); color: var(--ink-2); font: italic 500 calc(var(--u)*1.8)/1.3 var(--f-body); }
+.app-shell .hd-plant__head img { width: calc(var(--u)*7); height: calc(var(--u)*7); border-radius: calc(var(--u)*1.6*var(--hd-r,1)); object-fit: cover; }
+.app-shell .hd-plant__readings { display: grid; gap: calc(var(--u)*.7); margin: 0; padding: 0; list-style: none; }
+.app-shell .hd-plant__readings li { display: flex; align-items: center; gap: calc(var(--u)*1); min-height: calc(var(--u)*5); padding: 0 calc(var(--u)*1.6); border-radius: calc(var(--u)*1.6*var(--hd-r,1)); background: rgba(255,255,255,.07); font: 500 calc(var(--u)*1.8)/1.2 var(--f-body); }
+.app-shell .hd-plant__readings li span { flex: 1; color: var(--ink-2); }
+.app-shell .hd-plant__readings li i { font-style: normal; font-weight: 700; color: #ffb3b5; }
+.app-shell .hd-plant__readings .hd-plant__reading--problem { background: rgba(255,107,94,.18); }
+
+.app-shell .st-icon-button--small { width: calc(var(--u)*4); height: calc(var(--u)*4); background: rgba(255,255,255,.08); color: var(--ink-2); }
+.app-shell .st-input--framed { height: calc(var(--u)*4.2); border-color: rgba(255,255,255,.3); background: rgba(0,0,0,.16); }
+.app-shell .st-item__was { flex: none; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-3); font: 500 calc(var(--u)*1.5)/1 var(--f-body); }
 `;

@@ -7,7 +7,7 @@ import type { HomeDeckConfig, ScreenLayout } from "../../types/config";
 import type { DiscoveredEntity, Room } from "../../types/discovery";
 import type { HomeAssistant } from "../../types/home-assistant";
 
-const DOMAIN_ORDER = ["light", "switch", "fan", "cover", "climate", "media_player", "vacuum", "select", "input_select", "script", "button", "input_button", "scene", "lock", "camera", "binary_sensor", "sensor"];
+const DOMAIN_ORDER = ["light", "switch", "fan", "cover", "climate", "media_player", "vacuum", "select", "input_select", "script", "button", "input_button", "scene", "lock", "camera", "alarm_control_panel", "binary_sensor", "sensor", "plant"];
 export const ACTIVE = new Set(["on", "open", "opening", "playing", "heat", "cool", "heat_cool", "auto", "dry", "fan_only", "unlocked", "cleaning", "returning"]);
 
 /** Rooms in the order and visibility arranged on Home (edit mode applies to every layout). */
@@ -100,6 +100,6 @@ export function roomItems(config: HomeDeckConfig, room: Room, allRooms: Room[]) 
   const natural = [...room.entities].sort((a, b) => DOMAIN_ORDER.indexOf(a.domain) - DOMAIN_ORDER.indexOf(b.domain) || a.name.localeCompare(b.name));
   const added = (layout.added ?? []).filter((id) => !own.has(id) && everything.has(id));
   const byKey = new Map([...natural, ...added.map((id) => everything.get(id)!)].map((entity) => [entityKey(entity.entity_id), entity]));
-  const { visible, hidden } = arrange([...byKey.keys()], layout);
+  const { visible, hidden } = arrange([...byKey.keys()], layout, true);
   return { screen, layout, own, added, byKey, visible, hidden };
 }

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
-import { HDIcon, roomIcon, type IconName } from "../components/HDIcon";
+import { HDIcon, RoomIcon, type IconName } from "../components/HDIcon";
 import { HDSegmented, HDSelect } from "../components/HDSelect";
 import type { TranslationKey } from "../i18n";
 import type { HomeDeckBackgroundPreset, HomeDeckCardStyle, HomeDeckConfig, HomeDeckPageType } from "../types/config";
+import { withRoomOptions } from "../personalize";
 import type { Room } from "../types/discovery";
 import type { HomeAssistant } from "../types/home-assistant";
 import { hideSidebarPreferred, setHideSidebarPreferred } from "../sidebar";
@@ -120,6 +121,7 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
   };
   const orderedRooms = () => [...shownSelected.map((id) => rooms.find((room) => room.id === id)).filter((room): room is Room => Boolean(room)), ...rooms.filter((room) => !selected.includes(room.id))];
   // Drag to reorder: the held room follows the finger and the others make room for it.
+  const [renamingRoom, setRenamingRoom] = useState<string | null>(null);
   const [drag, setDrag] = useState<{ id: string; from: number; to: number; startY: number; dy: number; pitch: number } | null>(null);
   const shownSelected = drag ? moveItem(selected, drag.from, drag.to) : selected;
   const startDrag = (event: ReactPointerEvent<HTMLElement>, id: string) => {
@@ -232,11 +234,18 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
           <div className="st-list">{orderedRooms().map((room) => {
             const on = selected.includes(room.id);
             const held = drag?.id === room.id;
-            const name = room.id === "__unassigned__" ? t("unassigned") : room.name;
+            // The name in Home Assistant, and the one typed here (saved with the other settings).
+            const original = room.original_name ?? room.name;
+            const typed = draft.rooms?.[room.id]?.name;
+            const name = room.id === "__unassigned__" ? t("unassigned") : typed ?? original;
+            const renaming = renamingRoom === room.id;
             return <div className={`st-item ${on ? "st-item--on" : ""} ${held ? "st-item--held" : ""}`} key={room.id} style={held ? { transform: `translateY(${drag.dy - (drag.to - drag.from) * drag.pitch}px)` } : undefined}>
-              <button aria-pressed={on} className="st-item__main" disabled={on && selected.length === 1} onClick={() => toggleRoom(room.id, on)} type="button">
-                <span className="st-check">{on && <HDIcon name="check" size={14} />}</span><HDIcon name={roomIcon(room.name)} size={18} /><b>{name}</b>
-              </button>
+              {renaming
+                ? <div className="st-item__main"><span className="st-check">{on && <HDIcon name="check" size={14} />}</span><RoomIcon room={{ ...room, name }} size={18} /><input aria-label={`${t("renameRoom")}: ${original}`} autoFocus className="st-input st-input--framed" maxLength={60} onBlur={() => setRenamingRoom(null)} onChange={(event) => update({ rooms: withRoomOptions(draft, room.id, { name: event.target.value.trim() === original ? "" : event.target.value }).rooms })} onFocus={(event) => event.currentTarget.select()} onKeyDown={(event) => { if (event.key === "Enter" || event.key === "Escape") event.currentTarget.blur(); }} placeholder={original} value={typed ?? original} /></div>
+                : <button aria-pressed={on} className="st-item__main" disabled={on && selected.length === 1} onClick={() => toggleRoom(room.id, on)} type="button">
+                  <span className="st-check">{on && <HDIcon name="check" size={14} />}</span><RoomIcon room={{ ...room, name }} size={18} /><b>{name}</b>{typed && <small className="st-item__was">{original}</small>}
+                </button>}
+              {room.id !== "__unassigned__" && !renaming && <button aria-label={`${t("renameRoom")}: ${name}`} className="st-icon-button st-icon-button--small" onClick={() => setRenamingRoom(room.id)} type="button"><HDIcon name="pencil" size={15} /></button>}
               {on && selected.length > 1 && <span aria-label={`${t("dragToReorder")}: ${name}`} className="st-grip" onPointerCancel={endDrag} onPointerDown={(event) => startDrag(event, room.id)} onPointerMove={moveDrag} onPointerUp={endDrag} role="img"><HDIcon name="grip" size={18} /></span>}
             </div>;
           })}</div>

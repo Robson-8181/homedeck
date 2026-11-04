@@ -5,7 +5,7 @@ import type { DiscoveredEntity } from "../types/discovery";
 import type { HassEntity, HomeAssistant } from "../types/home-assistant";
 import { HDIcon } from "./HDIcon";
 import { HDSelect } from "./HDSelect";
-import { SELECTS, selectOption, selectOptions, vacuumActions } from "../devices";
+import { SELECTS, plantReadings, selectOption, selectOptions, vacuumActions } from "../devices";
 
 // Extra controls shown when a card is double size. Every control stops at the card: taps on them
 // never toggle the device underneath.
@@ -77,8 +77,16 @@ export function WideControls(props: WideProps) {
     case "vacuum": return <VacuumControls {...props} />;
     case "select":
     case "input_select": return <SelectControls {...props} />;
+    case "plant": return <PlantControls {...props} />;
     default: return <p className="tile-wide__since">{since(state.last_changed, props.language)}</p>;
   }
+}
+
+/** A plant's readings in the double-size card, the ones out of range marked. */
+function PlantControls({ hass, state, t }: WideProps) {
+  const readings = plantReadings(hass, state).slice(0, 4);
+  if (readings.length === 0) return <p className="tile-wide__since">{t("plantNoReadings")}</p>;
+  return <ul className="widget-list">{readings.map((reading) => <li key={reading.key}><button className={reading.problem ? "widget-list--alert" : undefined} tabIndex={-1} type="button"><span>{t(reading.label)}</span><small>{reading.value}</small></button></li>)}</ul>;
 }
 
 function LightControls({ entity, state, t, call }: WideProps & { call: Call }) {
@@ -188,7 +196,6 @@ function MediaControls({ state, t, call }: WideProps & { call: Call }) {
       <button aria-label={playing ? t("pause") : t("play")} className="tile-buttons__icon tile-buttons__main" onClick={() => call("media_player", "media_play_pause")} type="button"><HDIcon name={playing ? "pause" : "play"} size={18} /></button>
       <button aria-label={t("next")} className="tile-buttons__icon" onClick={() => call("media_player", "media_next_track")} type="button"><HDIcon name="next" size={16} /></button>
     </div>
-    <VolumeButtons onStep={(service) => call("media_player", service)} state={state} t={t} />
   </div>;
 }
 

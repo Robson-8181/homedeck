@@ -5,7 +5,7 @@ import { EditableGrid } from "../../components/EditableGrid";
 import { SceneStrip } from "../../components/SceneStrip";
 import { displayState } from "../../components/EntityCard";
 import { EntityModal } from "../../components/EntityModal";
-import { domainIcon, HDIcon, roomIcon } from "../../components/HDIcon";
+import { HDIcon, RoomIcon, domainIcon } from "../../components/HDIcon";
 import { weatherConditionLabel } from "../../i18n";
 import { useWeather } from "../../weather";
 import { roomKey } from "../../layout";
@@ -125,7 +125,7 @@ function FocusRooms(props: FocusLayoutProps) {
           hiddenItems={roomList.hiddenItems}
           items={rooms.map((room, index) => {
             const { on } = roomLights(hass, room);
-            return { key: roomKey(room.id), label: name(room), node: <button className={on.length > 0 ? "fc-room fc-room--lit" : "fc-room"} onClick={() => go(index + 1)} type="button"><HDIcon name={roomIcon(room.name)} size={18} /><span>{name(room)}</span>{on.length > 0 && <i>{on.length}</i>}</button> };
+            return { key: roomKey(room.id), label: name(room), node: <button className={on.length > 0 ? "fc-room fc-room--lit" : "fc-room"} onClick={() => go(index + 1)} type="button"><RoomIcon room={room} size={18} /><span>{name(room)}</span>{on.length > 0 && <i>{on.length}</i>}</button> };
           })}
           layout={roomList.layout}
           onLayout={roomList.onLayout}

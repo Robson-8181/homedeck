@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 export type IconName =
   | "arrow"
@@ -67,10 +67,26 @@ export type IconName =
   | "grip"
   | "camera"
   | "vacuum"
-  | "button";
+  | "button"
+  | "plant"
+  | "alarm"
+  | "laundry"
+  | "dining"
+  | "stairs"
+  | "game"
+  | "pool"
+  | "drop";
 
 const paths: Record<IconName, ReactNode> = {
   arrow: <path d="m15 18-6-6 6-6" />,
+  plant: <><path d="M12 21v-9" /><path d="M12 12c0-4 2.5-7 7-7 0 4.5-3 7-7 7Z" /><path d="M12 15c0-3-2-5.5-6-5.5 0 3.5 2.5 5.5 6 5.5Z" /><path d="M7 21h10" /></>,
+  alarm: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" /><path d="M12 7v5" /><path d="M12 15.5h.01" /></>,
+  laundry: <><rect x="4" y="2.5" width="16" height="19" rx="2.5" /><circle cx="12" cy="13.5" r="4.5" /><path d="M7.5 6h.01M10.5 6h.01" /></>,
+  dining: <><path d="M5 3v7a2 2 0 0 0 4 0V3M7 10v11" /><path d="M17 21V3c-2.2 1.2-3 4-3 7h3" /></>,
+  stairs: <path d="M3 20h5v-5h5v-5h5V5h3" />,
+  game: <><rect x="2.5" y="7" width="19" height="11" rx="5.5" /><path d="M7 11v3M5.5 12.5h3M15.5 12h.01M18 14h.01" /></>,
+  pool: <><path d="M2 18c2 1.3 4 1.3 6 0s4-1.3 6 0 4 1.3 6 0" /><path d="M8 15V5a2 2 0 0 1 4 0M16 15V5a2 2 0 0 0-4 0" /><path d="M8 8h8M8 12h8" /></>,
+  drop: <path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11Z" />,
   bed: <><path d="M2 4v16M22 20v-8a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v8M2 16h20" /><path d="M6 10V7a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3" /></>,
   chevron: <path d="m9 18 6-6-6-6" />,
   climate: <><path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" /><path d="M12 9v7" /></>,
@@ -157,6 +173,23 @@ export function HDIcon({ name, size = 22 }: { name: IconName; size?: number }) {
   );
 }
 
+/** Icons offered for a room in Edit mode, besides the automatic one and the area's icon in Home Assistant. */
+export const ROOM_ICONS: IconName[] = ["home", "sofa", "bed", "kitchen", "dining", "bath", "briefcase", "child", "laundry", "car", "tree", "pool", "game", "stairs", "door", "media", "plant", "star"];
+
+/** "ha" in a room's icon: the icon of its area in Home Assistant. */
+export const HA_ICON = "ha";
+
+/** A room's icon: the one chosen in Edit mode, the area's icon in Home Assistant, or (by default) a
+ * guess from the room's name. */
+export function RoomIcon({ room, size }: { room: { name: string; icon?: string | null; display_icon?: string }; size: number }) {
+  const choice = room.display_icon;
+  if (choice === HA_ICON && room.icon?.includes(":") && typeof customElements !== "undefined" && customElements.get("ha-icon")) {
+    return <ha-icon class="hd-ha-icon" icon={room.icon} style={{ "--mdc-icon-size": `${size}px`, width: size, height: size, display: "inline-flex" } as CSSProperties} />;
+  }
+  const own = choice && choice !== HA_ICON && (ROOM_ICONS as string[]).includes(choice) ? (choice as IconName) : roomIcon(room.name);
+  return <HDIcon name={own} size={size} />;
+}
+
 export function roomIcon(name: string): IconName {
   const normalized = name.toLowerCase();
   if (/bath|banheir|lavabo|baño|toilet|wc/.test(normalized)) return "bath";
@@ -189,6 +222,8 @@ export function domainIcon(domain: string): IconName {
     sensor: "sensor",
     switch: "switch",
     vacuum: "vacuum",
+    alarm_control_panel: "alarm",
+    plant: "plant",
   };
   return icons[domain] ?? "sensor";
 }

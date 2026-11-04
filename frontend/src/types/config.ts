@@ -44,7 +44,10 @@ export interface HomeDeckConfig {
   highlight_color: string;
   locale: string;
   selected_rooms: string[];
-  rooms: Record<string, Record<string, unknown>>;
+  /** Per room (area id): its name in HomeDeck, and the icon and temperature sensor chosen in Edit mode. */
+  rooms: Record<string, HomeDeckRoomOptions>;
+  /** Nicknames given in HomeDeck, by entity id; Home Assistant keeps its own names. */
+  names?: Record<string, string>;
   dashboard: Record<string, unknown>;
   favorites: string[];
   /** Free plan: the controllable devices chosen to appear (empty = all of the selected rooms, when they fit). */
@@ -124,6 +127,13 @@ export interface HomeDeckConfig {
   };
   /** Pro: how cards look. corners 0-150 (% of the default roundness), glass 0 (solid) to 100 (see-through). */
   cards: HomeDeckCardStyle;
+}
+
+export interface HomeDeckRoomOptions {
+  /** Name shown in HomeDeck (Settings → Rooms); the area keeps its name in Home Assistant. */
+  name?: string;
+  icon?: string;
+  temperature?: string;
 }
 
 export interface HomeDeckCardStyle {

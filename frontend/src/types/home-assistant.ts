@@ -54,6 +54,8 @@ export interface HassEntity {
 
 export interface HomeAssistant {
   states: Record<string, HassEntity>;
+  /** Entity registry as the Home Assistant frontend keeps it (device of each entity). */
+  entities?: Record<string, { entity_id: string; device_id?: string | null }>;
   /** How Home Assistant shows its sidebar on this device. */
   dockedSidebar?: "docked" | "always_hidden" | "auto";
   /** The home's location, used for Open-Meteo when no weather entity works. */

@@ -4,7 +4,7 @@ import { SceneStrip } from "../../components/SceneStrip";
 import { EditableGrid } from "../../components/EditableGrid";
 import { displayState, TOGGLES } from "../../components/EntityCard";
 import { EntityModal } from "../../components/EntityModal";
-import { domainIcon, HDIcon, roomIcon } from "../../components/HDIcon";
+import { HDIcon, RoomIcon, domainIcon } from "../../components/HDIcon";
 import { HomeStatus } from "../../components/HomeStatus";
 import { roomKey } from "../../layout";
 import type { DiscoveredEntity, Room } from "../../types/discovery";
@@ -85,7 +85,7 @@ function ListRooms(props: ListLayoutProps) {
     return <section className={`ls-group ${on.length > 0 ? "ls-group--lit" : ""}`}>
       <header className="ls-group__head">
         <button aria-expanded={open} className="ls-group__toggle" disabled={editing} onClick={() => setCollapsed(open ? [...collapsed, room.id] : collapsed.filter((id) => id !== room.id))} type="button">
-          <span className="ls-group__icon"><HDIcon name={roomIcon(room.name)} size={18} /></span>
+          <span className="ls-group__icon"><RoomIcon room={room} size={18} /></span>
           <span className="ls-group__copy"><b>{name(room)}</b><small>{lights.length === 0 ? `${count} ${t("entities")}` : on.length === 0 ? t("roomLightsOff") : t("roomLitOf").replace("{on}", String(on.length)).replace("{total}", String(lights.length))}</small></span>
           {!editing && <span className={open ? "ls-chevron ls-chevron--open" : "ls-chevron"}><HDIcon name="chevron" size={16} /></span>}
         </button>
@@ -101,7 +101,7 @@ function ListRooms(props: ListLayoutProps) {
     <ContextHeader config={config} hass={hass} language={language} onSettings={props.onSettings} t={t} />
     {editing && <p className="edit-hint">{t("editHintSimple")}</p>}
     {!roomId && !editing && config.visibility.home_cards.status && <HomeStatus config={config} data={data} hass={hass} t={t} />}
-    {roomId && <div className="ls-strip" role="tablist">{rooms.map((room) => <button aria-selected={room.id === roomId} key={room.id} onClick={() => onSelectRoom(room.id)} role="tab" type="button"><HDIcon name={roomIcon(room.name)} size={16} />{name(room)}</button>)}</div>}
+    {roomId && <div className="ls-strip" role="tablist">{rooms.map((room) => <button aria-selected={room.id === roomId} key={room.id} onClick={() => onSelectRoom(room.id)} role="tab" type="button"><RoomIcon room={room} size={16} />{name(room)}</button>)}</div>}
 
     {!roomId && config.visibility.home_cards.scenes && <SceneStrip props={props} />}
     {favorites.length > 0 && <div className="ls-groups ls-groups--favorites">

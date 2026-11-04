@@ -3,7 +3,7 @@ import { ContextHeader } from "../../components/ContextHeader";
 import { EditableGrid } from "../../components/EditableGrid";
 import { EntityCard } from "../../components/EntityCard";
 import { EntityModal } from "../../components/EntityModal";
-import { HDIcon, roomIcon, type IconName } from "../../components/HDIcon";
+import { HDIcon, RoomIcon, type IconName } from "../../components/HDIcon";
 import { HomeStatus } from "../../components/HomeStatus";
 import { roomKey } from "../../layout";
 import type { DiscoveredEntity } from "../../types/discovery";
@@ -48,7 +48,7 @@ export function SidebarLayout(props: SidebarLayoutProps) {
           items={roomList.rooms.map((item) => {
             const { on } = roomLights(hass, item);
             return { key: roomKey(item.id), label: name(item.id, item.name), node: <button aria-current={room?.id === item.id ? "page" : undefined} onClick={() => onSelectRoom(item.id)} type="button">
-              <span className="sb-nav__icon"><HDIcon name={roomIcon(item.name)} size={18} /></span><span>{name(item.id, item.name)}</span>{on.length > 0 && <i>{on.length}</i>}
+              <span className="sb-nav__icon"><RoomIcon room={item} size={18} /></span><span>{name(item.id, item.name)}</span>{on.length > 0 && <i>{on.length}</i>}
             </button> };
           })}
           layout={roomList.layout}
