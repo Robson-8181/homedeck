@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.14.1
+
+- The Spotify card now just says "Spotify": a speaker name on two lines made the row taller and pushed the cards against the bottom bar (the name still shows in the player).
+- Today card at double size: up to 3 items and the full weekday, without stretching the row.
+- Double-size camera: the name is back under the picture instead of behind the "Watch live" badge.
+
 ## 0.14.0
 
 - Settings → System now says HomeDeck is designed by people and built with AI, like the README and the website.

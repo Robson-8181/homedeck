@@ -32,7 +32,7 @@ export function SpotifyCard({ entity, hass, onOpen, t }: SpotifyCardProps) {
   return <div className={`widget-card spotify-card ${wide ? "spotify-card--wide" : ""} ${playing ? "spotify-card--playing" : ""}`} onClick={(event) => { if (!(event.target as HTMLElement).closest("button")) onOpen(entity); }} role="button" tabIndex={0}>
     {wide && <button aria-label={t("openPlayer")} className={picture && !idle ? "spotify-card__cover" : "spotify-card__cover spotify-card__cover--empty"} onClick={() => onOpen(entity)} style={picture && !idle ? { backgroundImage: `url("${picture.replaceAll('"', "%22")}")` } : undefined} type="button">{(!picture || idle) && <HDIcon name="note" size={26} />}</button>}
     <div className="spotify-card__meta">
-      <span className="spotify-card__source"><HDIcon name="note" size={13} />{attrs.source && attrs.source !== "Spotify" ? `Spotify · ${String(attrs.source)}` : "Spotify"}</span>
+      <span className="spotify-card__source"><HDIcon name="note" size={13} />Spotify</span>
       <span className="spotify-card__copy"><strong>{idle ? t("nothingPlaying") : String(attrs.media_title)}</strong><small>{idle ? t("tapPlayToResume") : String(attrs.media_artist ?? "")}</small></span>
       {!idle && duration > 0 && <span className="spotify-card__progress">
         {wide && <small>{formatTime(position)}</small>}

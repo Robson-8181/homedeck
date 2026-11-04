@@ -195,7 +195,7 @@ export function TodayCard({ config, hass, language, t }: AgendaProps) {
       {wide ? <>
         <strong>{weekday.charAt(0).toUpperCase() + weekday.slice(1)}</strong>
         <p>{date}</p>
-        {rows.length === 0 ? <p className="widget-card__empty">{t("nothingToday")}</p> : <ul className="widget-list">{rows.slice(0, 4).map((row) => <li key={row.key}><button className={row.late ? "widget-list--alert" : undefined} onClick={() => { setOpen(row.open); if (row.open === "todo") reload(); }} type="button">
+        {rows.length === 0 ? <p className="widget-card__empty">{t("nothingToday")}</p> : <ul className="widget-list">{rows.slice(0, 3).map((row) => <li key={row.key}><button className={row.late ? "widget-list--alert" : undefined} onClick={() => { setOpen(row.open); if (row.open === "todo") reload(); }} type="button">
           <span>{row.color ? <i className="widget-list__dot" style={{ background: row.color }} /> : <i className="widget-list__dot widget-list__dot--todo" />}{row.title}</span><small>{row.when}</small>
         </button></li>)}</ul>}
       </> : <>

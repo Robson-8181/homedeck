@@ -304,6 +304,9 @@ export const themeExtras = String.raw`
 .app-shell .widget-list__dot--todo { box-sizing: border-box; border: 2px solid currentColor; opacity: .6; }
 .app-shell .widget-card--today .widget-list small { text-transform: none; }
 .app-shell .widget-card--today > p { text-transform: none; }
+/* Double size: the weekday in the card's body size, and three rows at most, so the card keeps its row's height. */
+.app-shell .widget-card--today.widget-card--wide > strong { font: 600 calc(var(--u)*2.2)/1.2 var(--f-body); -webkit-line-clamp: 2; overflow-wrap: anywhere; }
+.app-shell .widget-card--today .widget-list button { padding-block: calc(var(--u)*.6); }
 .app-shell .widget-card--today:not(.widget-card--wide) > strong { font: 600 calc(var(--u)*2.2)/1.2 var(--f-body); -webkit-line-clamp: 3; }
 .app-shell .widget-card--wide > .widget-card__empty { grid-area: 1 / 2 / 4 / 3; align-self: center; margin: 0; opacity: .6; }
 /* Spotify, double size: times, shuffle, repeat and a volume slider. */
@@ -439,6 +442,8 @@ export const themeExtras = String.raw`
 .app-shell .camera-tile__empty { display: grid; place-items: center; color: rgba(255,255,255,.35); background: rgba(255,255,255,.06); }
 .app-shell .camera-tile__shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.62), rgba(0,0,0,0) 55%); pointer-events: none; }
 .app-shell .camera-tile__badge { position: absolute; top: calc(var(--u)*1.4); left: calc(var(--u)*1.4); display: inline-flex; align-items: center; gap: calc(var(--u)*.6); padding: calc(var(--u)*.6) calc(var(--u)*1.2); border-radius: var(--hd-pill,99px); background: rgba(0,0,0,.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); font: 600 calc(var(--u)*1.4)/1 var(--f-body); letter-spacing: .02em; }
+/* A double-size camera keeps the photo layout: the grid of other double cards would put the name at the top, under the badge. */
+.app-shell .camera-tile.device-tile--wide { display: flex; flex-direction: column; justify-content: flex-end; }
 .app-shell .camera-tile__name { position: relative; padding: calc(var(--u)*2); font: 600 calc(var(--u)*2)/1.2 var(--f-body); text-shadow: 0 1px 8px rgba(0,0,0,.5); }
 .app-shell .hd-detail--camera { width: min(960px, calc(100vw - var(--u)*6)); }
 .app-shell .hd-camera { overflow: hidden; border-radius: calc(var(--u)*2.4*var(--hd-r,1)); background: #000; aspect-ratio: 16 / 9; display: grid; place-items: center; }
