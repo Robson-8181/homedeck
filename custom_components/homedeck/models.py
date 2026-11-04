@@ -26,12 +26,13 @@ class HomeDeckGlobalActionsConfig(TypedDict):
 
 
 class HomeDeckNavigationConfig(TypedDict):
-    """Generated navigation visibility."""
+    """Generated navigation visibility and the order of the bottom bar's tabs."""
 
     rooms: bool
     scenes: bool
     media: bool
     security: bool
+    order: NotRequired[list[str]]
 
 
 class HomeDeckLayoutConfig(TypedDict):
@@ -120,6 +121,7 @@ class HomeDeckAgendaConfig(TypedDict):
     show_todo: bool
     todo_entity: str
     todo_no_date: bool
+    today_card: bool
 
 
 class HomeDeckCardStyle(TypedDict):
@@ -242,6 +244,7 @@ def default_config() -> HomeDeckConfig:
             "show_todo": True,
             "todo_entity": "",
             "todo_no_date": False,
+            "today_card": False,
         },
         "cards": {
             "corners": 100,

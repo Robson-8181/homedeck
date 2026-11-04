@@ -8,7 +8,7 @@ import { domainIcon, HDIcon } from "./HDIcon";
 import { WideControls } from "./WideControls";
 import { CameraCard } from "./CameraCard";
 import { HDSelect } from "./HDSelect";
-import { RUNNABLE, SELECTS, runEntity, selectOption, selectOptions, vacuumActions, vacuumStatus } from "../devices";
+import { RUNNABLE, SELECTS, mediaArt, runEntity, selectOption, selectOptions, vacuumActions, vacuumStatus } from "../devices";
 import { SpotifyCard } from "./SpotifyCard";
 import { usePlan } from "../plan";
 import { isSpotify } from "../spotify";
@@ -153,7 +153,9 @@ function DeviceCard({ entity, hass, language, onLongPress, t }: EntityCardProps)
       tabIndex={0}
     >
       {busy && <span className="device-tile__busy" />}
-      <div className="device-tile__top"><span className="device-tile__icon"><HDIcon name={domainIcon(entity.domain)} size={23} /></span></div>
+      <div className="device-tile__top">{entity.domain === "media_player" && mediaArt(state)
+        ? <span className="device-tile__icon device-tile__icon--art" style={{ backgroundImage: mediaArt(state)! }} />
+        : <span className="device-tile__icon"><HDIcon name={domainIcon(entity.domain)} size={23} /></span>}</div>
       <div className="device-tile__copy"><strong>{entity.name}</strong>{entity.domain !== "scene" && !(SELECTS.has(entity.domain) && !wide) && <span>{status}</span>}</div>
 
       {wide && !unavailable && state && <div className="tile-wide"><WideControls entity={entity} hass={hass} language={language} state={state} t={t} /></div>}

@@ -71,6 +71,8 @@ export interface HomeDeckConfig {
     scenes: boolean;
     media: boolean;
     security: boolean;
+    /** Tab ids of the bottom bar in the order arranged in Edit mode (Home always comes first). */
+    order?: string[];
   };
   layout: {
     density: HomeDeckDensity;
@@ -113,6 +115,8 @@ export interface HomeDeckConfig {
     show_todo: boolean;
     todo_entity: string;
     todo_no_date: boolean;
+    /** A Today card on Home with the day's events and the reminders due. */
+    today_card: boolean;
   };
   screensaver: {
     enabled: boolean;

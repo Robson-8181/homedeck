@@ -5,7 +5,7 @@ import { discoverRooms } from "./api/discovery";
 import { activateLicense, claimCheckout, getLicense, type LicenseStatus } from "./api/license";
 import { HDIcon } from "./components/HDIcon";
 import { DynamicShell } from "./components/DynamicShell";
-import { NavigationDock, type HomeDeckPage } from "./components/NavigationDock";
+import { NavigationDock, orderTabs, type HomeDeckPage } from "./components/NavigationDock";
 import { ProSheet } from "./components/ProSheet";
 import { FocusLayout } from "./screens/layouts/FocusLayout";
 import { ListLayout } from "./screens/layouts/ListLayout";
@@ -279,12 +279,12 @@ export function App({ hass, version }: { hass: HomeAssistant; version?: string }
   const pageRef: PageRef | null = selectedRoom ? null
     : activePage === "scenes" || activePage === "media" || activePage === "security" ? { kind: "collection", id: activePage }
     : customPage ? { kind: "custom", page: customPage } : null;
-  const links: NavLink[] = [
+  const links: NavLink[] = orderTabs([
     ...(view.navigation.scenes && hasScenes ? [{ id: "scenes", label: t("scenes"), icon: "scene" as const }] : []),
     ...(view.navigation.media && hasMedia ? [{ id: "media", label: t("media"), icon: "media" as const }] : []),
     ...(view.navigation.security && hasSecurity ? [{ id: "security", label: t("security"), icon: "shield" as const }] : []),
     ...view.pages.map((page) => ({ id: page.id, label: page.title, icon: (page.type === "favorites" ? "star" : page.type === "scenes" ? "scene" : "grid") as NavLink["icon"] })),
-  ];
+  ], view.navigation.order);
   const openRoom = (roomId: string | null) => { setSelectedRoomId(roomId); setActivePage(roomId ? "rooms" : "home"); };
 
   let screen;
@@ -300,9 +300,9 @@ export function App({ hass, version }: { hass: HomeAssistant; version?: string }
   return withPlan(
     <DynamicShell config={view} data={visibleData} hass={hass} mode={mode}>
       {screen}
-      {mode !== "sidebar" && <NavigationDock active={active} config={view} hasMedia={hasMedia} hasScenes={hasScenes} hasSecurity={hasSecurity} onNavigate={navigate} t={t} />}
+      {mode !== "sidebar" && <NavigationDock active={active} config={view} editing={editing} hasMedia={hasMedia} hasScenes={hasScenes} hasSecurity={hasSecurity} onNavigate={navigate} onOrder={(order) => void updateConfig((current) => ({ ...current, navigation: { ...current.navigation, order } }))} t={t} />}
       <button aria-label={editing ? t("doneEditing") : t("editScreen")} aria-pressed={editing} className={editing ? "edit-fab edit-fab--on" : "edit-fab"} onClick={() => setEditing((current) => !current)} type="button">
-        <HDIcon name={editing ? "check" : "pencil"} size={18} /><span>{editing ? t("doneEditing") : t("editScreen")}</span>
+        <HDIcon name={editing ? "check" : "pencil"} size={20} />
       </button>
       {saverOn && <Screensaver config={view} hass={hass} language={language} onDismiss={dismissSaver} t={t} />}
     </DynamicShell>,

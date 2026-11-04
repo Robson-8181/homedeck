@@ -4,6 +4,12 @@ A beautiful, local dashboard for Home Assistant that builds itself. HomeDeck rea
 `Areas → Devices → Entities`, organizes your home by room and keeps every setting and
 command inside Home Assistant. No YAML, no cards to configure.
 
+**Designed by people, built with AI.** HomeDeck is designed, tested and maintained by an attentive,
+committed team led by Rodrigo, who decide every feature, listen to the community and answer support.
+The code is written with the help of AI (Claude), which speeds the work up a lot: with people
+operating everything up close, fixes and new features ship much faster, often just days after
+someone suggests them.
+
 **Website:** [homedeck.pro](https://homedeck.pro) · English, Português, Español
 
 [![Open in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=rodrigo-wa&repository=homedeck&category=integration)
@@ -37,18 +43,21 @@ on macOS). Your rooms, backgrounds and preferences are kept.
 
 - **Four layouts:** Grid, Sidebar, List and Focus. Every screen, including Media,
   Security, Scenes and your own pages, follows the one you pick.
-- **Edit mode like an iPhone:** drag to reorder, tap − to hide, add devices from any room,
-  double the size of a card and split a screen into groups with separators. Nothing is ever deleted from Home Assistant.
+- **Edit mode, arranged your way:** drag to reorder, tap − to hide, add devices from any room,
+  double the size of a card, split a screen into groups with separators and reorder the bottom
+  bar. Nothing is ever deleted from Home Assistant.
 - **Calendar and reminders** beside the clock, with a full-screen month view and a
-  reminders list.
+  reminders list, plus an optional **Today card** on Home.
 - **Full weather forecast:** next hours and next 7 days, using your Home Assistant weather
   service, with Open-Meteo as a fallback for your home's location.
 - **Big cards** with brightness, colors, a vertical cover control and a climate ring.
+- **Media artwork** for Apple TV, Sonos, Chromecast and other players, with their favorites
+  and sources one tap away.
 - **Cameras** with a live view, **vacuums** with their controls, and **scripts, buttons and
   selects** (like a washing machine program) right on the dashboard.
 - **Spotify player**, screensaver, scene strip, and an option to hide the Home Assistant
   sidebar on a wall tablet.
-- **English, Portuguese and Spanish**, following Home Assistant's language.
+- **English, Portuguese, Spanish and German**, following Home Assistant's language.
 
 ## Plans
 

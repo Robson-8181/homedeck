@@ -32,6 +32,21 @@ type Call = (domain: string, service: string, data?: Record<string, unknown>) =>
 
 const num = (value: unknown): number | undefined => (typeof value === "number" && Number.isFinite(value) ? value : undefined);
 
+const VOLUME_SET = 4;
+const VOLUME_STEP = 1024;
+
+/** Volume as − and +. volume_down/volume_up work on TVs that can only step (many Samsung and LG TVs
+ * ignore a level) and on players that take a level, where Home Assistant steps it for them. */
+export function VolumeButtons({ className = "hd-volume", onStep, state, t }: { className?: string; onStep: (service: "volume_down" | "volume_up") => void; state: HassEntity; t: (key: TranslationKey) => string }) {
+  const features = num(state.attributes.supported_features) ?? 0;
+  const level = num(state.attributes.volume_level);
+  if (!(features & (VOLUME_SET | VOLUME_STEP)) && level == null) return null;
+  return <div aria-label={t("volume")} className={className} role="group" onClick={(event) => event.stopPropagation()}>
+    <button aria-label={t("volumeDown")} onClick={() => onStep("volume_down")} type="button"><HDIcon name="minus" size={16} /></button>
+    <button aria-label={t("volumeUp")} onClick={() => onStep("volume_up")} type="button"><HDIcon name="plus" size={16} /></button>
+  </div>;
+}
+
 /** A range that follows the finger and sends one service call when released. `off` hides the fill and the value. */
 export function TileSlider({ label, off = false, onCommit, suffix = "%", value, min = 0, max = 100 }: { label: string; off?: boolean; onCommit: (value: number) => void; suffix?: string; value: number; min?: number; max?: number }) {
   const [draft, setDraft] = useState<number | null>(null);
@@ -163,9 +178,8 @@ function ClimateControls({ language, state, t, call }: WideProps & { call: Call 
   </div>;
 }
 
-function MediaControls({ entity, state, t, call }: WideProps & { call: Call }) {
+function MediaControls({ state, t, call }: WideProps & { call: Call }) {
   const playing = state.state === "playing";
-  const volume = num(state.attributes.volume_level);
   const off = ["off", "standby", "unavailable"].includes(state.state);
   if (off) return <div className="tile-wide__controls"><div className="tile-buttons"><button onClick={() => call("media_player", "turn_on")} type="button"><HDIcon name="power" size={15} />{t("turnOn")}</button></div></div>;
   return <div className="tile-wide__controls">
@@ -174,7 +188,7 @@ function MediaControls({ entity, state, t, call }: WideProps & { call: Call }) {
       <button aria-label={playing ? t("pause") : t("play")} className="tile-buttons__icon tile-buttons__main" onClick={() => call("media_player", "media_play_pause")} type="button"><HDIcon name={playing ? "pause" : "play"} size={18} /></button>
       <button aria-label={t("next")} className="tile-buttons__icon" onClick={() => call("media_player", "media_next_track")} type="button"><HDIcon name="next" size={16} /></button>
     </div>
-    {volume != null && <TileSlider label={`${t("volume")}: ${entity.name}`} onCommit={(value) => call("media_player", "volume_set", { volume_level: value / 100 })} value={Math.round(volume * 100)} />}
+    <VolumeButtons onStep={(service) => call("media_player", service)} state={state} t={t} />
   </div>;
 }
 

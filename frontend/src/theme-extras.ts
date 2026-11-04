@@ -2,11 +2,15 @@
 export const themeExtras = String.raw`
 /* Dock and the floating Edit button share one baseline at the bottom */
 .app-shell { --dock-bottom: calc(var(--u)*2.4 + env(safe-area-inset-bottom, 0px)); --dock-height: calc(var(--u)*6.2 + 2px); }
-.app-shell .navigation-dock { bottom: var(--dock-bottom); max-width: calc(100% - var(--u)*36); }
+.app-shell .navigation-dock { bottom: var(--dock-bottom); max-width: calc(100% - var(--u)*24); }
 .app-shell .navigation-dock button { height: calc(var(--u)*4.6); padding-top: 0; padding-bottom: 0; }
+/* Edit mode: the tabs after Home are dragged sideways to reorder them. */
+.app-shell .navigation-dock--editing { touch-action: none; outline: 1.5px dashed color-mix(in srgb, var(--ink) 35%, transparent); outline-offset: calc(var(--u)*.4); }
+.app-shell .navigation-dock--editing button[data-tab] { cursor: grab; background: color-mix(in srgb, var(--ink) 8%, transparent); user-select: none; -webkit-user-select: none; }
+.app-shell .navigation-dock--editing button.navigation-dock__dragging { cursor: grabbing; background: var(--paper); color: var(--paper-ink); }
 .app-shell .edit-fab {
-  position: fixed; right: calc(var(--u)*4); bottom: var(--dock-bottom); z-index: 21; height: var(--dock-height); min-width: var(--dock-height);
-  display: inline-flex; align-items: center; justify-content: center; gap: calc(var(--u)*.9); padding: 0 calc(var(--u)*2.4); border-radius: var(--hd-pill,99px);
+  position: fixed; right: calc(var(--u)*4); bottom: var(--dock-bottom); z-index: 21; width: var(--dock-height); height: var(--dock-height);
+  display: inline-flex; align-items: center; justify-content: center; padding: 0; border-radius: var(--hd-round,50%);
   border: 1px solid var(--hd-frame,var(--line)); background: var(--glass); color: var(--ink); backdrop-filter: blur(var(--hd-blur,22px)) saturate(1.3); -webkit-backdrop-filter: blur(var(--hd-blur,22px)) saturate(1.3);
   box-shadow: 0 calc(var(--u)*1.2) calc(var(--u)*4) rgba(0,0,0,.35); font: 600 calc(var(--u)*1.9)/1 var(--f-body); cursor: pointer;
 }
@@ -173,8 +177,7 @@ export const themeExtras = String.raw`
   }
   .app-shell .navigation-dock button { height: auto; padding: 0 calc(var(--u)*2); font-size: calc(var(--u)*2.1); }
   .app-shell .navigation-dock button svg { width: calc(var(--u)*3); height: calc(var(--u)*3); }
-  .app-shell .edit-fab { right: var(--dock-side); bottom: var(--dock-bottom); width: var(--dock-height); height: var(--dock-height); min-width: 0; padding: 0; }
-  .app-shell .edit-fab span { display: none; }
+  .app-shell .edit-fab { right: var(--dock-side); }
 }
 }
 
@@ -272,7 +275,7 @@ export const themeExtras = String.raw`
   font: 600 calc(var(--u)*1.55)/1 var(--f-body); display: inline-flex; align-items: center; justify-content: center; gap: calc(var(--u)*.6);
 }
 .app-shell :is(.tile-buttons, .tile-chips, .tile-target) button:disabled { opacity: .35; cursor: default; }
-.app-shell .tile-buttons { display: flex; gap: calc(var(--u)*.8); }
+.app-shell .tile-buttons { display: flex; align-items: center; gap: calc(var(--u)*.8); }
 .app-shell .tile-buttons button { flex: 1; height: calc(var(--u)*4.4); padding: 0 calc(var(--u)*1.2); white-space: nowrap; }
 .app-shell .tile-buttons .tile-buttons__icon { flex: 0 0 calc(var(--u)*4.4); padding: 0; }
 .app-shell .tile-buttons--media { justify-content: center; }
@@ -296,13 +299,23 @@ export const themeExtras = String.raw`
 .app-shell .widget-list button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .app-shell .widget-list button small { flex: none; opacity: .65; text-transform: capitalize; }
 .app-shell .widget-list button.widget-list--alert { background: rgba(229,72,77,.22); }
+/* Today card: a dot in the calendar's color before each event, an empty ring before each reminder. */
+.app-shell .widget-list__dot { display: inline-block; width: calc(var(--u)*.9); height: calc(var(--u)*.9); margin-right: calc(var(--u)*.8); border-radius: var(--hd-round,50%); vertical-align: .1em; }
+.app-shell .widget-list__dot--todo { box-sizing: border-box; border: 2px solid currentColor; opacity: .6; }
+.app-shell .widget-card--today .widget-list small { text-transform: none; }
+.app-shell .widget-card--today > p { text-transform: none; }
+.app-shell .widget-card--today:not(.widget-card--wide) > strong { font: 600 calc(var(--u)*2.2)/1.2 var(--f-body); -webkit-line-clamp: 3; }
+.app-shell .widget-card--wide > .widget-card__empty { grid-area: 1 / 2 / 4 / 3; align-self: center; margin: 0; opacity: .6; }
 /* Spotify, double size: times, shuffle, repeat and a volume slider. */
 .app-shell .spotify-card__progress { display: flex; align-items: center; gap: calc(var(--u)*1); }
 .app-shell .spotify-card__progress .spotify-card__bar { flex: 1; }
 .app-shell .spotify-card__progress small { font: 600 calc(var(--u)*1.35)/1 var(--f-body); color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .app-shell .spotify-card__controls > .spotify-card__toggle { opacity: .55; }
 .app-shell .spotify-card__controls > .spotify-card__toggle--on { opacity: 1; color: #1ed760; }
-.app-shell .spotify-card--wide .spotify-card__controls { flex-wrap: wrap; row-gap: calc(var(--u)*.6); }
+.app-shell .spotify-card--wide .spotify-card__controls { flex-wrap: wrap; align-items: center; row-gap: calc(var(--u)*.6); }
+/* Double size: shuffle, previous, play, next and repeat on one line; the volume buttons on the next. */
+.app-shell .spotify-card--wide .spotify-card__controls { column-gap: calc(var(--u)*.6); }
+.app-shell .spotify-card--wide .spotify-card__volume { flex-basis: 100%; margin-left: 0; justify-content: flex-start; }
 .app-shell .spotify-card__slider { flex: 1 0 100%; min-width: 0; display: flex; align-items: center; gap: calc(var(--u)*.8); color: var(--ink-2); }
 .app-shell .spotify-card__slider .tile-slider { flex: 1; color: var(--ink); }
 .app-shell .spotify-card__slider .tile-slider__track { height: calc(var(--u)*2.6); }
@@ -449,6 +462,16 @@ export const themeExtras = String.raw`
 .app-shell .device-tile .device-select { position: relative; z-index: 2; min-height: calc(var(--u)*4.4); border-radius: var(--hd-pill,99px); font-size: calc(var(--u)*1.7); }
 .app-shell .device-tile--active .device-select { border-color: rgba(43,36,24,.16); background: rgba(43,36,24,.08); color: var(--paper-ink); }
 .app-shell .hd-options { display: flex; flex-wrap: wrap; gap: calc(var(--u)*.8); }
+/* Volume − and +, on double cards and in the details. */
+.app-shell .hd-volume { display: flex; align-items: center; justify-content: center; gap: calc(var(--u)*1.2); }
+.app-shell .hd-volume button { width: calc(var(--u)*4.4); height: calc(var(--u)*4.4); flex: none; display: grid; place-items: center; padding: 0; border: 0; border-radius: var(--hd-round,50%); background: color-mix(in srgb, currentColor 12%, transparent); color: inherit; cursor: pointer; }
+.app-shell .hd-volume button:active { transform: scale(.94); }
+.app-shell .hd-volume--large button { width: calc(var(--u)*5.6); height: calc(var(--u)*5.6); }
+
+/* Media: the artwork of what is playing, and the player's sources (Sonos favorites, Apple TV apps). */
+.app-shell :is(.device-tile__icon--art, .widget-card__icon--art) { background: center / cover no-repeat; border-radius: calc(var(--u)*1.2*var(--hd-r,1)); box-shadow: 0 calc(var(--u)*.4) calc(var(--u)*1.2) rgba(0,0,0,.25); }
+.app-shell .hd-detail__art { width: min(60%, calc(var(--u)*26)); aspect-ratio: 1; margin: 0 auto; border-radius: calc(var(--u)*2.4*var(--hd-r,1)); background: center / cover no-repeat; box-shadow: 0 calc(var(--u)*1.6) calc(var(--u)*4) rgba(0,0,0,.4); }
+.app-shell .hd-detail__sources { display: grid; gap: calc(var(--u)*1); max-height: calc(var(--u)*30); overflow-y: auto; }
 .app-shell .hd-options button { flex: 1 1 calc(50% - var(--u)*.8); min-height: calc(var(--u)*5.2); padding: 0 calc(var(--u)*1.6); border: 1px solid rgba(255,255,255,.14); border-radius: calc(var(--u)*1.8*var(--hd-r,1)); background: rgba(255,255,255,.08); color: var(--ink); font: 600 calc(var(--u)*1.8)/1.2 var(--f-body); cursor: pointer; }
 .app-shell .hd-options button[aria-pressed="true"] { border-color: transparent; background: var(--on); color: var(--on-ink, #2a2110); }
 .app-shell .tile-buttons--options { flex-wrap: wrap; }

@@ -48,6 +48,18 @@ export function cameraStream(state: HassEntity | undefined): string | null {
   return typeof picture === "string" && picture.includes("/api/camera_proxy/") ? picture.replace("/api/camera_proxy/", "/api/camera_proxy_stream/") : null;
 }
 
+/** The artwork of what a media player is playing (Apple TV, Sonos, Chromecast…), when it has one. */
+export function mediaArt(state: HassEntity | undefined): string | null {
+  const picture = state?.attributes.entity_picture;
+  if (typeof picture !== "string" || !picture || !["playing", "paused"].includes(state?.state ?? "")) return null;
+  return `url("${picture.replaceAll('"', "%22")}")`;
+}
+
+/** What a media player can switch to: Sonos favorites and playlists, Apple TV apps, inputs. */
+export function mediaSources(state: HassEntity | undefined): string[] {
+  return Array.isArray(state?.attributes.source_list) ? state.attributes.source_list.map(String).slice(0, 40) : [];
+}
+
 export function vacuumStatus(state: HassEntity, t: (key: TranslationKey) => string): string {
   const label = VACUUM_LABELS[state.state] ? t(VACUUM_LABELS[state.state]) : state.state.replaceAll("_", " ");
   const battery = state.attributes.battery_level;

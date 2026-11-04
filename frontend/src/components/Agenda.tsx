@@ -4,11 +4,12 @@ import type { CSSProperties } from "react";
 import type { TranslationKey } from "../i18n";
 import type { HomeDeckConfig } from "../types/config";
 import type { HomeAssistant } from "../types/home-assistant";
+import { useWideTile } from "./EditableGrid";
 import { HDIcon } from "./HDIcon";
 
 // Calendar and reminders beside the clock, as in the main dashboard: a button for each with a count
 // (events today, reminders due), opening a month view with the day's agenda, or the due reminders.
-// Which calendars and which list are chosen in Settings → Home.
+// Which calendars and which list are chosen in Settings → Home. The Today card shows the same on Home.
 
 const PALETTE = ["#ff7a59", "#4fa3ff", "#38c793", "#b38cff", "#ffc24d", "#ff5c8a", "#34c3d6", "#a3b86c"];
 const EVENTS_TTL = 5 * 60 * 1000;
@@ -81,12 +82,30 @@ function todoEntity(config: HomeDeckConfig, hass: HomeAssistant): string | undef
   return Object.keys(hass.states).sort().find((id) => id.startsWith("todo."));
 }
 
+/** Whether the Today card has anything to read from: a calendar or a to-do list. */
+export function todayCardAvailable(config: HomeDeckConfig, hass: HomeAssistant): boolean {
+  return config.agenda.today_card && (Boolean(todoEntity(config, hass)) || (Boolean(hass.callApi) && Object.keys(hass.states).some((id) => id.startsWith("calendar."))));
+}
+
+/** A list's items, reloaded when it changes in Home Assistant (its state is the open count), and the due ones. */
+function useReminders(hass: HomeAssistant, todo: string | undefined, noDate: boolean, language: string | undefined, t: (key: TranslationKey) => string) {
+  const [items, setItems] = useState<TodoItem[] | null>(null);
+  const todoState = todo ? hass.states[todo]?.state : undefined;
+  const reload = useCallback(() => {
+    if (!todo) return;
+    void hass.connection.sendMessagePromise<{ items?: TodoItem[] }>({ type: "todo/item/list", entity_id: todo })
+      .then((result) => setItems([...(result?.items ?? [])])).catch(() => setItems([]));
+  }, [todo, hass.connection]);
+  useEffect(() => { reload(); }, [reload, todoState]);
+  const due = useMemo(() => dueItems(items ?? [], noDate, language, t), [items, noDate, language]);
+  return { due, loaded: items !== null, reload };
+}
+
 export function AgendaButtons({ config, hass, language, t }: AgendaProps) {
   const calendars = useCalendars(config, hass);
   const todo = config.agenda.show_todo ? todoEntity(config, hass) : undefined;
   const showCalendar = config.agenda.show_calendar && calendars.length > 0 && Boolean(hass.callApi);
   const [todayCount, setTodayCount] = useState(0);
-  const [items, setItems] = useState<TodoItem[] | null>(null);
   const [open, setOpen] = useState<"calendar" | "todo" | null>(null);
   // Sheets render at the shell, outside the clock: above the dock, and free of the clock's text styles.
   const anchor = useRef<HTMLDivElement>(null);
@@ -106,16 +125,7 @@ export function AgendaButtons({ config, hass, language, t }: AgendaProps) {
     return () => { cancelled = true; window.clearInterval(timer); };
   }, [showCalendar, calendars.map((calendar) => calendar.id).join(",")]);
 
-  // Reminders reload when the list changes in Home Assistant (its state is the open count).
-  const todoState = todo ? hass.states[todo]?.state : undefined;
-  const loadTodo = useCallback(() => {
-    if (!todo) return;
-    void hass.connection.sendMessagePromise<{ items?: TodoItem[] }>({ type: "todo/item/list", entity_id: todo })
-      .then((result) => setItems([...(result?.items ?? [])])).catch(() => setItems([]));
-  }, [todo, hass.connection]);
-  useEffect(() => { loadTodo(); }, [loadTodo, todoState]);
-
-  const due = useMemo(() => dueItems(items ?? [], config.agenda.todo_no_date, language, t), [items, config.agenda.todo_no_date, language]);
+  const { due, loaded, reload: loadTodo } = useReminders(hass, todo, config.agenda.todo_no_date, language, t);
   const late = due.some((item) => item.late);
 
   if (!showCalendar && !todo) return null;
@@ -129,7 +139,72 @@ export function AgendaButtons({ config, hass, language, t }: AgendaProps) {
       </button>}
     </div>
     {open === "calendar" && shell && createPortal(<CalendarSheet calendars={calendars} hass={hass} language={language} onClose={() => setOpen(null)} t={t} />, shell)}
-    {open === "todo" && todo && shell && createPortal(<TodoSheet due={due} entityId={todo} hass={hass} loaded={items !== null} onClose={() => setOpen(null)} onReload={loadTodo} t={t} />, shell)}
+    {open === "todo" && todo && shell && createPortal(<TodoSheet due={due} entityId={todo} hass={hass} loaded={loaded} onClose={() => setOpen(null)} onReload={loadTodo} t={t} />, shell)}
+  </>;
+}
+
+/** The Today card on Home: what is left of today's events and the reminders due, without opening anything.
+ * A tap opens the month view; on the double-size card, a reminder opens the reminders. */
+export function TodayCard({ config, hass, language, t }: AgendaProps) {
+  const wide = useWideTile();
+  const calendars = useCalendars(config, hass);
+  const todo = todoEntity(config, hass);
+  const { due, loaded, reload } = useReminders(hass, todo, config.agenda.todo_no_date, language, t);
+  const hasCalendar = calendars.length > 0 && Boolean(hass.callApi);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [now, setNow] = useState(() => new Date());
+  const [open, setOpen] = useState<"calendar" | "todo" | null>(null);
+  const anchor = useRef<HTMLDivElement>(null);
+  const shell = anchor.current?.closest(".app-shell") ?? null;
+  const today = dayKey(now);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  useEffect(() => {
+    if (!hasCalendar) return;
+    let cancelled = false;
+    const load = () => {
+      const from = startOfDay(new Date());
+      void fetchEvents(hass, calendars, from, new Date(from.getTime() + 86_400_000)).then((list) => { if (!cancelled) setEvents(list); });
+    };
+    load();
+    const timer = window.setInterval(load, TODAY_REFRESH);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [hasCalendar, today, calendars.map((calendar) => calendar.id).join(",")]);
+
+  const colors = new Map(calendars.map((calendar) => [calendar.id, calendar.color]));
+  const time = new Intl.DateTimeFormat(language, { hour: "2-digit", minute: "2-digit" });
+  // Events that haven't ended yet, all-day ones first.
+  const left = events.filter((event) => colors.has(event.calendar) && onDay(event, now) && (event.allDay || event.end > now || event.start >= now));
+  const rows = [
+    ...left.map((event, index) => ({ key: `e${index}`, title: event.title, when: event.allDay ? t("allDay") : time.format(event.start), color: colors.get(event.calendar), late: false, open: "calendar" as const })),
+    ...due.map((item) => ({ key: item.uid, title: item.summary, when: item.when, color: undefined, late: item.late, open: "todo" as const })),
+  ];
+  // The small card names the next event with a time; all-day events and reminders count in the "+N".
+  const first = rows.find((row) => row.open === "calendar" && row.when !== t("allDay")) ?? rows[0];
+  const weekday = new Intl.DateTimeFormat(language, { weekday: "long" }).format(now);
+  const date = new Intl.DateTimeFormat(language, { day: "numeric", month: "long" }).format(now);
+  const openMain = () => setOpen(hasCalendar ? "calendar" : todo ? "todo" : null);
+
+  return <>
+    <div className={`widget-card widget-card--interactive widget-card--today ${wide ? "widget-card--wide" : ""}`} onClick={(event) => { if (!(event.target as HTMLElement).closest("button")) openMain(); }} ref={anchor} role="button" tabIndex={0}>
+      <span className="widget-card__icon"><HDIcon name="calendar" size={22} /></span>
+      <span className="widget-card__label">{t("today")}</span>
+      {wide ? <>
+        <strong>{weekday.charAt(0).toUpperCase() + weekday.slice(1)}</strong>
+        <p>{date}</p>
+        {rows.length === 0 ? <p className="widget-card__empty">{t("nothingToday")}</p> : <ul className="widget-list">{rows.slice(0, 4).map((row) => <li key={row.key}><button className={row.late ? "widget-list--alert" : undefined} onClick={() => { setOpen(row.open); if (row.open === "todo") reload(); }} type="button">
+          <span>{row.color ? <i className="widget-list__dot" style={{ background: row.color }} /> : <i className="widget-list__dot widget-list__dot--todo" />}{row.title}</span><small>{row.when}</small>
+        </button></li>)}</ul>}
+      </> : <>
+        <strong>{first ? first.title : (loaded || !todo) ? t("nothingToday") : t("loadingShort")}</strong>
+        <p>{first ? `${first.when}${rows.length > 1 ? ` · +${rows.length - 1}` : ""}` : date}</p>
+      </>}
+    </div>
+    {open === "calendar" && hasCalendar && shell && createPortal(<CalendarSheet calendars={calendars} hass={hass} language={language} onClose={() => setOpen(null)} t={t} />, shell)}
+    {open === "todo" && todo && shell && createPortal(<TodoSheet due={due} entityId={todo} hass={hass} loaded={loaded} onClose={() => setOpen(null)} onReload={reload} t={t} />, shell)}
   </>;
 }
 

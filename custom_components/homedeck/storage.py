@@ -180,6 +180,8 @@ def normalize_config(value: Any) -> HomeDeckConfig:
         for key in ("rooms", "scenes", "media", "security"):
             if isinstance(navigation.get(key), bool):
                 config["navigation"][key] = navigation[key]
+        if "order" in navigation:
+            config["navigation"]["order"] = _unique_strings(navigation.get("order"))[:60]
 
     layout = value.get("layout")
     if isinstance(layout, dict):
@@ -242,7 +244,7 @@ def normalize_config(value: Any) -> HomeDeckConfig:
 
     agenda = value.get("agenda")
     if isinstance(agenda, dict):
-        for key in ("show_calendar", "show_todo", "todo_no_date"):
+        for key in ("show_calendar", "show_todo", "todo_no_date", "today_card"):
             if isinstance(agenda.get(key), bool):
                 config["agenda"][key] = agenda[key]
         config["agenda"]["calendars"] = [

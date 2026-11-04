@@ -1,0 +1,15 @@
+{
+  "title": "HomeDeck",
+  "config": {
+    "step": {
+      "user": {
+        "title": "HomeDeck einrichten",
+        "description": "Fügt das lokale HomeDeck-Dashboard zur Seitenleiste von Home Assistant hinzu."
+      }
+    },
+    "abort": {
+      "already_configured": "HomeDeck ist bereits eingerichtet.",
+      "single_instance_allowed": "HomeDeck ist bereits eingerichtet."
+    }
+  }
+}

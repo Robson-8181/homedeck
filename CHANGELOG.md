@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.14.0
+
+- Settings → System now says HomeDeck is designed by people and built with AI, like the README and the website.
+- Bottom bar: in Edit mode, drag the tabs to reorder them (Home always stays first). This includes the pages you created, which used to sit at the end, and the links of the Sidebar layout.
+- Media volume uses − and + buttons (on double-size cards and in the details) instead of a slider. This also works on TVs that can only step the volume up and down, like many Samsung and LG models, where the slider did nothing.
+- Media artwork: what an Apple TV, Sonos, Chromecast or other player is playing shows on its card (instead of the icon), on the Media card on Home and large in its details.
+- Favorites and sources: a player's details list the sources it offers, such as saved favorites and playlists on Sonos, apps on Apple TV and inputs on a TV. One tap switches.
+- Today card on Home: turn it on in Settings → Home → Calendar and reminders. It shows the day's upcoming events (in each calendar's color) and the reminders due, without opening the calendar; events that have ended drop off. At normal size, the next timed event and how many more there are; at double size, the day's list. A tap opens the calendar, and a reminder in the list opens the reminders. It uses the calendars and list chosen for the buttons beside the clock.
+- German: the whole dashboard (Home, rooms, layouts, Edit mode, Settings, the Free and Pro plans, feedback, weather, calendar, cameras and vacuums) and the integration setup in Home Assistant. Like the other languages, it follows the user's language in Home Assistant.
+
 ## 0.13.0
 
 - Separators: in Edit mode, **Add separator** adds a title with a thin line that splits a screen into groups (for example "Waste" or "Kitchen"). Drag, rename or remove it. Works on Home, in rooms (every layout) and on your pages.

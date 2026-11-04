@@ -79,7 +79,6 @@ export function SpotifyPlayer({ entity, hass, onClose, t }: SpotifyPlayerProps) 
         <div className="hd-player__side hd-player__side--end">
           {volume != null && <div aria-label={t("volume")} className="hd-player__volume" role="group">
             <button aria-label={t("volumeDown")} onClick={() => call("volume_set", { volume_level: Math.max(0, volume - 5) / 100 })} type="button"><HDIcon name="minus" size={18} /></button>
-            <span>{volume}%</span>
             <button aria-label={t("volumeUp")} onClick={() => call("volume_set", { volume_level: Math.min(100, volume + 5) / 100 })} type="button"><HDIcon name="plus" size={18} /></button>
           </div>}
         </div>

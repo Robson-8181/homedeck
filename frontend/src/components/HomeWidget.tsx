@@ -11,19 +11,23 @@ import { WideControls } from "./WideControls";
 import { SpotifyCard } from "./SpotifyCard";
 import { usePlan } from "../plan";
 import { isSpotify } from "../spotify";
+import { mediaArt } from "../devices";
+import type { HomeDeckConfig } from "../types/config";
+import { TodayCard } from "./Agenda";
 
 function uniqueEntities(data: DiscoveryResponse): DiscoveredEntity[] {
   const seen = new Set<string>();
   return data.rooms.flatMap((room) => room.entities).filter((entity) => !seen.has(entity.entity_id) && Boolean(seen.add(entity.entity_id)));
 }
 
-/** Widgets only exist when the house has something to show in them. */
-export function availableWidgets(data: DiscoveryResponse): WidgetKey[] {
+/** Widgets only exist when the house has something to show in them; Today only when turned on in Settings. */
+export function availableWidgets(data: DiscoveryResponse, today = false): WidgetKey[] {
   const entities = uniqueEntities(data);
   const keys: WidgetKey[] = [];
   if (entities.some((entity) => isSecurityEntity(entity))) keys.push("widget:security");
   if (entities.some((entity) => entity.domain === "climate")) keys.push("widget:climate");
   if (entities.some((entity) => entity.domain === "media_player")) keys.push("widget:media");
+  if (today) keys.push("widget:today");
   return keys;
 }
 
@@ -31,9 +35,11 @@ export const WIDGET_LABELS: Record<WidgetKey, TranslationKey> = {
   "widget:security": "security",
   "widget:climate": "climate",
   "widget:media": "media",
+  "widget:today": "today",
 };
 
 interface HomeWidgetProps {
+  config: HomeDeckConfig;
   data: DiscoveryResponse;
   hass: HomeAssistant;
   kind: WidgetKey;
@@ -42,7 +48,12 @@ interface HomeWidgetProps {
   t: (key: TranslationKey) => string;
 }
 
-export function HomeWidget({ data, hass, kind, language, onOpen, t }: HomeWidgetProps) {
+export function HomeWidget(props: HomeWidgetProps) {
+  if (props.kind === "widget:today") return <TodayCard config={props.config} hass={props.hass} language={props.language} t={props.t} />;
+  return <DeviceWidget {...props} />;
+}
+
+function DeviceWidget({ data, hass, kind, language, onOpen, t }: HomeWidgetProps) {
   const { pro } = usePlan();
   const wide = useWideTile();
   const entities = uniqueEntities(data);
@@ -98,9 +109,11 @@ export function HomeWidget({ data, hass, kind, language, onOpen, t }: HomeWidget
     ?? players[0];
   const state = media ? hass.states[media.entity_id] : undefined;
   const playing = state?.state === "playing";
+  const art = mediaArt(state);
+  const icon = art ? <span className="widget-card__icon widget-card__icon--art" style={{ backgroundImage: art }} /> : <span className="widget-card__icon"><HDIcon name="media" size={22} /></span>;
   if (wide && media && state && state.state !== "unavailable") {
     return <div className={`widget-card widget-card--wide widget-card--media ${playing ? "widget-card--playing" : ""}`} onClick={(event) => { if (!(event.target as HTMLElement).closest("button, input, label")) onOpen(media); }} role="button" tabIndex={0}>
-      <span className="widget-card__icon"><HDIcon name="media" size={22} /></span>
+      {icon}
       <span className="widget-card__label">{t("media")}</span>
       <strong>{String(state.attributes.media_title ?? media.name)}</strong>
       <p>{String(state.attributes.media_artist ?? media.name)}</p>
@@ -108,7 +121,7 @@ export function HomeWidget({ data, hass, kind, language, onOpen, t }: HomeWidget
     </div>;
   }
   return <div className={`widget-card widget-card--media widget-card--interactive ${playing ? "widget-card--playing" : ""}`} onClick={() => media && onOpen(media)} role="button" tabIndex={0}>
-    <span className="widget-card__icon"><HDIcon name="media" size={22} /></span>
+    {icon}
     <span className="widget-card__label">{t("media")}</span>
     <strong>{String(state?.attributes.media_title ?? media?.name ?? t("nothingPlaying"))}</strong>
     <p>{String(state?.attributes.media_artist ?? (state ? (playing ? t("on") : t("nothingPlaying")) : ""))}</p>

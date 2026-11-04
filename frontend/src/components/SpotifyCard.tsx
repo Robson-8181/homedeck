@@ -4,7 +4,6 @@ import type { DiscoveredEntity } from "../types/discovery";
 import type { HomeAssistant } from "../types/home-assistant";
 import { useWideTile } from "./EditableGrid";
 import { HDIcon } from "./HDIcon";
-import { TileSlider } from "./WideControls";
 
 const REPEAT_NEXT: Record<string, string> = { off: "all", all: "one", one: "off" };
 
@@ -46,10 +45,8 @@ export function SpotifyCard({ entity, hass, onOpen, t }: SpotifyCardProps) {
         <button aria-label={playing ? t("pause") : t("play")} className="spotify-card__pp" onClick={() => call("media_play_pause")} type="button"><HDIcon name={playing ? "pause" : "play"} size={18} /></button>
         <button aria-label={t("next")} onClick={() => call("media_next_track")} type="button"><HDIcon name="next" size={18} /></button>
         {wide && repeat && <button aria-label={t("repeat")} aria-pressed={repeat !== "off"} className={repeat !== "off" ? "spotify-card__toggle spotify-card__toggle--on" : "spotify-card__toggle"} onClick={() => call("repeat_set", { repeat: REPEAT_NEXT[repeat] ?? "off" })} type="button"><HDIcon name={repeat === "one" ? "repeat1" : "repeat"} size={16} /></button>}
-        {wide && volume != null && <span className="spotify-card__slider"><HDIcon name="volume" size={15} /><TileSlider label={t("volume")} onCommit={(value) => call("volume_set", { volume_level: value / 100 })} value={volume} /></span>}
-        {!wide && volume != null && <span className="spotify-card__volume">
+        {volume != null && <span className="spotify-card__volume">
           <button aria-label={t("volumeDown")} onClick={() => call("volume_set", { volume_level: Math.max(0, volume - 5) / 100 })} type="button"><HDIcon name="minus" size={14} /></button>
-          {volume}%
           <button aria-label={t("volumeUp")} onClick={() => call("volume_set", { volume_level: Math.min(100, volume + 5) / 100 })} type="button"><HDIcon name="plus" size={14} /></button>
         </span>}
       </span>

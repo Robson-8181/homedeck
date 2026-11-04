@@ -4,10 +4,11 @@ import { domainLabel, hvacLabel, type TranslationKey } from "../i18n";
 import type { DiscoveredEntity } from "../types/discovery";
 import type { HomeAssistant } from "../types/home-assistant";
 import { domainIcon, HDIcon } from "./HDIcon";
+import { VolumeButtons } from "./WideControls";
 import { SpotifyPlayer } from "./SpotifyPlayer";
 import { isSpotify } from "../spotify";
 import { usePlan } from "../plan";
-import { cameraSnapshot, cameraStream, RUNNABLE, SELECTS, runEntity, selectOption, selectOptions, vacuumActions, vacuumStatus } from "../devices";
+import { cameraSnapshot, cameraStream, mediaArt, mediaSources, RUNNABLE, SELECTS, runEntity, selectOption, selectOptions, vacuumActions, vacuumStatus } from "../devices";
 
 interface EntityModalProps {
   entity: DiscoveredEntity;
@@ -147,13 +148,18 @@ function EntityDetails({ entity, hass, language, onClose, roomName, t }: EntityM
         </>}
 
         {domain === "media_player" && <>
+          {mediaArt(state) && <div className="hd-detail__art" style={{ backgroundImage: mediaArt(state)! }} />}
           {attrs.media_artist != null && <p className="hd-detail__meta">{String(attrs.media_artist)}</p>}
           <div className="hd-transport">
             <button aria-label={t("previous")} onClick={() => void call("media_player", "media_previous_track")} type="button"><HDIcon name="arrow" size={22} /></button>
             <button aria-label={t("playPause")} className="hd-transport__play" onClick={() => void call("media_player", "media_play_pause")} type="button"><HDIcon name={state.state === "playing" ? "pause" : "media"} size={24} /></button>
             <button aria-label={t("next")} onClick={() => void call("media_player", "media_next_track")} type="button"><HDIcon name="chevron" size={22} /></button>
           </div>
-          {typeof attrs.volume_level === "number" && <Slider label={t("volume")} onCommit={(value) => void call("media_player", "volume_set", { volume_level: value / 100 })} value={Math.round(num(attrs.volume_level, 0) * 100)} />}
+          <VolumeButtons className="hd-volume hd-volume--large" onStep={(service) => void call("media_player", service)} state={state} t={t} />
+          {mediaSources(state).length > 1 && <div className="hd-detail__sources">
+            <span className="eyebrow">{t("mediaSources")}</span>
+            <div className="hd-options" role="group" aria-label={t("mediaSources")}>{mediaSources(state).map((source) => <button aria-pressed={attrs.source === source} key={source} onClick={() => void call("media_player", "select_source", { source })} type="button">{source}</button>)}</div>
+          </div>}
         </>}
 
         {domain === "fan" && typeof attrs.percentage === "number" && <Slider label={t("fanSpeed")} off={state?.state !== "on"} onCommit={(value) => void call("fan", "set_percentage", { percentage: value })} value={num(attrs.percentage, 0)} />}

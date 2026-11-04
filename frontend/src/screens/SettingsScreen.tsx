@@ -296,7 +296,7 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
           <Row description={t("hideHaSidebarDescription")} label={t("hideHaSidebar")}><Switch checked={hideHaSidebar} label={t("hideHaSidebar")} onChange={(hidden) => { setHideHaSidebar(hidden); setHideSidebarPreferred(hidden); }} /></Row>
           <Row description={t("reloadDevicesDescription")} label={t("reloadDevices")}><button className="hd-pill" onClick={onReload} type="button"><HDIcon name="refresh" size={16} />{t("refresh")}</button></Row>
           <Row description={t("restartSetupDescription")} label={t("restartSetup")}><button className="hd-pill" disabled={saving} onClick={() => void save({ ...draft, onboarding_complete: false })} type="button">{t("restartSetup")}</button></Row>
-          {version && <Row label={t("version")}><span className="st-value">{version}</span></Row>}
+          <Row description={t("madeWith")} label={version ? t("version") : "HomeDeck"}>{version && <span className="st-value">{version}</span>}</Row>
         </section>}
       </section>
     </div>
@@ -386,16 +386,19 @@ function AgendaPanel({ draft, hass, t, update }: { draft: HomeDeckConfig; hass: 
   if (calendars.length === 0 && lists.length === 0) return null;
   return <section className="st-panel">
     <h2>{t("agendaTitle")}</h2><p>{t("agendaDescription")}</p>
+    <div className="st-group">
+      <Row description={t("todayCardDescription")} label={t("todayCard")}><Switch checked={agenda.today_card} label={t("todayCard")} onChange={(today_card) => set({ today_card })} /></Row>
+    </div>
     {calendars.length > 0 && <div className="st-group">
       <Row label={t("showCalendar")}><Switch checked={agenda.show_calendar} label={t("showCalendar")} onChange={(show_calendar) => set({ show_calendar })} /></Row>
-      {agenda.show_calendar && <div className="st-sub" role="group" aria-label={t("calendars")}>
+      {(agenda.show_calendar || agenda.today_card) && <div className="st-sub" role="group" aria-label={t("calendars")}>
         <span className="st-sub__title">{t("calendars")}</span>
         {calendars.map((id) => <label className="st-sub__row" key={id}><span>{name(id)}</span><Switch checked={shown(id)} label={name(id)} onChange={(on) => toggleCalendar(id, on)} /></label>)}
       </div>}
     </div>}
     {lists.length > 0 && <div className="st-group">
       <Row label={t("showTodo")}><Switch checked={agenda.show_todo} label={t("showTodo")} onChange={(show_todo) => set({ show_todo })} /></Row>
-      {agenda.show_todo && <div className="st-sub">
+      {(agenda.show_todo || agenda.today_card) && <div className="st-sub">
         <div className="st-sub__row"><span>{t("todoList")}</span><HDSelect ariaLabel={t("todoList")} onChange={(todo_entity) => set({ todo_entity })} options={lists.map((id) => ({ value: id, label: name(id) }))} value={lists.includes(agenda.todo_entity) ? agenda.todo_entity : lists[0]} /></div>
         <label className="st-sub__row"><span>{t("todoNoDate")}</span><Switch checked={agenda.todo_no_date} label={t("todoNoDate")} onChange={(todo_no_date) => set({ todo_no_date })} /></label>
       </div>}

@@ -6,6 +6,7 @@ import { EntityModal } from "../components/EntityModal";
 import { EntityPicker } from "../components/EntityPicker";
 import { HDIcon } from "../components/HDIcon";
 import { HomeStatus } from "../components/HomeStatus";
+import { todayCardAvailable } from "../components/Agenda";
 import { HomeWidget, WIDGET_LABELS, availableWidgets } from "../components/HomeWidget";
 import { RoomCard } from "../components/RoomCard";
 import { SceneStrip } from "../components/SceneStrip";
@@ -16,7 +17,7 @@ import { usePlan } from "../plan";
 
 export function HomeScreen(props: ScreenProps & { onOpenRoom: (roomId: string) => void }) {
   const { config, data, editing, hass, language, t } = props;
-  const empty = data.rooms.length === 0 && config.visibility.visible_home_entities.length === 0 && availableWidgets(data).length === 0;
+  const empty = data.rooms.length === 0 && config.visibility.visible_home_entities.length === 0 && availableWidgets(data, todayCardAvailable(config, hass)).length === 0;
 
   return (
     <main className={`screen home-screen ${editing ? "screen--editing" : ""}`}>
@@ -41,7 +42,7 @@ export function HomeGrid(props: ScreenProps & { className: string; onOpenRoom: (
   const { byId, roomName } = useMemo(() => entityIndex(allRooms), [allRooms]);
   const rooms = new Map(data.rooms.map((room) => [room.id, room]));
   const homeEntities = config.visibility.visible_home_entities.filter((id) => byId.has(id));
-  const keys = [...data.rooms.map((room) => roomKey(room.id)), ...availableWidgets(data), ...homeEntities.map(entityKey)];
+  const keys = [...data.rooms.map((room) => roomKey(room.id)), ...availableWidgets(data, todayCardAvailable(config, hass)), ...homeEntities.map(entityKey)];
   const { visible, hidden } = arrange(keys, layout);
 
   const label = (key: string): string => {
@@ -55,7 +56,7 @@ export function HomeGrid(props: ScreenProps & { className: string; onOpenRoom: (
 
   const items: GridItem[] = visible.map((key, index) => {
     if (key.startsWith("widget:")) {
-      return { key, label: label(key), node: <HomeWidget data={data} hass={hass} kind={key as WidgetKey} language={language} onOpen={setModalEntity} t={t} /> };
+      return { key, label: label(key), node: <HomeWidget config={config} data={data} hass={hass} kind={key as WidgetKey} language={language} onOpen={setModalEntity} t={t} /> };
     }
     if (key.startsWith("entity:")) {
       const entity = byId.get(keyId(key)) as DiscoveredEntity;

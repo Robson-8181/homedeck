@@ -11,7 +11,7 @@ export const pageScreen = (pageId: string) => `page:${pageId}`;
 
 export const roomKey = (roomId: string) => `room:${roomId}`;
 export const entityKey = (entityId: string) => `entity:${entityId}`;
-export const WIDGET_KEYS = ["widget:security", "widget:climate", "widget:media"] as const;
+export const WIDGET_KEYS = ["widget:security", "widget:climate", "widget:media", "widget:today"] as const;
 export type WidgetKey = (typeof WIDGET_KEYS)[number];
 
 export const SECTION_PREFIX = "section:";
