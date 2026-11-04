@@ -10,7 +10,12 @@ Home Assistant and report problems. This license explains what you may and may n
 
    You may download, install and use the Software on Home Assistant installations that you
    own or administer, for personal or household use, free of charge, within the limits of
-   the free plan. You may read the source code and build it for your own installations.
+   the free plan. You may read the source code, change it and build it for your own
+   installations.
+
+   You may fork this repository on GitHub, as GitHub's Terms of Service allow for every
+   public repository, and keep your changes in that fork, for example to experiment, to fix
+   something for your own home or to propose changes back through a pull request.
 
 2. HomeDeck Pro
 
@@ -22,24 +27,26 @@ Home Assistant and report problems. This license explains what you may and may n
 
    You may not, without prior written permission from the copyright holder:
 
-   a. copy, publish, distribute, sublicense, rent, sell or otherwise make the Software, or
-      any modified version or substantial part of it, available to others;
-   b. publish forks, mirrors or derived dashboards based on the Software;
+   a. distribute, sublicense, rent or sell the Software, or any modified version or
+      substantial part of it, or offer it for other people to install, for example through
+      HACS, an add-on, a package or a download. A fork on GitHub that others can view, as
+      allowed in section 1, is not distribution in itself;
+   b. publish a modified version, or a dashboard derived from the Software, as a separate
+      product or under another name;
    c. remove, disable, bypass or work around the license check, the free-plan limits or
-      any other mechanism that controls access to the Pro features, or help others do so;
+      any other mechanism that controls access to the Pro features, or help others do so,
+      including by publishing such changes in a fork;
    d. generate, share or sell license keys, or use a license key on more installations than
       it covers;
-   e. remove or alter copyright notices, this license or the HomeDeck name and logo.
-
-   Forking this repository on GitHub solely to propose changes back through a pull request
-   is allowed.
+   e. remove or alter copyright notices or this license, or use the HomeDeck name and logo
+      for anything other than referring to the Software.
 
 4. Contributions
 
-   By submitting a contribution (for example a pull request, patch or translation), you
-   grant the copyright holder a perpetual, worldwide, royalty-free, irrevocable license to
-   use, modify, sublicense and distribute your contribution as part of the Software, under
-   this license or any other terms.
+   You keep the copyright in your contributions (for example a pull request, patch or
+   translation). By submitting one, you grant the copyright holder a perpetual, worldwide,
+   royalty-free license to use, modify and distribute it as part of the Software, including
+   in HomeDeck Pro. You confirm that you have the right to grant this license.
 
 5. Third-party components
 

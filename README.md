@@ -96,8 +96,9 @@ committed. The **Validate** workflow fails if it doesn't match the source.
 Questions, moving to a new home or refunds: [suporte@homedeck.pro](mailto:suporte@homedeck.pro).
 Bugs: [issues](https://github.com/rodrigo-wa/homedeck/issues).
 
-HomeDeck is source-available under the [HomeDeck License](LICENSE): free to install and use
-at home, not to copy, redistribute or modify to unlock Pro. Changes: [CHANGELOG.md](CHANGELOG.md).
+HomeDeck is source-available under the [HomeDeck License](LICENSE): free to install, use,
+fork and change for your own home, not to redistribute, sell or modify to unlock Pro.
+Changes: [CHANGELOG.md](CHANGELOG.md).
 
 HomeDeck is an independent project, not affiliated with Home Assistant, Nabu Casa or the
 Open Home Foundation.
