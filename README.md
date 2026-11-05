@@ -64,7 +64,7 @@ on macOS). Your rooms, backgrounds and preferences are kept.
   energy cards** on Home (consumption, solar, grid and battery).
 - **Spotify player**, screensaver, scene strip, and an option to hide the Home Assistant
   sidebar on a wall tablet.
-- **English, Portuguese, Spanish and German**, following Home Assistant's language.
+- **English, Portuguese, Spanish, German and Polish**, following Home Assistant's language.
 
 ## Plans
 

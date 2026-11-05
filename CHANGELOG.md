@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.16.1
+
+- Polish: the whole dashboard and the integration setup in Home Assistant. Like the other languages, it follows the user's language in Home Assistant.
+- Settings → Navigation: when Scenes, Media or Security is on but its tab doesn't show because the panel's rooms have nothing of that kind (for example, scenes without an area in Home Assistant), a note explains why.
+
 ## 0.16.0
 
 Everything is optional: if you don't turn anything on, the panel looks as before.

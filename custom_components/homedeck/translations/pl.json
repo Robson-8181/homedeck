@@ -1,0 +1,15 @@
+{
+  "title": "HomeDeck",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Skonfiguruj HomeDeck",
+        "description": "Dodaje lokalny panel HomeDeck do paska bocznego Home Assistant."
+      }
+    },
+    "abort": {
+      "already_configured": "HomeDeck jest już skonfigurowany.",
+      "single_instance_allowed": "HomeDeck jest już skonfigurowany."
+    }
+  }
+}

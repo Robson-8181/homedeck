@@ -16,7 +16,8 @@ import { EntityPicker } from "../components/EntityPicker";
 import { FeedbackSheet } from "../components/FeedbackSheet";
 import { LayoutPicker } from "../components/LayoutPicker";
 import { OPEN_METEO } from "../weather";
-import { DEFAULT_ACCENT, DEFAULT_CARDS, DEFAULT_HIGHLIGHT, FREE_BACKGROUNDS, FREE_VIEW_MODES, freeDevices, freeRoomIds, freeUsage, isControllable, SUPPORT_EMAIL, usePlan } from "../plan";
+import { DEFAULT_ACCENT, DEFAULT_CARDS, DEFAULT_HIGHLIGHT, FREE_BACKGROUNDS, FREE_VIEW_MODES, freeDevices, freeRoomIds, freeUsage, isControllable, panelRoomIds, SUPPORT_EMAIL, usePlan } from "../plan";
+import { availableSections } from "../security";
 
 type Section = "layout" | "appearance" | "home" | "rooms" | "navigation" | "plan" | "system";
 
@@ -255,13 +256,18 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
           })}</div>
         </section>}
 
-        {section === "navigation" && <>
+        {section === "navigation" && (() => {
+          // A tab only shows when the panel's rooms have something for it: say so under a switch that is on.
+          const panelIds = new Set(panelRoomIds(draft, rooms, plan.pro));
+          const found = availableSections(rooms.filter((room) => panelIds.has(room.id)).flatMap((room) => room.entities));
+          const missing = (on: boolean, has: boolean, key: TranslationKey) => (on && !has ? t(key) : undefined);
+          return <>
           <section className="st-panel">
             <h2>{t("builtInNavigation")}</h2><p>{t("navigationDescription")}</p>
             <Row label={t("roomsPage")}><Switch checked={draft.navigation.rooms} label={t("roomsPage")} onChange={(rooms) => update({ navigation: { ...draft.navigation, rooms } })} /></Row>
-            <Row label={t("scenes")}><Switch checked={draft.navigation.scenes} label={t("scenes")} onChange={(scenes) => update({ navigation: { ...draft.navigation, scenes } })} /></Row>
-            <Row label={t("media")}><Switch checked={draft.navigation.media} label={t("media")} onChange={(media) => update({ navigation: { ...draft.navigation, media } })} /></Row>
-            <Row label={t("security")}><Switch checked={draft.navigation.security} label={t("security")} onChange={(security) => update({ navigation: { ...draft.navigation, security } })} /></Row>
+            <Row description={missing(draft.navigation.scenes, found.hasScenes, "navNoScenes")} label={t("scenes")}><Switch checked={draft.navigation.scenes} label={t("scenes")} onChange={(scenes) => update({ navigation: { ...draft.navigation, scenes } })} /></Row>
+            <Row description={missing(draft.navigation.media, found.hasMedia, "navNoMedia")} label={t("media")}><Switch checked={draft.navigation.media} label={t("media")} onChange={(media) => update({ navigation: { ...draft.navigation, media } })} /></Row>
+            <Row description={missing(draft.navigation.security, found.hasSecurity, "navNoSecurity")} label={t("security")}><Switch checked={draft.navigation.security} label={t("security")} onChange={(security) => update({ navigation: { ...draft.navigation, security } })} /></Row>
           </section>
           <section className="st-panel">
             <h2>{t("yourPages")}</h2><p>{t("pagesHint")}</p>
@@ -279,7 +285,8 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
               <button className="hd-pill" onClick={() => addPage("custom")} type="button"><HDIcon name="plus" size={16} />{t("newPage")}</button>
             </div></>}
           </section>
-        </>}
+        </>;
+        })()}
 
         {section === "plan" && <section className="st-panel st-plan">
           {plan.pro ? <>
