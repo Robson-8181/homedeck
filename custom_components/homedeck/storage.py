@@ -299,7 +299,7 @@ def normalize_config(value: Any) -> HomeDeckConfig:
             number = cards.get(key)
             if isinstance(number, (int, float)) and not isinstance(number, bool):
                 config["cards"][key] = max(0, min(high, round(number)))
-        for key in ("frame", "animations"):
+        for key in ("frame", "animations", "sparklines"):
             if isinstance(cards.get(key), bool):
                 config["cards"][key] = cards[key]
 
@@ -315,6 +315,23 @@ def normalize_config(value: Any) -> HomeDeckConfig:
             entity_id = energy.get(key)
             if isinstance(entity_id, str) and (entity_id == "" or (entity_id.startswith("sensor.") and len(entity_id) <= _MAX_KEY_LENGTH)):
                 config["energy"][key] = entity_id
+
+    if isinstance(value.get("live_cameras"), bool):
+        config["live_cameras"] = value["live_cameras"]
+
+    doorbell = value.get("doorbell")
+    if isinstance(doorbell, dict):
+        if isinstance(doorbell.get("enabled"), bool):
+            config["doorbell"]["enabled"] = doorbell["enabled"]
+        trigger = doorbell.get("trigger")
+        if isinstance(trigger, str) and (trigger == "" or (trigger.split(".")[0] in ("event", "binary_sensor", "input_boolean") and len(trigger) <= _MAX_KEY_LENGTH)):
+            config["doorbell"]["trigger"] = trigger
+        camera = doorbell.get("camera")
+        if isinstance(camera, str) and (camera == "" or (camera.startswith("camera.") and len(camera) <= _MAX_KEY_LENGTH)):
+            config["doorbell"]["camera"] = camera
+        seconds = doorbell.get("seconds")
+        if isinstance(seconds, int) and not isinstance(seconds, bool) and seconds in (30, 60, 120, 300):
+            config["doorbell"]["seconds"] = seconds
 
     return config
 

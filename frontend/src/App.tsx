@@ -11,6 +11,8 @@ import { FocusLayout } from "./screens/layouts/FocusLayout";
 import { ListLayout } from "./screens/layouts/ListLayout";
 import { SidebarLayout, type NavLink } from "./screens/layouts/SidebarLayout";
 import { Screensaver } from "./components/Screensaver";
+import { DoorbellPopup, useDoorbell } from "./components/Doorbell";
+import { editingLocked, useDevicePref } from "./devicePrefs";
 import { createTranslator } from "./i18n";
 import { migrateLayouts, withLayout } from "./layout";
 import { effectiveConfig, freeDevices, isControllable, overFreeLimits, panelRoomIds, PlanContext, restrictRooms, type PlanState, type UpsellReason } from "./plan";
@@ -175,6 +177,14 @@ export function App({ hass, version }: { hass: HomeAssistant; version?: string }
   }, [saver?.enabled, saver?.delay, editing, settingsOpen]);
   const dismissSaver = useCallback(() => { lastActivity.current = Date.now(); setSaverOn(false); }, []);
 
+  // Doorbell (Pro): a ring wakes the panel and shows the camera above everything.
+  const [ringing, setRinging] = useState(false);
+  // A wall tablet can lock editing: no Edit button, and Edit mode closes if it was open.
+  const locked = useDevicePref(editingLocked);
+  useEffect(() => { if (locked) setEditing(false); }, [locked]);
+  useDoorbell(hass, view?.doorbell, useCallback(() => { dismissSaver(); setRinging(true); }, [dismissSaver]));
+  const stopRinging = useCallback(() => { lastActivity.current = Date.now(); setRinging(false); }, []);
+
   useEffect(() => {
     window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "auto" }));
   }, [activePage, settingsOpen, selectedRoomId]);
@@ -278,7 +288,7 @@ export function App({ hass, version }: { hass: HomeAssistant; version?: string }
     onConfig: (update) => void updateConfig(update),
     onLayout: (screen: string, layout: ScreenLayout) => void updateConfig((current) => withLayout(current, screen, pro ? layout : { ...layout, wide: current.layouts[screen]?.wide ?? [], tall: current.layouts[screen]?.tall ?? [] })),
     onSettings: () => { setEditing(false); setSettingsOpen(true); },
-    onToggleEdit: () => setEditing((current) => !current),
+    onToggleEdit: () => { if (!locked) setEditing((current) => !current); },
     t,
   };
 
@@ -313,10 +323,11 @@ export function App({ hass, version }: { hass: HomeAssistant; version?: string }
     <DynamicShell config={view} data={visibleData} hass={hass} mode={mode}>
       {screen}
       {mode !== "sidebar" && <NavigationDock active={active} config={view} editing={editing} hasMedia={hasMedia} hasScenes={hasScenes} hasSecurity={hasSecurity} onNavigate={navigate} onOrder={(order) => void updateConfig((current) => ({ ...current, navigation: { ...current.navigation, order } }))} t={t} />}
-      <button aria-label={editing ? t("doneEditing") : t("editScreen")} aria-pressed={editing} className={editing ? "edit-fab edit-fab--on" : "edit-fab"} onClick={() => setEditing((current) => !current)} type="button">
+      {!locked && <button aria-label={editing ? t("doneEditing") : t("editScreen")} aria-pressed={editing} className={editing ? "edit-fab edit-fab--on" : "edit-fab"} onClick={() => setEditing((current) => !current)} type="button">
         <HDIcon name={editing ? "check" : "pencil"} size={20} />
-      </button>
+      </button>}
       {saverOn && <Screensaver config={view} hass={hass} language={language} onDismiss={dismissSaver} t={t} />}
+      {ringing && <DoorbellPopup camera={view.doorbell.camera} hass={hass} onClose={stopRinging} seconds={view.doorbell.seconds} t={t} />}
     </DynamicShell>,
   );
 }

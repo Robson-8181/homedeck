@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { spotifyPlayPause } from "../devicePrefs";
 import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import type { TranslationKey } from "../i18n";
 import { formatTime, mediaSeconds, usePlaybackClock } from "../spotify";
@@ -73,7 +74,7 @@ export function SpotifyPlayer({ entity, hass, onClose, t }: SpotifyPlayerProps) 
         </div>
         <div className="hd-player__main">
           <button aria-label={t("previous")} onClick={() => call("media_previous_track")} type="button"><HDIcon name="prev" size={26} /></button>
-          <button aria-label={playing ? t("pause") : t("play")} className="hd-player__pp" onClick={() => call("media_play_pause")} type="button"><HDIcon name={playing ? "pause" : "play"} size={30} /></button>
+          <button aria-label={playing ? t("pause") : t("play")} className="hd-player__pp" onClick={() => spotifyPlayPause(hass, entity.entity_id, state)} type="button"><HDIcon name={playing ? "pause" : "play"} size={30} /></button>
           <button aria-label={t("next")} onClick={() => call("media_next_track")} type="button"><HDIcon name="next" size={26} /></button>
         </div>
         <div className="hd-player__side hd-player__side--end">

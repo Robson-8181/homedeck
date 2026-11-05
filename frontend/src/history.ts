@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import type { HomeAssistant } from "./types/home-assistant";
 
 // A sensor's recent values from Home Assistant's recorder, for the charts in the details and the
@@ -57,6 +57,10 @@ export function useHistory(hass: HomeAssistant, entityId: string | undefined, ho
   }, [entityId, hours, hass.connection]);
   return points;
 }
+
+/** Whether double and large sensor cards draw their last 24 hours (Settings → Card style). */
+export const SparklinesContext = createContext(false);
+export const useSparklines = () => useContext(SparklinesContext);
 
 export function isNumericState(state?: { state: string }): boolean {
   return Boolean(state && Number.isFinite(Number.parseFloat(state.state)) && !/^\d{4}-\d{2}-\d{2}/.test(state.state));

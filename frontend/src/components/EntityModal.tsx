@@ -12,7 +12,7 @@ import { usePlan } from "../plan";
 import { isNumericState } from "../history";
 import { HistoryChart } from "./HistoryChart";
 import { MAX_NAME, useCustomize } from "../personalize";
-import { ALARM_ARMED, alarmCall, alarmCodeFormat, alarmModes, alarmStatus, cameraSnapshot, cameraStream, loadCameraPlayer, mediaArt, mediaSources, plantReadings, plantStatus, RUNNABLE, SELECTS, runEntity, selectOption, selectOptions, vacuumActions, vacuumStatus } from "../devices";
+import { ALARM_ARMED, alarmCall, alarmCodeFormat, alarmModes, alarmStatus, cameraIsWebRtcOnly, cameraSnapshot, cameraStream, loadCameraPlayer, mediaArt, mediaSources, plantReadings, plantStatus, RUNNABLE, SELECTS, runEntity, selectOption, selectOptions, vacuumActions, vacuumStatus } from "../devices";
 
 interface EntityModalProps {
   entity: DiscoveredEntity;
@@ -232,7 +232,7 @@ function EntityName({ entity: opened, t }: { entity: DiscoveredEntity; t: (key: 
   const [draft, setDraft] = useState<string | null>(null);
   if (!customize) return <h2 id="hd-detail-title">{entity.name}</h2>;
   if (draft == null) {
-    return <h2 className="hd-detail__name" id="hd-detail-title">{entity.name}<button aria-label={`${t("renameDevice")}: ${entity.name}`} className="hd-detail__rename" onClick={() => setDraft(entity.name)} type="button"><HDIcon name="pencil" size={14} /></button></h2>;
+    return <h2 className="hd-detail__name" id="hd-detail-title"><span>{entity.name}</span><button aria-label={`${t("renameDevice")}: ${entity.name}`} className="hd-detail__rename" onClick={() => setDraft(entity.name)} type="button"><HDIcon name="pencil" size={14} /></button></h2>;
   }
   const save = () => { customize.rename(entity.entity_id, draft, original); setDraft(null); };
   return <div className="hd-detail__naming">
@@ -242,9 +242,8 @@ function EntityName({ entity: opened, t }: { entity: DiscoveredEntity; t: (key: 
   </div>;
 }
 
-/** The camera's live MJPEG stream; if the camera can't stream, its still, refreshed every few seconds. */
 /** Home Assistant's camera player, given the same hass and state the panel has. */
-function HaCameraPlayer({ hass, state }: { hass: HomeAssistant; state: HassEntity }) {
+export function HaCameraPlayer({ fit = "contain", hass, state }: { fit?: "contain" | "cover"; hass: HomeAssistant; state: HassEntity }) {
   const element = useRef<HTMLElement & Record<string, unknown>>(null);
   useEffect(() => {
     const player = element.current;
@@ -257,16 +256,17 @@ function HaCameraPlayer({ hass, state }: { hass: HomeAssistant; state: HassEntit
     if (!player) return;
     player.muted = true;
     player.controls = false;
-    player.fitMode = "contain";
-  }, []);
+    player.fitMode = fit;
+  }, [fit]);
   return <ha-camera-stream class="hd-camera__player" ref={element} />;
 }
 
-function CameraLive({ entity, hass, t }: { entity: DiscoveredEntity; hass: HomeAssistant; t: (key: TranslationKey) => string }) {
+/** The camera's live view: MJPEG, else Home Assistant's player (WebRTC / HLS), else stills every 2 seconds. */
+export function CameraLive({ entity, hass, t }: { entity: DiscoveredEntity; hass: HomeAssistant; t: (key: TranslationKey) => string }) {
   const state = hass.states[entity.entity_id];
-  // MJPEG first (what every camera that works today keeps using); when it fails, Home Assistant's
-  // own player (WebRTC / HLS); and stills every 2 seconds when neither works.
-  const [mode, setMode] = useState<"mjpeg" | "player" | "still">("mjpeg");
+  // MJPEG first (what every camera that works today keeps using); WebRTC-only cameras, or MJPEG that
+  // fails, use Home Assistant's own player (WebRTC / HLS); stills every 2 seconds when neither works.
+  const [mode, setMode] = useState<"probe" | "mjpeg" | "player" | "still">("probe");
   const [tick, setTick] = useState(() => Date.now());
   useEffect(() => {
     if (mode !== "still") return;
@@ -275,6 +275,12 @@ function CameraLive({ entity, hass, t }: { entity: DiscoveredEntity; hass: HomeA
   }, [mode]);
   const stream = cameraStream(state);
   const fallBack = () => { void loadCameraPlayer().then((ready) => setMode(ready ? "player" : "still")); };
+  useEffect(() => {
+    if (mode !== "probe") return;
+    let cancelled = false;
+    void cameraIsWebRtcOnly(hass, entity.entity_id).then((only) => { if (cancelled) return; if (only) fallBack(); else setMode("mjpeg"); });
+    return () => { cancelled = true; };
+  }, [entity.entity_id, mode]);
   useEffect(() => { if (!stream && mode === "mjpeg") fallBack(); }, [stream, mode]);
   const source = mode === "still" ? cameraSnapshot(state, tick) : mode === "mjpeg" ? stream : null;
   const frame = useRef<HTMLDivElement>(null);
@@ -290,7 +296,7 @@ function CameraLive({ entity, hass, t }: { entity: DiscoveredEntity; hass: HomeA
   const live = mode === "player" && Boolean(state);
   const picture = live ? <HaCameraPlayer hass={hass} state={state} />
     : source ? <img alt={entity.name} onError={() => (mode === "mjpeg" ? fallBack() : undefined)} src={source} />
-      : mode === "mjpeg" ? <span className="mini-spinner" /> : <p>{t("cameraOffline")}</p>;
+      : mode === "mjpeg" || mode === "probe" ? <span className="mini-spinner" /> : <p>{t("cameraOffline")}</p>;
   return <div className="hd-camera" ref={frame}>
     {picture}
     {(source || live) && <button aria-label={t("fullScreen")} className="hd-camera__full" onClick={() => (document.fullscreenElement ? void document.exitFullscreen() : enter())} type="button"><HDIcon name="expand" size={18} /></button>}

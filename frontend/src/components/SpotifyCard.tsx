@@ -1,4 +1,5 @@
 import type { TranslationKey } from "../i18n";
+import { spotifyPlayPause } from "../devicePrefs";
 import { formatTime, mediaSeconds, usePlaybackClock } from "../spotify";
 import type { DiscoveredEntity } from "../types/discovery";
 import type { HomeAssistant } from "../types/home-assistant";
@@ -41,7 +42,7 @@ export function SpotifyCard({ entity, hass, onOpen, t }: SpotifyCardProps) {
       <span className="spotify-card__controls">
         {wide && typeof attrs.shuffle === "boolean" && <button aria-label={t("shuffle")} aria-pressed={attrs.shuffle} className={attrs.shuffle ? "spotify-card__toggle spotify-card__toggle--on" : "spotify-card__toggle"} onClick={() => call("shuffle_set", { shuffle: !attrs.shuffle })} type="button"><HDIcon name="shuffle" size={16} /></button>}
         <button aria-label={t("previous")} onClick={() => call("media_previous_track")} type="button"><HDIcon name="prev" size={18} /></button>
-        <button aria-label={playing ? t("pause") : t("play")} className="spotify-card__pp" onClick={() => call("media_play_pause")} type="button"><HDIcon name={playing ? "pause" : "play"} size={18} /></button>
+        <button aria-label={playing ? t("pause") : t("play")} className="spotify-card__pp" onClick={() => spotifyPlayPause(hass, entity.entity_id, state)} type="button"><HDIcon name={playing ? "pause" : "play"} size={18} /></button>
         <button aria-label={t("next")} onClick={() => call("media_next_track")} type="button"><HDIcon name="next" size={18} /></button>
         {wide && repeat && <button aria-label={t("repeat")} aria-pressed={repeat !== "off"} className={repeat !== "off" ? "spotify-card__toggle spotify-card__toggle--on" : "spotify-card__toggle"} onClick={() => call("repeat_set", { repeat: REPEAT_NEXT[repeat] ?? "off" })} type="button"><HDIcon name={repeat === "one" ? "repeat1" : "repeat"} size={16} /></button>}
       </span>

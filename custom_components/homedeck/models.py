@@ -115,6 +115,15 @@ class HomeDeckScreensaverConfig(TypedDict):
     show_todo: bool
 
 
+class HomeDeckDoorbellConfig(TypedDict):
+    """Pro: the camera pops up when the doorbell (an event or a sensor turning on) rings."""
+
+    enabled: bool
+    trigger: str
+    camera: str
+    seconds: int
+
+
 class HomeDeckAgendaConfig(TypedDict):
     """Calendar and to-do buttons beside the clock on Home."""
 
@@ -133,6 +142,7 @@ class HomeDeckCardStyle(TypedDict):
     frame: bool
     glass: int
     animations: bool
+    sparklines: bool
 
 
 class HomeDeckWidgets(TypedDict):
@@ -176,6 +186,8 @@ class HomeDeckConfig(TypedDict):
     cards: HomeDeckCardStyle
     widgets: HomeDeckWidgets
     energy: dict[str, str]
+    doorbell: HomeDeckDoorbellConfig
+    live_cameras: bool
 
 
 ENERGY_FIELDS = ("consumption", "grid_import", "grid_export", "solar", "battery", "solar_today")
@@ -271,8 +283,11 @@ def default_config() -> HomeDeckConfig:
             "frame": True,
             "glass": 50,
             "animations": False,
+            "sparklines": False,
         },
         "widgets": {"weather": False, "sun": False, "energy": False},
         "energy": {key: "" for key in ENERGY_FIELDS},
+        "doorbell": {"enabled": False, "trigger": "", "camera": "", "seconds": 60},
+        "live_cameras": True,
     }
 

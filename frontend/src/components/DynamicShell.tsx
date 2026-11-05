@@ -2,6 +2,8 @@ import type { CSSProperties, ReactNode } from "react";
 import type { HomeDeckCardStyle, HomeDeckConfig } from "../types/config";
 import type { DiscoveryResponse } from "../types/discovery";
 import type { HomeAssistant } from "../types/home-assistant";
+import { SparklinesContext } from "../history";
+import { LiveCamerasContext } from "./CameraCard";
 
 type Palette = [string, string, string, string];
 type Stop = [number, Palette];
@@ -138,7 +140,7 @@ export function DynamicShell({ children, config, data, hass, mode = "grid" }: { 
   return (
     <div className={`app-shell theme-${config.theme} view-${mode} ${config.background.animated ? "ambient-animated" : "ambient-still"} ${config.cards?.animations ? "hd-anim" : ""}`} data-activity={level.toFixed(2)} style={style}>
       <div aria-hidden="true" className="ambient-background"><i /><i /><i /></div>
-      {children}
+      <SparklinesContext.Provider value={Boolean(config.cards?.sparklines)}><LiveCamerasContext.Provider value={config.live_cameras !== false}>{children}</LiveCamerasContext.Provider></SparklinesContext.Provider>
     </div>
   );
 }

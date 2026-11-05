@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { HDIcon, RoomIcon, type IconName } from "../components/HDIcon";
 import { HDSegmented, HDSelect } from "../components/HDSelect";
@@ -6,9 +6,11 @@ import type { TranslationKey } from "../i18n";
 import type { HomeDeckBackgroundPreset, HomeDeckCardStyle, HomeDeckConfig, HomeDeckPageType } from "../types/config";
 import { withRoomOptions } from "../personalize";
 import { energyCandidates } from "../components/ExtraWidgets";
+import { cameraIds, DoorbellPopup, doorbellCandidates, guessDoorbellCamera } from "../components/Doorbell";
 import type { Room } from "../types/discovery";
 import type { HomeAssistant } from "../types/home-assistant";
 import { hideSidebarPreferred, setHideSidebarPreferred } from "../sidebar";
+import { editingLocked, setEditingLocked, setSpotifySpeaker, spotifySpeaker, useDevicePref } from "../devicePrefs";
 import { deactivateLicense, getLicense, openPortal, type LicenseStatus } from "../api/license";
 import { LICENSE_ERRORS } from "../components/ProSheet";
 import { getDefaultPanel, setSystemDefault, setUserDefault, type DefaultPanelState } from "../api/defaultPanel";
@@ -19,14 +21,19 @@ import { OPEN_METEO } from "../weather";
 import { DEFAULT_ACCENT, DEFAULT_CARDS, DEFAULT_HIGHLIGHT, FREE_BACKGROUNDS, FREE_VIEW_MODES, freeDevices, freeRoomIds, freeUsage, isControllable, panelRoomIds, SUPPORT_EMAIL, usePlan } from "../plan";
 import { availableSections } from "../security";
 
-type Section = "layout" | "appearance" | "home" | "rooms" | "navigation" | "plan" | "system";
+type Section = "layout" | "appearance" | "home" | "weather" | "agenda" | "cameras" | "screensaver" | "rooms" | "navigation" | "device" | "plan" | "system";
 
 const SECTIONS: Array<[Section, IconName, TranslationKey]> = [
   ["layout", "layout", "sectionLayout"],
-  ["appearance", "sun", "sectionAppearance"],
+  ["appearance", "palette", "sectionAppearance"],
   ["home", "home", "sectionHome"],
+  ["weather", "cloud", "sectionWeather"],
+  ["agenda", "calendar", "sectionAgenda"],
+  ["cameras", "camera", "camerasTitle"],
+  ["screensaver", "clock", "screensaver"],
   ["rooms", "grid", "sectionRooms"],
   ["navigation", "chevron", "sectionNavigation"],
+  ["device", "tablet", "sectionDevice"],
   ["plan", "star", "sectionPlan"],
   ["system", "settings", "sectionSystem"],
 ];
@@ -84,6 +91,13 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
   const locked = (condition: boolean) => !plan.pro && condition;
   const Lock = () => <span className="st-lock" aria-hidden="true"><HDIcon name="lock" size={11} /></span>;
   const [section, setSection] = useState<Section>("layout");
+  // On a phone the menu is a sideways strip: keep the chosen section in view.
+  const sectionList = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const list = sectionList.current;
+    const active = list?.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (list && active && list.scrollWidth > list.clientWidth) list.scrollTo({ left: active.offsetLeft - (list.clientWidth - active.offsetWidth) / 2, behavior: "smooth" });
+  }, [section]);
   // An empty room list means "every room"; spell it out so the list can be edited, without counting as a change.
   const [initial] = useState<HomeDeckConfig>(() => ({
     ...config,
@@ -170,9 +184,9 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
     </header>
 
     <div className="room-workspace">
-      <aside className="room-selector" aria-label={t("settings")}>
-        <div className="room-selector__list" role="tablist">
-          {SECTIONS.map(([id, icon, label]) => <button aria-selected={section === id} key={id} onClick={() => setSection(id)} role="tab" type="button"><span className="room-selector__icon"><HDIcon name={icon} size={18} /></span><span>{t(label)}</span></button>)}
+      <aside className="room-selector st-nav" aria-label={t("settings")}>
+        <div className="room-selector__list" ref={sectionList} role="tablist">
+          {SECTIONS.filter(([id]) => id !== "cameras" || Object.keys(hass.states).some((entity) => entity.startsWith("camera."))).map(([id, icon, label]) => <button aria-selected={section === id} key={id} onClick={() => setSection(id)} role="tab" type="button"><span className="room-selector__icon"><HDIcon name={icon} size={18} /></span><span>{t(label)}</span></button>)}
         </div>
       </aside>
 
@@ -203,14 +217,16 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
             <div className="st-backgrounds">{BACKGROUNDS.map(([preset, label, preview]) => <button aria-pressed={draft.background.preset === preset} key={preset} onClick={() => (locked(!FREE_BACKGROUNDS.includes(preset)) ? plan.upsell("feature") : update({ background: { ...draft.background, preset } }))} type="button"><i style={{ background: preview }}>{locked(!FREE_BACKGROUNDS.includes(preset)) && <Lock />}</i><b>{t(label)}</b><small>{locked(!FREE_BACKGROUNDS.includes(preset)) ? "Pro" : preset.startsWith("adaptive_") ? t("automatic") : t("fixedBackground")}</small></button>)}</div>
             <Row label={t("animateBackground")}><Switch checked={draft.background.animated} label={t("animateBackground")} onChange={(animated) => update({ background: { ...draft.background, animated } })} /></Row>
           </section>
-          <section className="st-panel">
+
+        </>}
+
+        {section === "screensaver" && <section className="st-panel">
             <h2>{t("screensaver")}</h2><p>{t("screensaverDescription")}</p>
             <Row label={t("screensaverEnable")}>{plan.pro ? <Switch checked={draft.screensaver.enabled} label={t("screensaverEnable")} onChange={(enabled) => update({ screensaver: { ...draft.screensaver, enabled } })} /> : <button className="hd-pill" onClick={() => plan.upsell("feature")} type="button"><HDIcon name="lock" size={14} />Pro</button>}</Row>
             <Row label={t("screensaverDelay")}><HDSelect ariaLabel={t("screensaverDelay")} disabled={!draft.screensaver.enabled} onChange={(value) => update({ screensaver: { ...draft.screensaver, delay: Number(value) } })} options={SAVER_DELAYS.map((seconds) => ({ value: String(seconds), label: seconds < 60 ? `${seconds} s` : `${seconds / 60} min` }))} value={String(draft.screensaver.delay)} /></Row>
             {plan.pro && draft.screensaver.enabled && Object.keys(hass.states).some((id) => id.startsWith("calendar.")) && <Row description={t("saverAgendaDescription")} label={t("saverEvents")}><Switch checked={Boolean(draft.screensaver.show_events)} label={t("saverEvents")} onChange={(show_events) => update({ screensaver: { ...draft.screensaver, show_events } })} /></Row>}
             {plan.pro && draft.screensaver.enabled && Object.keys(hass.states).some((id) => id.startsWith("todo.")) && <Row description={t("saverAgendaDescription")} label={t("saverTodo")}><Switch checked={Boolean(draft.screensaver.show_todo)} label={t("saverTodo")} onChange={(show_todo) => update({ screensaver: { ...draft.screensaver, show_todo } })} /></Row>}
-          </section>
-        </>}
+          </section>}
 
         {section === "home" && <>
           <section className="st-panel">
@@ -226,12 +242,23 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
             <Row label={t("turnAllOff")}><Switch checked={draft.global_actions.lights_off} label={t("turnAllOff")} onChange={(lights_off) => update({ global_actions: { ...draft.global_actions, lights_off } })} /></Row>
             <Row label={t("showScenesStrip")}><Switch checked={draft.visibility.home_cards.scenes} label={t("showScenesStrip")} onChange={(scenes) => update({ visibility: { ...draft.visibility, home_cards: { ...draft.visibility.home_cards, scenes } } })} /></Row>
           </section>
-          <section className="st-panel">
+
+          <ExtraCardsPanel draft={draft} hass={hass} onUpsell={() => plan.upsell("feature")} pro={plan.pro} t={t} update={update} />
+        </>}
+
+        {section === "weather" && <section className="st-panel">
             <h2>{t("weatherForecast")}</h2><p>{t("weatherSourceDescription")}</p>
             <Row label={t("weatherSource")}><HDSelect ariaLabel={t("weatherSource")} onChange={(entity_id) => update({ weather: { ...draft.weather, entity_id } })} options={[{ value: "auto", label: t("automatic") }, { value: OPEN_METEO, label: t("openMeteoSource") }, ...weatherEntities.map((entity) => ({ value: entity.entity_id, label: `${String(entity.attributes.friendly_name ?? entity.entity_id)}${["unknown", "unavailable"].includes(entity.state) ? ` · ${t("unavailable")}` : ""}` }))]} value={draft.weather.entity_id === OPEN_METEO || weatherEntities.some((entity) => entity.entity_id === draft.weather.entity_id) ? draft.weather.entity_id : "auto"} /></Row>
+          </section>}
+
+        {section === "agenda" && <AgendaPanel draft={draft} hass={hass} t={t} update={update} />}
+
+        {section === "cameras" && <>
+          <section className="st-panel">
+            <h2>{t("camerasTitle")}</h2>
+            <Row description={t("liveCamerasDescription")} label={t("liveCameras")}><Switch checked={draft.live_cameras !== false} label={t("liveCameras")} onChange={(live_cameras) => update({ live_cameras })} /></Row>
           </section>
-          <AgendaPanel draft={draft} hass={hass} t={t} update={update} />
-          <ExtraCardsPanel draft={draft} hass={hass} onUpsell={() => plan.upsell("feature")} pro={plan.pro} t={t} update={update} />
+          <DoorbellPanel draft={draft} hass={hass} onUpsell={() => plan.upsell("feature")} pro={plan.pro} t={t} update={update} />
         </>}
 
         {section === "rooms" && <section className="st-panel">
@@ -309,11 +336,16 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
           <Row description={t("installationIdDescription")} label={t("installationId")}><code className="st-code">{plan.license?.installation_id ?? "—"}</code></Row>
         </section>}
 
+        {section === "device" && <section className="st-panel">
+          <h2>{t("sectionDevice")}</h2><p>{t("sectionDeviceDescription")}</p>
+          <Row description={t("hideHaSidebarDescription")} label={t("hideHaSidebar")}><Switch checked={hideHaSidebar} label={t("hideHaSidebar")} onChange={(hidden) => { setHideHaSidebar(hidden); setHideSidebarPreferred(hidden); }} /></Row>
+          <DevicePrefsRows hass={hass} t={t} />
+        </section>}
+
         {section === "system" && <StartScreenPanel hass={hass} t={t} />}
 
         {section === "system" && <section className="st-panel">
           <h2>{t("sectionSystem")}</h2>
-          <Row description={t("hideHaSidebarDescription")} label={t("hideHaSidebar")}><Switch checked={hideHaSidebar} label={t("hideHaSidebar")} onChange={(hidden) => { setHideHaSidebar(hidden); setHideSidebarPreferred(hidden); }} /></Row>
           <Row description={t("reloadDevicesDescription")} label={t("reloadDevices")}><button className="hd-pill" onClick={onReload} type="button"><HDIcon name="refresh" size={16} />{t("refresh")}</button></Row>
           <Row description={t("restartSetupDescription")} label={t("restartSetup")}><button className="hd-pill" disabled={saving} onClick={() => void save({ ...draft, onboarding_complete: false })} type="button">{t("restartSetup")}</button></Row>
           <Row description={t("madeWith")} label={version ? t("version") : "HomeDeck"}>{version && <span className="st-value">{version}</span>}</Row>
@@ -348,6 +380,7 @@ function CardStylePanel({ cards, locked, onChange, onUpsell, t }: { cards: HomeD
       <Row label={t("glass")}><Range ends={[t("glassSolid"), t("glassClear")]} label={t("glass")} max={100} onChange={(glass) => onChange({ ...cards, glass })} value={cards.glass} /></Row>
       <Row description={t("frameDescription")} label={t("frame")}><Switch checked={cards.frame} label={t("frame")} onChange={(frame) => onChange({ ...cards, frame })} /></Row>
       <Row description={t("animationsDescription")} label={t("animations")}><Switch checked={Boolean(cards.animations)} label={t("animations")} onChange={(animations) => onChange({ ...cards, animations })} /></Row>
+      <Row description={t("sparklinesDescription")} label={t("sparklines")}><Switch checked={Boolean(cards.sparklines)} label={t("sparklines")} onChange={(sparklines) => onChange({ ...cards, sparklines })} /></Row>
     </fieldset>{locked && <button aria-label={t("proStyleLocked")} className="st-cards__lock" onClick={onUpsell} type="button" />}</div>
     {!locked && changed && <div className="st-actions"><button className="hd-pill" onClick={() => onChange(DEFAULT_CARDS)} type="button"><HDIcon name="refresh" size={16} />{t("restoreDefaults")}</button></div>}
   </section>;
@@ -381,6 +414,46 @@ function ExtraCardsPanel({ draft, hass, onUpsell, pro, t, update }: { draft: Hom
         {fields.map(([key, name]) => <div className="st-sub__row" key={key}><span>{t(name)}</span><HDSelect ariaLabel={t(name)} onChange={(id) => update({ energy: { ...energy, [key]: id } })} options={[{ value: "", label: t("none") }, ...[...new Set([...(energy[key] ? [energy[key]] : []), ...candidates[key].map((state) => state.entity_id)])].map((id) => ({ value: id, label: label(id) }))]} value={energy[key]} /></div>)}
       </div>}
     </div>
+  </section>;
+}
+
+/** Choices for this device only: lock editing, and the speaker Spotify starts on from here. */
+function DevicePrefsRows({ hass, t }: { hass: HomeAssistant; t: (key: TranslationKey) => string }) {
+  const locked = useDevicePref(editingLocked);
+  const speaker = useDevicePref(spotifySpeaker);
+  const spotify = Object.values(hass.states).find((state) => state.entity_id.startsWith("media_player.") && (state.entity_id.includes("spotify") || state.attributes.source === "Spotify" || String(state.attributes.friendly_name ?? "").toLowerCase().includes("spotify")));
+  const sources = Array.isArray(spotify?.attributes.source_list) ? spotify.attributes.source_list.map(String) : [];
+  return <>
+    <Row description={t("lockEditingDescription")} label={t("lockEditing")}><Switch checked={locked} label={t("lockEditing")} onChange={setEditingLocked} /></Row>
+    {spotify && <Row description={t("spotifySpeakerDescription")} label={t("spotifySpeaker")}><HDSelect ariaLabel={t("spotifySpeaker")} onChange={setSpotifySpeaker} options={[{ value: "", label: t("spotifySpeakerAny") }, ...[...new Set([...(speaker ? [speaker] : []), ...sources])].map((source) => ({ value: source, label: source }))]} value={speaker} /></Row>}
+  </>;
+}
+
+/** Pro: the camera pops up when the doorbell rings. The trigger and camera are guessed the first time. */
+function DoorbellPanel({ draft, hass, onUpsell, pro, t, update }: { draft: HomeDeckConfig; hass: HomeAssistant; onUpsell: () => void; pro: boolean; t: (key: TranslationKey) => string; update: (patch: Partial<HomeDeckConfig>) => void }) {
+  const doorbell = draft.doorbell;
+  const [testing, setTesting] = useState(false);
+  const triggers = useMemo(() => doorbellCandidates(hass).map((state) => state.entity_id), [hass.states]);
+  const cameras = useMemo(() => cameraIds(hass), [hass.states]);
+  const label = (id: string) => String(hass.states[id]?.attributes.friendly_name ?? id);
+  const set = (patch: Partial<HomeDeckConfig["doorbell"]>) => update({ doorbell: { ...doorbell, ...patch } });
+  const turnOn = (on: boolean) => {
+    if (on && !pro) { onUpsell(); return; }
+    const trigger = doorbell.trigger || triggers[0] || "";
+    set({ enabled: on, ...(on && !doorbell.trigger ? { trigger } : {}), ...(on && !doorbell.camera ? { camera: guessDoorbellCamera(hass, trigger) } : {}) });
+  };
+  const options = (ids: string[], current: string) => [{ value: "", label: t("none") }, ...[...new Set([...(current ? [current] : []), ...ids])].map((id) => ({ value: id, label: label(id) }))];
+  const seconds = [30, 60, 120, 300].map((value) => ({ value: String(value), label: value < 60 ? `${value} s` : `${value / 60} min` }));
+  return <section className="st-panel">
+    <h2>{t("doorbellTitle")}</h2><p>{t("doorbellDescription")}</p>
+    <Row label={t("doorbellEnable")}>{pro ? <Switch checked={doorbell.enabled} label={t("doorbellEnable")} onChange={turnOn} /> : <button className="hd-pill" onClick={onUpsell} type="button"><HDIcon name="lock" size={14} />Pro</button>}</Row>
+    {pro && doorbell.enabled && <div className="st-sub">
+      <div className="st-sub__row"><span>{t("doorbellTrigger")}</span><HDSelect ariaLabel={t("doorbellTrigger")} onChange={(trigger) => set({ trigger, ...(doorbell.camera ? {} : { camera: guessDoorbellCamera(hass, trigger) }) })} options={options(triggers, doorbell.trigger)} value={doorbell.trigger} /></div>
+      <div className="st-sub__row"><span>{t("doorbellCamera")}</span><HDSelect ariaLabel={t("doorbellCamera")} onChange={(camera) => set({ camera })} options={options(cameras, doorbell.camera)} value={doorbell.camera} /></div>
+      <div className="st-sub__row"><span>{t("doorbellSeconds")}</span><HDSelect ariaLabel={t("doorbellSeconds")} onChange={(value) => set({ seconds: Number(value) })} options={seconds} value={String(doorbell.seconds)} /></div>
+      <div className="st-actions st-actions--end"><button className="hd-pill" onClick={() => setTesting(true)} type="button"><HDIcon name="bell" size={16} />{t("doorbellTest")}</button></div>
+    </div>}
+    {testing && <DoorbellPopup camera={doorbell.camera} hass={hass} onClose={() => setTesting(false)} seconds={doorbell.seconds} t={t} />}
   </section>;
 }
 

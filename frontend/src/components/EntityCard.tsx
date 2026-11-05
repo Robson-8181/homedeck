@@ -3,7 +3,9 @@ import type { CSSProperties, KeyboardEvent, MouseEvent, PointerEvent } from "rea
 import { hvacLabel, type TranslationKey } from "../i18n";
 import type { DiscoveredEntity } from "../types/discovery";
 import type { HassEntity, HomeAssistant } from "../types/home-assistant";
-import { useWideTile } from "./EditableGrid";
+import { useTallTile, useWideTile } from "./EditableGrid";
+import { isNumericState, useHistory, useSparklines } from "../history";
+import { Sparkline } from "./HistoryChart";
 import { domainIcon, HDIcon } from "./HDIcon";
 import { WideControls } from "./WideControls";
 import { CameraCard } from "./CameraCard";
@@ -181,6 +183,7 @@ function DeviceCard({ entity, hass, language, onLongPress, t }: EntityCardProps)
         : <span className="device-tile__icon"><HDIcon name={domainIcon(entity.domain)} size={23} /></span>}</div>
       <div className="device-tile__copy"><strong>{entity.name}</strong>{entity.domain !== "scene" && !(SELECTS.has(entity.domain) && !wide) && <span>{status}</span>}</div>
 
+      {wide && entity.domain === "sensor" && isNumericState(state) && <SensorSpark entityId={entity.entity_id} language={language} hass={hass} unit={typeof state?.attributes.unit_of_measurement === "string" ? state.attributes.unit_of_measurement : undefined} />}
       {wide && !unavailable && state && <div className="tile-wide"><WideControls entity={entity} hass={hass} language={language} state={state} t={t} /></div>}
 
       {!wide && entity.domain === "light" && !unavailable && dimmable && (
@@ -214,4 +217,13 @@ function DeviceCard({ entity, hass, language, onLongPress, t }: EntityCardProps)
       )}
     </article>
   );
+}
+
+/** Double and large sensor cards with charts on: the last 24 hours under the value (a thin line at double size). */
+function SensorSpark({ entityId, hass, language, unit }: { entityId: string; hass: HomeAssistant; language?: string; unit?: string }) {
+  const on = useSparklines();
+  const tall = useTallTile();
+  const points = useHistory(hass, on ? entityId : undefined, 24);
+  if (!on || !points || points.length < 2) return null;
+  return <div className={tall ? "device-tile__spark device-tile__spark--tall" : "device-tile__spark"}><Sparkline compact hours={24} language={language} points={points} unit={unit} /></div>;
 }

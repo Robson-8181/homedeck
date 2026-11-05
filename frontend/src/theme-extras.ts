@@ -439,6 +439,11 @@ export const themeExtras = String.raw`
 .app-shell .camera-tile { padding: 0; border: 0; justify-content: flex-end; background: #0c0a0f; color: #fff; cursor: pointer; text-align: left; font: inherit; }
 .app-shell .camera-tile__image, .app-shell .camera-tile__empty { position: absolute; inset: 0; width: 100%; height: 100%; }
 .app-shell .camera-tile__image { object-fit: cover; }
+/* Live video in the card: the player fills it and never takes the tap (which opens the details). */
+.app-shell .camera-tile__player { display: block; overflow: hidden; pointer-events: none; }
+.app-shell .camera-tile__player ha-camera-stream { display: block; width: 100%; height: 100%; }
+.app-shell .camera-tile__badge--live i { width: 7px; height: 7px; border-radius: 50%; background: #ff4d4d; box-shadow: 0 0 0 3px rgba(255,77,77,.25); animation: hd-live 1.6s ease-in-out infinite; }
+@keyframes hd-live { 50% { opacity: .35; } }
 .app-shell .camera-tile__empty { display: grid; place-items: center; color: rgba(255,255,255,.35); background: rgba(255,255,255,.06); }
 .app-shell .camera-tile__shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.62), rgba(0,0,0,0) 55%); pointer-events: none; }
 .app-shell .camera-tile__badge { position: absolute; top: calc(var(--u)*1.4); left: calc(var(--u)*1.4); display: inline-flex; align-items: center; gap: calc(var(--u)*.6); padding: calc(var(--u)*.6) calc(var(--u)*1.2); border-radius: var(--hd-pill,99px); background: rgba(0,0,0,.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); font: 600 calc(var(--u)*1.4)/1 var(--f-body); letter-spacing: .02em; }
@@ -493,6 +498,9 @@ export const themeExtras = String.raw`
 .app-shell .room-options__select { max-width: calc(var(--u)*44); }
 .app-shell .hd-ha-icon { color: inherit; }
 .app-shell .hd-detail__name { display: flex; align-items: center; gap: calc(var(--u)*.8); }
+/* A long name wraps to two lines and the pencil stays beside it. */
+.app-shell .hd-detail__header h2.hd-detail__name { overflow: visible; white-space: normal; }
+.app-shell .hd-detail__name > span { min-width: 0; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
 .app-shell .hd-detail__rename { flex: none; display: inline-grid; place-items: center; width: calc(var(--u)*3.4); height: calc(var(--u)*3.4); border: 0; border-radius: 50%; background: rgba(255,255,255,.1); color: var(--ink-2); cursor: pointer; }
 .app-shell .hd-detail__naming { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: calc(var(--u)*.8); align-items: center; margin-top: calc(var(--u)*.3); }
 .app-shell .hd-detail__naming input { min-width: 0; height: calc(var(--u)*4.6); padding: 0 calc(var(--u)*1.4); border: 1px solid rgba(255,255,255,.22); border-radius: calc(var(--u)*1.4*var(--hd-r,1)); background: rgba(0,0,0,.18); color: var(--ink); font: 500 calc(var(--u)*2.2)/1 var(--f-body); }
@@ -547,6 +555,11 @@ export const themeExtras = String.raw`
 .app-shell .widget-card--wide.widget-card--energy { grid-template-rows: auto 1fr auto auto; }
 .app-shell .widget-card__chart { grid-column: 1 / -1; min-height: calc(var(--u)*7); color: var(--on); margin-top: calc(var(--u)*1); }
 .app-shell .hd-item--tall .widget-card__chart { flex: 1; }
+/* Sensor charts (optional): double cards draw a thin line on the right half, large cards fill the middle. */
+.app-shell .device-tile__spark { position: absolute; right: calc(var(--u)*1.6); bottom: calc(var(--u)*1.6); width: 46%; height: calc(var(--u)*4.4); color: var(--on); opacity: .85; pointer-events: none; }
+.app-shell .device-tile__spark .hd-spark, .app-shell .device-tile__spark svg { height: 100%; min-height: 0; }
+.app-shell .device-tile__spark--tall { left: calc(var(--u)*1.6); width: auto; top: 38%; bottom: 34%; height: auto; }
+.app-shell .device-tile:has(.device-tile__spark) .tile-wide__since { position: absolute; top: calc(var(--u)*2.2); right: calc(var(--u)*2.2); margin: 0; }
 @keyframes hd-spin { to { transform: rotate(360deg); } }
 @keyframes hd-glow { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--on) 0%, transparent); } 50% { box-shadow: 0 0 calc(var(--u)*2.4) calc(var(--u)*.4) color-mix(in srgb, var(--on) 55%, transparent); } }
 @keyframes hd-shake { 0%, 100% { transform: translate(0, 0) rotate(0); } 20% { transform: translate(-1px, 1px) rotate(-3deg); } 40% { transform: translate(1px, -1px) rotate(3deg); } 60% { transform: translate(-1px, 0) rotate(-2deg); } 80% { transform: translate(1px, 1px) rotate(2deg); } }
@@ -585,4 +598,26 @@ export const themeExtras = String.raw`
 .app-shell .hd-grid--editing .hd-item--section > :first-child, .app-shell .hd-sections--editing .hd-item--section > :first-child { pointer-events: auto; }
 .app-shell .hd-section__input { user-select: text; -webkit-user-select: text; cursor: text; touch-action: auto; }
 .app-shell .ls-group .hd-sections > .hd-item--section .hd-item__badge--remove { left: calc(var(--u)*.6); }
+/* Doorbell pop-up (Pro): above everything, the screensaver included. */
+.app-shell .st-actions--end { justify-content: flex-end; }
+/* Settings menu: with many sections it scrolls on its own on short screens instead of running off the bottom. */
+@media (min-width: 721px) { .app-shell .st-nav .room-selector__list { max-height: calc(100dvh - var(--u)*4); overflow-y: auto; scrollbar-width: none; } }
+/* An action at the end of a group sits in its own row, with the rows' divider and breathing room. */
+/* Rows with a select breathe like the others: the select no longer touches the dividers. */
+.app-shell .st-sub__row:has(.hdx-select) { padding: calc(var(--u)*.8) 0; }
+.app-shell .st-sub > .st-actions--end { margin: 0; padding: calc(var(--u)*1.2) 0 calc(var(--u)*.8); border-top: 1px solid rgba(255,255,255,.07); }
+.app-shell .st-sub > .st-actions--end .hd-pill { min-height: calc(var(--u)*4.4); padding-inline: calc(var(--u)*2); }
+.app-shell .hd-doorbell { position: fixed; inset: 0; z-index: 900; display: grid; place-items: center; padding: calc(var(--u)*3); background: rgba(8,6,10,.72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); animation: hd-doorbell-in .25s ease-out; }
+.app-shell .hd-doorbell__panel { width: min(100%, 1100px); display: grid; gap: calc(var(--u)*1.6); padding: calc(var(--u)*2); border-radius: calc(var(--u)*3*var(--hd-r,1)); background: rgba(30,24,34,.92); border: 1px solid rgba(255,255,255,.1); box-shadow: 0 30px 90px rgba(0,0,0,.55); }
+.app-shell .hd-doorbell__panel > header { display: flex; align-items: center; gap: calc(var(--u)*1.4); }
+.app-shell .hd-doorbell__panel > header > div { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.app-shell .hd-doorbell__panel strong { font: 500 calc(var(--u)*2.8)/1.1 var(--f-display); color: var(--ink); }
+.app-shell .hd-doorbell__panel small { color: var(--ink-2); font: 500 calc(var(--u)*1.6)/1.2 var(--f-body); }
+.app-shell .hd-doorbell__icon { width: calc(var(--u)*5); height: calc(var(--u)*5); flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--on); color: var(--on-ink, #2a2110); animation: hd-doorbell-ring 1.2s ease-in-out 3; }
+.app-shell .hd-doorbell__panel > header > button { width: calc(var(--u)*4.6); height: calc(var(--u)*4.6); flex: none; display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(255,255,255,.1); color: var(--ink); cursor: pointer; }
+.app-shell .hd-doorbell .hd-camera { max-height: calc(100dvh - var(--u)*16); }
+.app-shell .hd-doorbell__none { margin: 0; padding: calc(var(--u)*4) 0; text-align: center; color: var(--ink-2); }
+@keyframes hd-doorbell-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes hd-doorbell-ring { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(14deg); } 30% { transform: rotate(-12deg); } 45% { transform: rotate(8deg); } 60% { transform: rotate(-4deg); } }
+
 `;

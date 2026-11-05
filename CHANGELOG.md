@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.16.2
+
+- Settings reorganized: new Weather, Calendar, Cameras, Screensaver and This device sections (choices that apply only to the device in use). On a phone the menu scrolls sideways to the chosen section.
+- Live video on camera cards, on by default (Settings → Cameras): a card plays the live video while it's on screen, Nest cameras included. Turn it off to go back to a still every 10 seconds.
+- The panel's address now carries a fingerprint of the file, so browsers always load the new panel after an update instead of a cached copy.
+- Google Nest cameras (WebRTC only): the live view now opens straight in Home Assistant's player. Before, Nest served a placeholder picture instead of MJPEG, so no video showed.
+- Lock editing on this device, in Settings → This device, off by default: hides the Edit button on that device only, for a wall dashboard.
+- Spotify speaker on this device, in Settings → This device: playback started from that device goes to the chosen speaker.
+- Doorbell pop-up (Pro), in Settings → Cameras, off by default: when the doorbell rings (a doorbell event entity, or a sensor turning on), the chosen camera's live view pops up over the panel, even on the screensaver, and closes by itself after the time you pick. The doorbell and camera are suggested the first time, and a Test button shows it right away.
+- Sensor charts (Pro), in Appearance → Card style, off by default: numeric sensor cards at double size show a line of the last 24 hours, and at large size the chart fills the middle of the card.
+- Device details: a long name wraps to up to two lines and the rename pencil stays visible beside it.
+
 ## 0.16.1
 
 - Polish: the whole dashboard and the integration setup in Home Assistant. Like the other languages, it follows the user's language in Home Assistant.

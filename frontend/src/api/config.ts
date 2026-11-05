@@ -19,6 +19,8 @@ function withDefaults(config: HomeDeckConfig): HomeDeckConfig {
     screensaver: { enabled: false, delay: 180, ...(config.screensaver as Partial<HomeDeckConfig["screensaver"]> | undefined) },
     cards: { ...DEFAULT_CARDS, ...(config.cards as Partial<HomeDeckConfig["cards"]> | undefined) },
     widgets: { weather: false, sun: false, energy: false, ...(config.widgets as Partial<HomeDeckConfig["widgets"]> | undefined) },
+    live_cameras: config.live_cameras ?? true,
+    doorbell: { enabled: false, trigger: "", camera: "", seconds: 60, ...(config.doorbell as Partial<HomeDeckConfig["doorbell"]> | undefined) },
     energy: { ...EMPTY_ENERGY, ...(config.energy as Partial<HomeDeckConfig["energy"]> | undefined) },
     agenda: { show_calendar: true, calendars: [], show_todo: true, todo_entity: "", todo_no_date: false, today_card: false, ...(config.agenda as Partial<HomeDeckConfig["agenda"]> | undefined) },
   };

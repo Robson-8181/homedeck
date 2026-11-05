@@ -8,6 +8,9 @@ export type IconName =
   | "cloud"
   | "clock"
   | "close"
+  | "bell"
+  | "palette"
+  | "tablet"
   | "cover"
   | "door"
   | "eye"
@@ -95,6 +98,9 @@ const paths: Record<IconName, ReactNode> = {
   cloud: <path d="M17.5 19H7a5 5 0 1 1 1.7-9.7A6 6 0 0 1 20 12a3.5 3.5 0 0 1-2.5 7Z" />,
   clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
   close: <><path d="m6 6 12 12" /><path d="m18 6-12 12" /></>,
+  palette: <><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.7-1.6 1.6-1.6H16a5 5 0 0 0 5-5c0-4-4-7.4-9-7.4Z" /><circle cx="7.5" cy="11" r="1.1" /><circle cx="10" cy="7" r="1.1" /><circle cx="14.5" cy="7" r="1.1" /><circle cx="17" cy="10.5" r="1.1" /></>,
+  tablet: <><rect x="4.5" y="2.5" width="15" height="19" rx="2.5" /><path d="M11 18.5h2" /></>,
+  bell: <><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15Z" /><path d="M10 20.5a2 2 0 0 0 4 0" /></>,
   rain: <><path d="M17.5 16H7a4.5 4.5 0 1 1 1.6-8.7A5.5 5.5 0 0 1 19 9.5a3.25 3.25 0 0 1-1.5 6.5Z" /><path d="M8 19.5 7 21.5M12 19.5l-1 2M16 19.5l-1 2" /></>,
   storm: <><path d="M17.5 16H7a4.5 4.5 0 1 1 1.6-8.7A5.5 5.5 0 0 1 19 9.5a3.25 3.25 0 0 1-1.5 6.5Z" /><path d="m12.5 17.5-2 3h3l-2 3" /></>,
   snow: <><path d="M17.5 16H7a4.5 4.5 0 1 1 1.6-8.7A5.5 5.5 0 0 1 19 9.5a3.25 3.25 0 0 1-1.5 6.5Z" /><path d="M8 20h.01M12 20h.01M16 20h.01M10 22.5h.01M14 22.5h.01" /></>,

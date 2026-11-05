@@ -169,6 +169,21 @@ export function plantReadings(hass: HomeAssistant, state: HassEntity): PlantRead
  * without an MJPEG stream, such as newer Google Nest models. The frontend loads it on demand, so a
  * live picture card is created once to bring it in. Resolves false when it cannot be loaded. */
 let cameraPlayer: Promise<boolean> | null = null;
+/** Cameras that only stream over WebRTC (newer Google Nest models). Home Assistant still serves them an
+ * MJPEG address, but it only repeats a placeholder picture, so they go straight to the player. Cached
+ * per camera; any doubt (an older Home Assistant, an error) keeps the usual MJPEG. */
+const webRtcOnly = new Map<string, Promise<boolean>>();
+export function cameraIsWebRtcOnly(hass: HomeAssistant, entityId: string): Promise<boolean> {
+  let known = webRtcOnly.get(entityId);
+  if (!known) {
+    known = hass.connection.sendMessagePromise<{ frontend_stream_types?: string[] }>({ type: "camera/capabilities", entity_id: entityId })
+      .then((result) => { const types = result?.frontend_stream_types ?? []; return types.includes("web_rtc") && !types.includes("hls"); })
+      .catch(() => false);
+    webRtcOnly.set(entityId, known);
+  }
+  return known;
+}
+
 export function loadCameraPlayer(): Promise<boolean> {
   if (typeof customElements === "undefined") return Promise.resolve(false);
   if (customElements.get("ha-camera-stream")) return Promise.resolve(true);

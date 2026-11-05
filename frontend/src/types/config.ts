@@ -138,6 +138,15 @@ export interface HomeDeckConfig {
   };
   /** Sensors of the energy card; empty fields are left out. */
   energy: HomeDeckEnergy;
+  /** Camera cards play their live video while on screen (on by default); off shows a still every 10 s. */
+  live_cameras: boolean;
+  /** Pro: when the trigger (a doorbell event, or a sensor turning on) fires, the camera pops up. */
+  doorbell: {
+    enabled: boolean;
+    trigger: string;
+    camera: string;
+    seconds: number;
+  };
   /** Pro: how cards look. corners 0-150 (% of the default roundness), glass 0 (solid) to 100 (see-through). */
   cards: HomeDeckCardStyle;
 }
@@ -155,6 +164,8 @@ export interface HomeDeckCardStyle {
   glass: number;
   /** Lit fans spin, lights glow and washing machines shake while they run. */
   animations?: boolean;
+  /** Double and large sensor cards show a small chart of the last 24 hours. */
+  sparklines?: boolean;
 }
 
 export interface HomeDeckEnergy {
