@@ -4,6 +4,7 @@ import type { HomeDeckConfig } from "../types/config";
 import type { HomeAssistant } from "../types/home-assistant";
 import { useWeather } from "../weather";
 import { HDIcon, type IconName } from "./HDIcon";
+import { SaverAgenda } from "./Agenda";
 
 function weatherIcon(condition: string): IconName {
   if (condition === "sunny") return "sun";
@@ -39,6 +40,7 @@ export function Screensaver({ config, hass, language, onDismiss, t }: Screensave
       <div className="hd-saver__date">{new Intl.DateTimeFormat(language, { weekday: "long", day: "numeric", month: "long" }).format(now)}</div>
       {weather && <div className="hd-saver__weather"><HDIcon name={weatherIcon(weather.condition ?? "")} size={22} /><span>{temperature != null ? `${temperature}°` : ""}{temperature != null && weather.condition ? " · " : ""}{weather.condition ? weatherConditionLabel(weather.condition, language) : ""}</span></div>}
     </div>
+    {(config.screensaver.show_events || config.screensaver.show_todo) && <SaverAgenda config={config} hass={hass} language={language} showEvents={Boolean(config.screensaver.show_events)} showTodo={Boolean(config.screensaver.show_todo)} t={t} />}
     <div className="hd-saver__hint">{t("tapToReturn")}</div>
   </div>;
 }

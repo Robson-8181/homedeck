@@ -276,7 +276,7 @@ export function App({ hass, version }: { hass: HomeAssistant; version?: string }
     hass,
     language,
     onConfig: (update) => void updateConfig(update),
-    onLayout: (screen: string, layout: ScreenLayout) => void updateConfig((current) => withLayout(current, screen, pro ? layout : { ...layout, wide: current.layouts[screen]?.wide ?? [] })),
+    onLayout: (screen: string, layout: ScreenLayout) => void updateConfig((current) => withLayout(current, screen, pro ? layout : { ...layout, wide: current.layouts[screen]?.wide ?? [], tall: current.layouts[screen]?.tall ?? [] })),
     onSettings: () => { setEditing(false); setSettingsOpen(true); },
     onToggleEdit: () => setEditing((current) => !current),
     t,

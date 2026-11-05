@@ -136,7 +136,7 @@ export function DynamicShell({ children, config, data, hass, mode = "grid" }: { 
     ...cardVars(config.cards, palette),
   } as CSSProperties;
   return (
-    <div className={`app-shell theme-${config.theme} view-${mode} ${config.background.animated ? "ambient-animated" : "ambient-still"}`} data-activity={level.toFixed(2)} style={style}>
+    <div className={`app-shell theme-${config.theme} view-${mode} ${config.background.animated ? "ambient-animated" : "ambient-still"} ${config.cards?.animations ? "hd-anim" : ""}`} data-activity={level.toFixed(2)} style={style}>
       <div aria-hidden="true" className="ambient-background"><i /><i /><i /></div>
       {children}
     </div>

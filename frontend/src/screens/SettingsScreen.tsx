@@ -5,6 +5,7 @@ import { HDSegmented, HDSelect } from "../components/HDSelect";
 import type { TranslationKey } from "../i18n";
 import type { HomeDeckBackgroundPreset, HomeDeckCardStyle, HomeDeckConfig, HomeDeckPageType } from "../types/config";
 import { withRoomOptions } from "../personalize";
+import { energyCandidates } from "../components/ExtraWidgets";
 import type { Room } from "../types/discovery";
 import type { HomeAssistant } from "../types/home-assistant";
 import { hideSidebarPreferred, setHideSidebarPreferred } from "../sidebar";
@@ -205,6 +206,8 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
             <h2>{t("screensaver")}</h2><p>{t("screensaverDescription")}</p>
             <Row label={t("screensaverEnable")}>{plan.pro ? <Switch checked={draft.screensaver.enabled} label={t("screensaverEnable")} onChange={(enabled) => update({ screensaver: { ...draft.screensaver, enabled } })} /> : <button className="hd-pill" onClick={() => plan.upsell("feature")} type="button"><HDIcon name="lock" size={14} />Pro</button>}</Row>
             <Row label={t("screensaverDelay")}><HDSelect ariaLabel={t("screensaverDelay")} disabled={!draft.screensaver.enabled} onChange={(value) => update({ screensaver: { ...draft.screensaver, delay: Number(value) } })} options={SAVER_DELAYS.map((seconds) => ({ value: String(seconds), label: seconds < 60 ? `${seconds} s` : `${seconds / 60} min` }))} value={String(draft.screensaver.delay)} /></Row>
+            {plan.pro && draft.screensaver.enabled && Object.keys(hass.states).some((id) => id.startsWith("calendar.")) && <Row description={t("saverAgendaDescription")} label={t("saverEvents")}><Switch checked={Boolean(draft.screensaver.show_events)} label={t("saverEvents")} onChange={(show_events) => update({ screensaver: { ...draft.screensaver, show_events } })} /></Row>}
+            {plan.pro && draft.screensaver.enabled && Object.keys(hass.states).some((id) => id.startsWith("todo.")) && <Row description={t("saverAgendaDescription")} label={t("saverTodo")}><Switch checked={Boolean(draft.screensaver.show_todo)} label={t("saverTodo")} onChange={(show_todo) => update({ screensaver: { ...draft.screensaver, show_todo } })} /></Row>}
           </section>
         </>}
 
@@ -227,6 +230,7 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
             <Row label={t("weatherSource")}><HDSelect ariaLabel={t("weatherSource")} onChange={(entity_id) => update({ weather: { ...draft.weather, entity_id } })} options={[{ value: "auto", label: t("automatic") }, { value: OPEN_METEO, label: t("openMeteoSource") }, ...weatherEntities.map((entity) => ({ value: entity.entity_id, label: `${String(entity.attributes.friendly_name ?? entity.entity_id)}${["unknown", "unavailable"].includes(entity.state) ? ` · ${t("unavailable")}` : ""}` }))]} value={draft.weather.entity_id === OPEN_METEO || weatherEntities.some((entity) => entity.entity_id === draft.weather.entity_id) ? draft.weather.entity_id : "auto"} /></Row>
           </section>
           <AgendaPanel draft={draft} hass={hass} t={t} update={update} />
+          <ExtraCardsPanel draft={draft} hass={hass} onUpsell={() => plan.upsell("feature")} pro={plan.pro} t={t} update={update} />
         </>}
 
         {section === "rooms" && <section className="st-panel">
@@ -328,7 +332,7 @@ function Range({ label, max, onChange, value, ends }: { label: string; max: numb
 
 /** Pro: corners, frame and glass, previewed live on the panel behind the settings. */
 function CardStylePanel({ cards, locked, onChange, onUpsell, t }: { cards: HomeDeckCardStyle; locked: boolean; onChange: (cards: HomeDeckCardStyle) => void; onUpsell: () => void; t: (key: TranslationKey) => string }) {
-  const changed = JSON.stringify(cards) !== JSON.stringify(DEFAULT_CARDS);
+  const changed = JSON.stringify({ ...DEFAULT_CARDS, ...cards }) !== JSON.stringify(DEFAULT_CARDS);
   return <section className={`st-panel st-cards ${locked ? "st-cards--locked" : ""}`}>
     <h2>{t("cardStyle")}</h2><p>{t("cardStyleDescription")}</p>
     {locked && <div className="st-actions"><button className="hd-pill" onClick={onUpsell} type="button"><HDIcon name="lock" size={14} />{t("proStyleLocked")}</button></div>}
@@ -336,8 +340,40 @@ function CardStylePanel({ cards, locked, onChange, onUpsell, t }: { cards: HomeD
       <Row label={t("corners")}><Range ends={[t("cornersSquare"), t("cornersRound")]} label={t("corners")} max={150} onChange={(corners) => onChange({ ...cards, corners })} value={cards.corners} /></Row>
       <Row label={t("glass")}><Range ends={[t("glassSolid"), t("glassClear")]} label={t("glass")} max={100} onChange={(glass) => onChange({ ...cards, glass })} value={cards.glass} /></Row>
       <Row description={t("frameDescription")} label={t("frame")}><Switch checked={cards.frame} label={t("frame")} onChange={(frame) => onChange({ ...cards, frame })} /></Row>
+      <Row description={t("animationsDescription")} label={t("animations")}><Switch checked={Boolean(cards.animations)} label={t("animations")} onChange={(animations) => onChange({ ...cards, animations })} /></Row>
     </fieldset>{locked && <button aria-label={t("proStyleLocked")} className="st-cards__lock" onClick={onUpsell} type="button" />}</div>
     {!locked && changed && <div className="st-actions"><button className="hd-pill" onClick={() => onChange(DEFAULT_CARDS)} type="button"><HDIcon name="refresh" size={16} />{t("restoreDefaults")}</button></div>}
+  </section>;
+}
+
+/** Optional cards on Home: the bigger weather card, the sun and (Pro) energy, with its sensors. */
+function ExtraCardsPanel({ draft, hass, onUpsell, pro, t, update }: { draft: HomeDeckConfig; hass: HomeAssistant; onUpsell: () => void; pro: boolean; t: (key: TranslationKey) => string; update: (patch: Partial<HomeDeckConfig>) => void }) {
+  const widgets = draft.widgets;
+  const energy = draft.energy;
+  const candidates = useMemo(() => energyCandidates(hass), [hass.states]);
+  const label = (id: string) => String(hass.states[id]?.attributes.friendly_name ?? id);
+  const set = (patch: Partial<HomeDeckConfig["widgets"]>) => update({ widgets: { ...widgets, ...patch } });
+  const turnOnEnergy = (on: boolean) => {
+    if (on && !pro) { onUpsell(); return; }
+    // The first time, each field starts with the sensor that best fits it.
+    const empty = Object.values(energy).every((id) => !id);
+    const guess = (key: keyof typeof candidates) => candidates[key][0]?.entity_id ?? "";
+    update({
+      widgets: { ...widgets, energy: on },
+      ...(on && empty ? { energy: { consumption: guess("consumption"), grid_import: guess("grid_import"), grid_export: "", solar: guess("solar"), battery: guess("battery"), solar_today: guess("solar_today") } } : {}),
+    });
+  };
+  const fields: Array<[keyof HomeDeckConfig["energy"], TranslationKey]> = [["consumption", "energyHome"], ["solar", "energySolar"], ["grid_import", "energyGrid"], ["grid_export", "energyGridExport"], ["battery", "energyBattery"], ["solar_today", "energyToday"]];
+  return <section className="st-panel">
+    <h2>{t("moreHomeCards")}</h2><p>{t("homeCardsDescription")}</p>
+    <Row label={t("weatherCard")}><Switch checked={widgets.weather} label={t("weatherCard")} onChange={(weather) => set({ weather })} /></Row>
+    {hass.states["sun.sun"] && <Row description={t("sunCardDescription")} label={t("sunCard")}><Switch checked={widgets.sun} label={t("sunCard")} onChange={(sun) => set({ sun })} /></Row>}
+    <div className="st-group">
+      <Row description={t("energyCardDescription")} label={t("energyCard")}>{pro ? <Switch checked={widgets.energy} label={t("energyCard")} onChange={turnOnEnergy} /> : <button className="hd-pill" onClick={onUpsell} type="button"><HDIcon name="lock" size={14} />Pro</button>}</Row>
+      {pro && widgets.energy && <div className="st-sub">
+        {fields.map(([key, name]) => <div className="st-sub__row" key={key}><span>{t(name)}</span><HDSelect ariaLabel={t(name)} onChange={(id) => update({ energy: { ...energy, [key]: id } })} options={[{ value: "", label: t("none") }, ...[...new Set([...(energy[key] ? [energy[key]] : []), ...candidates[key].map((state) => state.entity_id)])].map((id) => ({ value: id, label: label(id) }))]} value={energy[key]} /></div>)}
+      </div>}
+    </div>
   </section>;
 }
 

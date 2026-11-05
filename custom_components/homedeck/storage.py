@@ -8,7 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN, STORAGE_KEY, STORAGE_VERSION
-from .models import HomeDeckConfig, default_config
+from .models import ENERGY_FIELDS, HomeDeckConfig, default_config
 
 _CONFIG_DATA = "config"
 _STORE_DATA = "store"
@@ -115,7 +115,7 @@ def _normalize_layouts(value: Any) -> dict[str, dict[str, Any]]:
                 for item in _unique_strings(layout.get(key))
                 if len(item) <= _MAX_KEY_LENGTH
             ][:_MAX_LAYOUT_ITEMS]
-            for key in ("order", "hidden", "wide", "added")
+            for key in ("order", "hidden", "wide", "added", "tall")
         }
         sections = _normalize_sections(layout.get("sections"))
         if sections:
@@ -274,8 +274,9 @@ def normalize_config(value: Any) -> HomeDeckConfig:
 
     screensaver = value.get("screensaver")
     if isinstance(screensaver, dict):
-        if isinstance(screensaver.get("enabled"), bool):
-            config["screensaver"]["enabled"] = screensaver["enabled"]
+        for key in ("enabled", "show_events", "show_todo"):
+            if isinstance(screensaver.get(key), bool):
+                config["screensaver"][key] = screensaver[key]
         delay = screensaver.get("delay")
         if isinstance(delay, int) and delay in _SCREENSAVER_DELAYS:
             config["screensaver"]["delay"] = delay
@@ -298,8 +299,22 @@ def normalize_config(value: Any) -> HomeDeckConfig:
             number = cards.get(key)
             if isinstance(number, (int, float)) and not isinstance(number, bool):
                 config["cards"][key] = max(0, min(high, round(number)))
-        if isinstance(cards.get("frame"), bool):
-            config["cards"]["frame"] = cards["frame"]
+        for key in ("frame", "animations"):
+            if isinstance(cards.get(key), bool):
+                config["cards"][key] = cards[key]
+
+    widgets = value.get("widgets")
+    if isinstance(widgets, dict):
+        for key in ("weather", "sun", "energy"):
+            if isinstance(widgets.get(key), bool):
+                config["widgets"][key] = widgets[key]
+
+    energy = value.get("energy")
+    if isinstance(energy, dict):
+        for key in ENERGY_FIELDS:
+            entity_id = energy.get(key)
+            if isinstance(entity_id, str) and (entity_id == "" or (entity_id.startswith("sensor.") and len(entity_id) <= _MAX_KEY_LENGTH)):
+                config["energy"][key] = entity_id
 
     return config
 

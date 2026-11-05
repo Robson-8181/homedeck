@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { CSSProperties, KeyboardEvent } from "react";
 import { domainLabel, hvacLabel, type TranslationKey } from "../i18n";
 import type { DiscoveredEntity } from "../types/discovery";
@@ -8,8 +9,10 @@ import { VolumeButtons } from "./WideControls";
 import { SpotifyPlayer } from "./SpotifyPlayer";
 import { isSpotify } from "../spotify";
 import { usePlan } from "../plan";
+import { isNumericState } from "../history";
+import { HistoryChart } from "./HistoryChart";
 import { MAX_NAME, useCustomize } from "../personalize";
-import { ALARM_ARMED, alarmCall, alarmCodeFormat, alarmModes, alarmStatus, cameraSnapshot, cameraStream, mediaArt, mediaSources, plantReadings, plantStatus, RUNNABLE, SELECTS, runEntity, selectOption, selectOptions, vacuumActions, vacuumStatus } from "../devices";
+import { ALARM_ARMED, alarmCall, alarmCodeFormat, alarmModes, alarmStatus, cameraSnapshot, cameraStream, loadCameraPlayer, mediaArt, mediaSources, plantReadings, plantStatus, RUNNABLE, SELECTS, runEntity, selectOption, selectOptions, vacuumActions, vacuumStatus } from "../devices";
 
 interface EntityModalProps {
   entity: DiscoveredEntity;
@@ -183,6 +186,7 @@ function EntityDetails({ entity, hass, language, onClose, roomName, t }: EntityM
         </div>}
 
         {["sensor", "binary_sensor"].includes(domain) && <div className="hd-detail__reading"><strong>{status}</strong><small>{t("lastChanged")} {new Intl.DateTimeFormat(language, { hour: "2-digit", minute: "2-digit" }).format(new Date(state.last_changed))}</small></div>}
+        {domain === "sensor" && isNumericState(state) && <HistoryChart entityId={entity.entity_id} hass={hass} language={language} t={t} unit={typeof attrs.unit_of_measurement === "string" ? attrs.unit_of_measurement : undefined} />}
       </div>}
 
       {primary && <button className={on ? "hd-detail__primary" : "hd-detail__primary hd-detail__primary--off"} disabled={busy} onClick={() => void primary.run()} type="button"><HDIcon name={domain === "scene" ? "scene" : domain === "lock" ? "lock" : RUNNABLE.has(domain) ? "play" : "power"} size={18} />{primary.label}</button>}
@@ -239,18 +243,60 @@ function EntityName({ entity: opened, t }: { entity: DiscoveredEntity; t: (key: 
 }
 
 /** The camera's live MJPEG stream; if the camera can't stream, its still, refreshed every few seconds. */
+/** Home Assistant's camera player, given the same hass and state the panel has. */
+function HaCameraPlayer({ hass, state }: { hass: HomeAssistant; state: HassEntity }) {
+  const element = useRef<HTMLElement & Record<string, unknown>>(null);
+  useEffect(() => {
+    const player = element.current;
+    if (!player) return;
+    player.hass = hass;
+    player.stateObj = state;
+  }, [hass, state]);
+  useEffect(() => {
+    const player = element.current;
+    if (!player) return;
+    player.muted = true;
+    player.controls = false;
+    player.fitMode = "contain";
+  }, []);
+  return <ha-camera-stream class="hd-camera__player" ref={element} />;
+}
+
 function CameraLive({ entity, hass, t }: { entity: DiscoveredEntity; hass: HomeAssistant; t: (key: TranslationKey) => string }) {
   const state = hass.states[entity.entity_id];
-  const [still, setStill] = useState(false);
+  // MJPEG first (what every camera that works today keeps using); when it fails, Home Assistant's
+  // own player (WebRTC / HLS); and stills every 2 seconds when neither works.
+  const [mode, setMode] = useState<"mjpeg" | "player" | "still">("mjpeg");
   const [tick, setTick] = useState(() => Date.now());
   useEffect(() => {
-    if (!still) return;
+    if (mode !== "still") return;
     const timer = window.setInterval(() => setTick(Date.now()), 2000);
     return () => window.clearInterval(timer);
-  }, [still]);
+  }, [mode]);
   const stream = cameraStream(state);
-  const source = still || !stream ? cameraSnapshot(state, tick) : stream;
-  return <div className="hd-camera">
-    {source ? <img alt={entity.name} onError={() => setStill(true)} src={source} /> : <p>{t("cameraOffline")}</p>}
+  const fallBack = () => { void loadCameraPlayer().then((ready) => setMode(ready ? "player" : "still")); };
+  useEffect(() => { if (!stream && mode === "mjpeg") fallBack(); }, [stream, mode]);
+  const source = mode === "still" ? cameraSnapshot(state, tick) : mode === "mjpeg" ? stream : null;
+  const frame = useRef<HTMLDivElement>(null);
+  const [full, setFull] = useState(false);
+  // The browser's full screen when it allows it (not in every webview); otherwise the picture covers
+  // the whole panel (drawn at the panel's root, since the details sheet would clip it).
+  const enter = () => {
+    const element = frame.current;
+    if (element?.requestFullscreen) element.requestFullscreen().catch(() => setFull(true));
+    else setFull(true);
+  };
+  const shell = frame.current?.closest(".app-shell") ?? null;
+  const live = mode === "player" && Boolean(state);
+  const picture = live ? <HaCameraPlayer hass={hass} state={state} />
+    : source ? <img alt={entity.name} onError={() => (mode === "mjpeg" ? fallBack() : undefined)} src={source} />
+      : mode === "mjpeg" ? <span className="mini-spinner" /> : <p>{t("cameraOffline")}</p>;
+  return <div className="hd-camera" ref={frame}>
+    {picture}
+    {(source || live) && <button aria-label={t("fullScreen")} className="hd-camera__full" onClick={() => (document.fullscreenElement ? void document.exitFullscreen() : enter())} type="button"><HDIcon name="expand" size={18} /></button>}
+    {full && shell && createPortal(<div className="hd-camera hd-camera--full" onClick={() => setFull(false)} role="dialog" aria-label={entity.name}>
+      {picture}
+      <button aria-label={t("exitFullScreen")} className="hd-camera__full" onClick={() => setFull(false)} type="button"><HDIcon name="shrink" size={18} /></button>
+    </div>, shell)}
   </div>;
 }

@@ -28,6 +28,8 @@ export interface ScreenLayout {
   order: string[];
   hidden: string[];
   wide: string[];
+  /** Item keys shown large (two columns and two rows); always also in `wide`. */
+  tall?: string[];
   /** Entities from other rooms shown on this screen (room screens only). */
   added?: string[];
   /** Separators placed in the order, by key ("section:<id>") with their title. */
@@ -124,7 +126,18 @@ export interface HomeDeckConfig {
   screensaver: {
     enabled: boolean;
     delay: number;
+    /** Under the clock: today's events and the reminders due (same calendars and list as the agenda). */
+    show_events?: boolean;
+    show_todo?: boolean;
   };
+  /** Optional cards on Home: the bigger weather card, the sun and (Pro) energy. All off by default. */
+  widgets: {
+    weather: boolean;
+    sun: boolean;
+    energy: boolean;
+  };
+  /** Sensors of the energy card; empty fields are left out. */
+  energy: HomeDeckEnergy;
   /** Pro: how cards look. corners 0-150 (% of the default roundness), glass 0 (solid) to 100 (see-through). */
   cards: HomeDeckCardStyle;
 }
@@ -140,5 +153,21 @@ export interface HomeDeckCardStyle {
   corners: number;
   frame: boolean;
   glass: number;
+  /** Lit fans spin, lights glow and washing machines shake while they run. */
+  animations?: boolean;
+}
+
+export interface HomeDeckEnergy {
+  /** Power the home is using now (W or kW). */
+  consumption: string;
+  /** Power drawn from the grid; when there is no export sensor, negative means exporting. */
+  grid_import: string;
+  grid_export: string;
+  /** Power the solar panels (inverter) produce now. */
+  solar: string;
+  /** Home battery charge (%). */
+  battery: string;
+  /** Energy produced today (kWh). */
+  solar_today: string;
 }
 

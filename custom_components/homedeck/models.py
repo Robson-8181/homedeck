@@ -111,6 +111,8 @@ class HomeDeckScreensaverConfig(TypedDict):
 
     enabled: bool
     delay: int
+    show_events: bool
+    show_todo: bool
 
 
 class HomeDeckAgendaConfig(TypedDict):
@@ -130,6 +132,15 @@ class HomeDeckCardStyle(TypedDict):
     corners: int
     frame: bool
     glass: int
+    animations: bool
+
+
+class HomeDeckWidgets(TypedDict):
+    """Optional cards on Home."""
+
+    weather: bool
+    sun: bool
+    energy: bool
 
 
 class HomeDeckConfig(TypedDict):
@@ -163,6 +174,11 @@ class HomeDeckConfig(TypedDict):
     screensaver: HomeDeckScreensaverConfig
     agenda: HomeDeckAgendaConfig
     cards: HomeDeckCardStyle
+    widgets: HomeDeckWidgets
+    energy: dict[str, str]
+
+
+ENERGY_FIELDS = ("consumption", "grid_import", "grid_export", "solar", "battery", "solar_today")
 
 
 def default_config() -> HomeDeckConfig:
@@ -238,6 +254,8 @@ def default_config() -> HomeDeckConfig:
         "screensaver": {
             "enabled": False,
             "delay": 180,
+            "show_events": False,
+            "show_todo": False,
         },
         # Empty calendars means every calendar; an empty to-do entity means the first list.
         "agenda": {
@@ -252,6 +270,9 @@ def default_config() -> HomeDeckConfig:
             "corners": 100,
             "frame": True,
             "glass": 50,
+            "animations": False,
         },
+        "widgets": {"weather": False, "sun": False, "energy": False},
+        "energy": {key: "" for key in ENERGY_FIELDS},
     }
 

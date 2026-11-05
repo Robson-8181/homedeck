@@ -44,7 +44,7 @@ on macOS). Your rooms, backgrounds and preferences are kept.
 - **Four layouts:** Grid, Sidebar, List and Focus. Every screen, including Media,
   Security, Scenes and your own pages, follows the one you pick.
 - **Edit mode, arranged your way:** drag to reorder, tap − to hide, add devices from any room,
-  double the size of a card, split a screen into groups with separators and reorder the bottom
+  make a card double or large, split a screen into groups with separators and reorder the bottom
   bar. Nothing is ever deleted from Home Assistant.
 - **Your names and icons:** rename devices and rooms inside HomeDeck, pick each room's icon and
   the sensor that shows its temperature. Home Assistant keeps its own names.
@@ -60,6 +60,8 @@ on macOS). Your rooms, backgrounds and preferences are kept.
 - **Alarm panels** to arm and disarm (with the code when the panel asks for one) and **plants**
   from Plant Monitor/OpenPlantbook with their moisture, light and more. Both appear only once
   you add them in Edit mode.
+- **History charts** in sensor details, **camera full screen**, and optional **weather, sun and
+  energy cards** on Home (consumption, solar, grid and battery).
 - **Spotify player**, screensaver, scene strip, and an option to hide the Home Assistant
   sidebar on a wall tablet.
 - **English, Portuguese, Spanish and German**, following Home Assistant's language.

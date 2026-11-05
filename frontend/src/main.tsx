@@ -9,11 +9,13 @@ import { themePlan } from "./theme-plan";
 import { themeLayouts } from "./theme-layouts";
 import type { HomeAssistant, HomeDeckPanelInfo } from "./types/home-assistant";
 import { hideSidebar, hideSidebarPreferred, restoreSidebar } from "./sidebar";
+import { hidePageScrollbars } from "./scrollbars";
 
 class HomeDeckPanel extends HTMLElement {
   private _hass?: HomeAssistant;
   private _panel?: HomeDeckPanelInfo;
   private readonly root: Root;
+  private showScrollbars?: () => void;
 
   constructor() {
     super();
@@ -42,10 +44,14 @@ class HomeDeckPanel extends HTMLElement {
     this.renderPanel();
     window.addEventListener("homedeck-sidebar-pref", this.applySidebar);
     this.applySidebar();
+    this.showScrollbars?.();
+    this.showScrollbars = hidePageScrollbars(this);
   }
 
   disconnectedCallback() {
     window.removeEventListener("homedeck-sidebar-pref", this.applySidebar);
+    this.showScrollbars?.();
+    this.showScrollbars = undefined;
     // Leaving HomeDeck brings Home Assistant's sidebar back as it was.
     restoreSidebar(document.querySelector("home-assistant") ?? document.body);
   }

@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.16.0
+
+Everything is optional: if you don't turn anything on, the panel looks as before.
+
+- History in the details of numeric sensors (temperature, power, prices…): a 6 h, 24 h or 7-day chart with the lowest and highest value and the value under your finger.
+- Camera full screen: a button in the camera details. It uses the browser's full screen and, where there is none (some apps and webviews), covers the whole panel.
+- Cameras that only stream over WebRTC or HLS (such as newer Google Nest models): when a camera has no MJPEG stream, the live view uses Home Assistant's own camera player. Cameras that already worked are unchanged.
+- More cards on Home, in Settings → Home → More cards on Home, all off by default:
+  - Weather: temperature, condition, high and low; at double size, the next hours; a tap opens the forecast.
+  - Sun: next sunrise or sunset and elevation; at double size, the sun's path through the day.
+  - Energy (Pro): home consumption, solar, grid (importing or exporting), battery and today's production. Sensors are suggested the first time and can be changed; each line opens the sensor with its history; at large size, a chart of the last 24 h.
+- Large size (Pro): the size badge in Edit mode now goes from normal to double, large (two columns and two rows) and back to normal.
+- Animations (Pro), in Appearance → Card style, off by default: running fans spin, lit lights glow, and washing machines, dryers and dishwashers shake while they run (recognized by name).
+- Screensaver (Pro) with today's agenda: under the clock, today's upcoming events (in each calendar's color) and the reminders due, overdue ones in red. Each part is turned on separately in Settings → Appearance → Screensaver and uses the same calendars and list as the agenda.
+- No scroll bars: while HomeDeck is open, the panel's and the page's scroll bars are hidden (scrolling works as before, by touch, wheel or keyboard); they come back when you leave.
+- Home without the small scroll: when it is only a little taller than the screen (a separator, one more row), everything shrinks by up to 15% to fit; much bigger homes still scroll, and phones don't change.
+- List layout: a separator inside a room is inset like the rows instead of touching the edges; in Home's Edit mode it no longer jiggles and its name can be selected and edited.
+
 ## 0.15.0
 
 Everything is optional: if you don't change anything, the panel looks exactly as before.

@@ -164,3 +164,25 @@ export function plantReadings(hass: HomeAssistant, state: HassEntity): PlantRead
   }
   return readings;
 }
+
+/** Home Assistant's own camera player (`ha-camera-stream`), which plays WebRTC and HLS: for cameras
+ * without an MJPEG stream, such as newer Google Nest models. The frontend loads it on demand, so a
+ * live picture card is created once to bring it in. Resolves false when it cannot be loaded. */
+let cameraPlayer: Promise<boolean> | null = null;
+export function loadCameraPlayer(): Promise<boolean> {
+  if (typeof customElements === "undefined") return Promise.resolve(false);
+  if (customElements.get("ha-camera-stream")) return Promise.resolve(true);
+  cameraPlayer ??= (async () => {
+    try {
+      const helpers = await (window as unknown as { loadCardHelpers?: () => Promise<{ createCardElement: (config: object) => unknown }> }).loadCardHelpers?.();
+      helpers?.createCardElement({ type: "picture-entity", entity: "camera.homedeck", camera_view: "live" });
+    } catch { /* the wait below decides */ }
+    const defined = await Promise.race([
+      customElements.whenDefined("ha-camera-stream").then(() => true),
+      new Promise<boolean>((resolve) => window.setTimeout(() => resolve(false), 6000)),
+    ]);
+    if (!defined) cameraPlayer = null;
+    return defined;
+  })();
+  return cameraPlayer;
+}

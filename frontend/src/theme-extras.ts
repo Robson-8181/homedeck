@@ -515,4 +515,74 @@ export const themeExtras = String.raw`
 .app-shell .st-icon-button--small { width: calc(var(--u)*4); height: calc(var(--u)*4); background: rgba(255,255,255,.08); color: var(--ink-2); }
 .app-shell .st-input--framed { height: calc(var(--u)*4.2); border-color: rgba(255,255,255,.3); background: rgba(0,0,0,.16); }
 .app-shell .st-item__was { flex: none; max-width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-3); font: 500 calc(var(--u)*1.5)/1 var(--f-body); }
+
+/* 0.16: history, large cards, camera full screen, weather, sun and energy cards, animations. */
+.app-shell .hd-item--tall { grid-row: span 2; }
+.app-shell .hd-item--tall > :first-child { height: 100%; }
+.app-shell .hd-history { display: grid; gap: calc(var(--u)*1); color: var(--on); }
+.app-shell .hd-history__head { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u)*1); color: var(--ink); }
+.app-shell .hd-history__ranges { display: flex; gap: calc(var(--u)*.5); }
+.app-shell .hd-history__ranges button { min-height: calc(var(--u)*3.6); padding: 0 calc(var(--u)*1.2); border: 1px solid rgba(255,255,255,.14); border-radius: 99px; background: rgba(255,255,255,.06); color: var(--ink-2); font: 600 calc(var(--u)*1.5)/1 var(--f-body); cursor: pointer; }
+.app-shell .hd-history__ranges button[aria-pressed="true"] { background: var(--on); border-color: transparent; color: var(--on-ink, #2a2110); }
+.app-shell .hd-history__empty { display: grid; place-items: center; min-height: calc(var(--u)*12); margin: 0; color: var(--ink-2); font: 500 calc(var(--u)*1.7)/1.3 var(--f-body); text-align: center; }
+.app-shell .hd-spark { margin: 0; display: grid; gap: calc(var(--u)*.6); }
+.app-shell .hd-spark svg { width: 100%; height: calc(var(--u)*14); display: block; touch-action: none; overflow: visible; }
+.app-shell .hd-spark--compact svg { height: 100%; min-height: calc(var(--u)*6); }
+.app-shell .hd-spark figcaption { display: flex; justify-content: center; color: var(--ink-2); font: 500 calc(var(--u)*1.6)/1.2 var(--f-body); }
+.app-shell .hd-spark figcaption span { display: flex; gap: calc(var(--u)*2); }
+.app-shell .hd-spark figcaption i { font-style: normal; }
+.app-shell .hd-spark__hover b { color: var(--ink); }
+.app-shell .hd-camera { position: relative; }
+.app-shell .hd-camera__full { position: absolute; right: calc(var(--u)*1); bottom: calc(var(--u)*1); width: calc(var(--u)*4.4); height: calc(var(--u)*4.4); display: grid; place-items: center; border: 0; border-radius: 50%; background: rgba(0,0,0,.55); color: #fff; cursor: pointer; backdrop-filter: blur(6px); }
+.app-shell .hd-camera:fullscreen, .app-shell .hd-camera--full { position: fixed; inset: 0; z-index: 400; width: 100vw; height: 100vh; height: 100dvh; aspect-ratio: auto; display: grid; place-items: center; margin: 0; border-radius: 0; background: #000; }
+.app-shell .hd-camera:fullscreen img, .app-shell .hd-camera--full img { width: 100%; height: 100%; max-height: none; object-fit: contain; border-radius: 0; }
+.app-shell .hd-camera__player { display: block; width: 100%; height: 100%; }
+.app-shell .hd-camera:fullscreen .hd-camera__player, .app-shell .hd-camera--full .hd-camera__player { width: 100%; height: 100%; }
+.app-shell .widget-card--wide > .widget-hours, .app-shell .widget-card--wide > .sun-arc { grid-area: 1 / 2 / 4 / 3; align-self: center; min-width: 0; }
+.app-shell .widget-hours { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: calc(var(--u)*.6); text-align: center; }
+.app-shell .widget-hours span { display: grid; justify-items: center; gap: calc(var(--u)*.5); }
+.app-shell .widget-hours small { color: var(--ink-2); font: 500 calc(var(--u)*1.4)/1 var(--f-body); }
+.app-shell .widget-hours b { font: 600 calc(var(--u)*1.8)/1 var(--f-body); }
+.app-shell .sun-arc { width: 100%; height: auto; overflow: visible; color: inherit; }
+.app-shell .widget-card--wide.widget-card--energy { grid-template-rows: auto 1fr auto auto; }
+.app-shell .widget-card__chart { grid-column: 1 / -1; min-height: calc(var(--u)*7); color: var(--on); margin-top: calc(var(--u)*1); }
+.app-shell .hd-item--tall .widget-card__chart { flex: 1; }
+@keyframes hd-spin { to { transform: rotate(360deg); } }
+@keyframes hd-glow { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--on) 0%, transparent); } 50% { box-shadow: 0 0 calc(var(--u)*2.4) calc(var(--u)*.4) color-mix(in srgb, var(--on) 55%, transparent); } }
+@keyframes hd-shake { 0%, 100% { transform: translate(0, 0) rotate(0); } 20% { transform: translate(-1px, 1px) rotate(-3deg); } 40% { transform: translate(1px, -1px) rotate(3deg); } 60% { transform: translate(-1px, 0) rotate(-2deg); } 80% { transform: translate(1px, 1px) rotate(2deg); } }
+.app-shell.hd-anim [data-domain="fan"].device-tile--active .device-tile__icon svg { animation: hd-spin 1.6s linear infinite; }
+.app-shell.hd-anim [data-domain="light"].device-tile--active .device-tile__icon { animation: hd-glow 3.2s ease-in-out infinite; }
+.app-shell.hd-anim [data-running="appliance"] .device-tile__icon svg { animation: hd-shake .45s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .app-shell.hd-anim [data-domain] .device-tile__icon, .app-shell.hd-anim [data-domain] .device-tile__icon svg { animation: none !important; } }
+
+/* No scroll bars inside the panel: scrolling works as before. */
+.app-shell, .app-shell * { scrollbar-width: none; }
+.app-shell ::-webkit-scrollbar, .app-shell::-webkit-scrollbar { display: none; }
+
+/* Screensaver agenda, as on the home dashboard: today's events and reminders under the clock. */
+.app-shell .hd-saver__clock { transition: transform .4s ease; }
+.app-shell .hd-saver:has(.hd-saver__agenda) .hd-saver__clock { transform: translateY(-14vh); }
+.app-shell .hd-saver:has(.hd-saver__agenda--many) .hd-saver__clock { transform: translateY(-22vh); }
+.app-shell .hd-saver:has(.hd-saver__agenda) .hd-saver__time { font-size: min(26vw, 34vh, 240px); }
+.app-shell .hd-saver__agenda { position: absolute; left: 50%; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); width: min(560px, calc(100vw - 48px)); max-height: 40vh; overflow: hidden; display: flex; flex-direction: column; gap: 14px; padding: 14px 16px; border-radius: 22px; background: rgba(0,0,0,.22); box-shadow: inset 0 0 0 1px rgba(255,255,255,.1); text-align: left; cursor: default; }
+.app-shell .hd-saver__agenda section { display: flex; flex-direction: column; gap: 6px; }
+.app-shell .hd-saver__head { display: flex; align-items: center; gap: 8px; padding-bottom: 4px; font: 700 12px/1 var(--f-body); letter-spacing: .14em; text-transform: uppercase; opacity: .65; }
+.app-shell .hd-saver__row { display: flex; align-items: center; gap: 12px; font: 500 clamp(14px, 2.2vw, 19px)/1.25 var(--f-body); }
+.app-shell .hd-saver__row i { flex: none; width: 14px; height: 14px; border-radius: 50%; box-shadow: inset 0 0 0 2px rgba(255,255,255,.8); }
+.app-shell .hd-saver__row span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-shell .hd-saver__row small { flex: none; font-size: .82em; opacity: .65; font-variant-numeric: tabular-nums; }
+.app-shell .hd-saver__row--late i { box-shadow: inset 0 0 0 2px #ff8a7e; }
+.app-shell .hd-saver__row--late small { color: #ffb0a8; opacity: .95; }
+.app-shell .hd-saver__more { padding-left: 26px; font: 500 14px/1.2 var(--f-body); opacity: .55; }
+.app-shell .hd-saver:has(.hd-saver__agenda) .hd-saver__hint { bottom: calc(40px + env(safe-area-inset-bottom, 0px)); }
+
+/* Separators inside a list group: inset like the rows. A separator inside an edited list (a room's
+   rows on Home) neither jiggles nor blocks its title field, whatever grid it sits in. */
+.app-shell .ls-group .hd-sections { gap: 0; }
+.app-shell .ls-group .hd-sections > .hd-item--section { margin: 0; padding: calc(var(--u)*1.6) calc(var(--u)*1.8) calc(var(--u)*.8) calc(var(--u)*1.6); }
+.app-shell .ls-group .hd-sections > .hd-item--section + .ls-rows, .app-shell .ls-group .hd-sections > .ls-rows + .hd-item--section { border-top: 1px solid rgba(255,255,255,.07); }
+.app-shell .hd-grid--editing .hd-item--section, .app-shell .hd-sections--editing .hd-item--section { animation: none; }
+.app-shell .hd-grid--editing .hd-item--section > :first-child, .app-shell .hd-sections--editing .hd-item--section > :first-child { pointer-events: auto; }
+.app-shell .hd-section__input { user-select: text; -webkit-user-select: text; cursor: text; touch-action: auto; }
+.app-shell .ls-group .hd-sections > .hd-item--section .hd-item__badge--remove { left: calc(var(--u)*.6); }
 `;

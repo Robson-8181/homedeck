@@ -349,3 +349,47 @@ function CalendarSheet({ calendars, hass, language, onClose, t }: { calendars: C
     </div>
   </div>;
 }
+
+/** The screensaver's list, as on the home dashboard: today's events still ahead (with each calendar's
+ * color) and the reminders due, each part turned on in Settings. Returns how many lines it shows, so
+ * the clock can make room. */
+export function SaverAgenda({ config, hass, language, showEvents, showTodo, t }: AgendaProps & { showEvents: boolean; showTodo: boolean }) {
+  const calendars = useCalendars(config, hass);
+  const todo = showTodo ? todoEntity(config, hass) : undefined;
+  const { due } = useReminders(hass, todo, config.agenda.todo_no_date, language, t);
+  const hasCalendar = showEvents && calendars.length > 0 && Boolean(hass.callApi);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [now, setNow] = useState(() => new Date());
+  const today = dayKey(now);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  useEffect(() => {
+    if (!hasCalendar) { setEvents([]); return; }
+    let cancelled = false;
+    const from = startOfDay(new Date());
+    void fetchEvents(hass, calendars, from, new Date(from.getTime() + 86_400_000)).then((list) => { if (!cancelled) setEvents(list); });
+    const timer = window.setInterval(() => void fetchEvents(hass, calendars, startOfDay(new Date()), new Date(startOfDay(new Date()).getTime() + 86_400_000)).then((list) => { if (!cancelled) setEvents(list); }), TODAY_REFRESH);
+    return () => { cancelled = true; window.clearInterval(timer); };
+  }, [hasCalendar, today, calendars.map((calendar) => calendar.id).join(",")]);
+  const colors = new Map(calendars.map((calendar) => [calendar.id, calendar.color]));
+  const time = new Intl.DateTimeFormat(language, { hour: "2-digit", minute: "2-digit" });
+  const left = events.filter((event) => colors.has(event.calendar) && onDay(event, now) && (event.allDay || event.end > now || event.start >= now));
+  const max = 4;
+  const reminders = showTodo ? due : [];
+  if (left.length === 0 && reminders.length === 0) return null;
+  const more = (count: number, one: TranslationKey, many: TranslationKey) => count > max ? <div className="hd-saver__more">+{count - max} {t(count - max === 1 ? one : many)}</div> : null;
+  return <div className={`hd-saver__agenda ${left.length + reminders.length >= 3 ? "hd-saver__agenda--many" : ""}`} onClick={(event) => event.stopPropagation()}>
+    {left.length > 0 && <section>
+      <div className="hd-saver__head"><HDIcon name="calendar" size={16} /><span>{t("today")}</span></div>
+      {left.slice(0, max).map((event, index) => <div className="hd-saver__row" key={`e${index}`}><i style={{ background: colors.get(event.calendar), boxShadow: "none" }} /><span>{event.title}</span><small>{event.allDay ? t("allDay") : time.format(event.start)}</small></div>)}
+      {more(left.length, "moreEvent", "moreEvents")}
+    </section>}
+    {reminders.length > 0 && <section>
+      <div className="hd-saver__head"><HDIcon name="list" size={16} /><span>{t("reminders")}</span></div>
+      {reminders.slice(0, max).map((item) => <div className={item.late ? "hd-saver__row hd-saver__row--late" : "hd-saver__row"} key={item.uid}><i /><span>{item.summary}</span><small>{item.when}</small></div>)}
+      {more(reminders.length, "moreReminder", "moreReminders")}
+    </section>}
+  </div>;
+}

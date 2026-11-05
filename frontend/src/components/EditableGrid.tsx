@@ -9,6 +9,9 @@ import { isSectionKey, SECTION_PREFIX, showItem, withSections } from "../layout"
 /** True inside a double-size tile, so cards can offer more controls there. */
 const WideTile = createContext(false);
 export const useWideTile = () => useContext(WideTile);
+/** True inside a large tile (two columns and two rows). */
+const TallTile = createContext(false);
+export const useTallTile = () => useContext(TallTile);
 
 export interface GridItem {
   key: string;
@@ -180,17 +183,23 @@ export function EditableGrid({ addLabel, className, editing, hiddenItems = [], i
     if (!item) return null;
     const section = isSectionKey(key);
     const wide = !section && layout.wide.includes(key);
+    const tall = wide && (layout.tall ?? []).includes(key);
+    // The size badge goes normal → double → large → normal.
+    const nextSize = () => wide && !tall
+      ? { ...layout, tall: [...(layout.tall ?? []).filter((entry) => entry !== key), key] }
+      : wide ? { ...layout, wide: layout.wide.filter((entry) => entry !== key), tall: (layout.tall ?? []).filter((entry) => entry !== key) }
+        : { ...layout, wide: [...layout.wide, key] };
     return <div
-      className={`hd-item ${wide ? "hd-item--wide" : ""} ${section ? "hd-item--section" : ""} ${dragKey === key ? "hd-item--dragging" : ""}`}
+      className={`hd-item ${wide ? "hd-item--wide" : ""} ${tall ? "hd-item--tall" : ""} ${section ? "hd-item--section" : ""} ${dragKey === key ? "hd-item--dragging" : ""}`}
       data-hd-key={key}
       key={key}
       onPointerDown={start(key)}
       style={{ animationDelay: `${(index % 5) * -0.09}s` }}
     >
-      <WideTile.Provider value={wide}>{item.node}</WideTile.Provider>
+      <WideTile.Provider value={wide}><TallTile.Provider value={tall}>{item.node}</TallTile.Provider></WideTile.Provider>
       {editing && <>
         <button aria-label={`${item.removal === "remove" ? t("removeItem") : t("hideItem")}: ${item.label}`} className="hd-item__badge hd-item__badge--remove" onClick={() => hide(item)} type="button"><HDIcon name="minus" size={14} /></button>
-        {sizable && !section && <button aria-label={`${wide ? t("normalSize") : t("doubleSize")}: ${item.label}`} aria-pressed={wide} className="hd-item__badge hd-item__badge--size" onClick={() => (plan.pro ? onLayout({ ...layout, wide: wide ? layout.wide.filter((entry) => entry !== key) : [...layout.wide, key] }) : plan.upsell("feature"))} type="button"><HDIcon name={!plan.pro ? "lock" : wide ? "shrink" : "expand"} size={14} /></button>}
+        {sizable && !section && <button aria-label={`${tall ? t("normalSize") : wide ? t("largeSize") : t("doubleSize")}: ${item.label}`} aria-pressed={wide} className="hd-item__badge hd-item__badge--size" onClick={() => (plan.pro ? onLayout(nextSize()) : plan.upsell("feature"))} type="button"><HDIcon name={!plan.pro ? "lock" : tall ? "shrink" : "expand"} size={14} /></button>}
       </>}
     </div>;
   };

@@ -14,6 +14,7 @@ import { isSpotify } from "../spotify";
 import { mediaArt } from "../devices";
 import type { HomeDeckConfig } from "../types/config";
 import { TodayCard } from "./Agenda";
+import { EnergyWidget, SunWidget, WeatherWidget } from "./ExtraWidgets";
 
 function uniqueEntities(data: DiscoveryResponse): DiscoveredEntity[] {
   const seen = new Set<string>();
@@ -21,14 +22,14 @@ function uniqueEntities(data: DiscoveryResponse): DiscoveredEntity[] {
 }
 
 /** Widgets only exist when the house has something to show in them; Today only when turned on in Settings. */
-export function availableWidgets(data: DiscoveryResponse, today = false): WidgetKey[] {
+export function availableWidgets(data: DiscoveryResponse, today = false, extra: WidgetKey[] = []): WidgetKey[] {
   const entities = uniqueEntities(data);
   const keys: WidgetKey[] = [];
   if (entities.some((entity) => isSecurityEntity(entity))) keys.push("widget:security");
   if (entities.some((entity) => entity.domain === "climate")) keys.push("widget:climate");
   if (entities.some((entity) => entity.domain === "media_player")) keys.push("widget:media");
   if (today) keys.push("widget:today");
-  return keys;
+  return [...keys, ...extra];
 }
 
 export const WIDGET_LABELS: Record<WidgetKey, TranslationKey> = {
@@ -36,6 +37,9 @@ export const WIDGET_LABELS: Record<WidgetKey, TranslationKey> = {
   "widget:climate": "climate",
   "widget:media": "media",
   "widget:today": "today",
+  "widget:weather": "weatherNow",
+  "widget:sun": "sunCard",
+  "widget:energy": "energy",
 };
 
 interface HomeWidgetProps {
@@ -50,6 +54,9 @@ interface HomeWidgetProps {
 
 export function HomeWidget(props: HomeWidgetProps) {
   if (props.kind === "widget:today") return <TodayCard config={props.config} hass={props.hass} language={props.language} t={props.t} />;
+  if (props.kind === "widget:weather") return <WeatherWidget config={props.config} hass={props.hass} language={props.language} t={props.t} />;
+  if (props.kind === "widget:sun") return <SunWidget hass={props.hass} language={props.language} onOpen={props.onOpen} t={props.t} />;
+  if (props.kind === "widget:energy") return <EnergyWidget config={props.config} hass={props.hass} language={props.language} onOpen={props.onOpen} t={props.t} />;
   return <DeviceWidget {...props} />;
 }
 

@@ -17,6 +17,25 @@ const ACTIVE_STATES = new Set(["on", "open", "opening", "playing", "paused", "he
 export const TOGGLES = new Set(["light", "switch", "fan", "input_boolean", "automation"]);
 const HOLD_MS = 520;
 
+/** Washing machines, dryers and dishwashers, by name: their card shakes while they run (with animations on). */
+const APPLIANCE = /wash|dryer|lavar|lavadora|lava.?lou|secadora|secar|wasch|trockner|sp(ü|ue)l/i;
+const IDLE = new Set(["off", "idle", "standby", "unavailable", "unknown", "0", "none", "finished", "complete", "completed", "ready", "paused", "stop", "stopped"]);
+
+function isAppliance(entity: DiscoveredEntity): boolean {
+  return ["switch", "sensor", "binary_sensor", "input_boolean"].includes(entity.domain) && APPLIANCE.test(`${entity.entity_id} ${entity.original_name ?? ""} ${entity.name}`);
+}
+
+function applianceRunning(state?: HassEntity): boolean {
+  if (!state) return false;
+  const value = state.state.toLowerCase();
+  if (IDLE.has(value)) return false;
+  // A finish time runs until it is reached.
+  if (/^\d{4}-\d{2}-\d{2}t/.test(value)) return Date.parse(state.state) > Date.now();
+  // A power sensor runs above a few watts; a remaining-time or status sensor whenever it has a value.
+  const number = Number.parseFloat(value);
+  return Number.isFinite(number) ? number > 5 : true;
+}
+
 export function displayState(state: HassEntity | undefined, entity: DiscoveredEntity, t: (key: TranslationKey) => string, language?: string): string {
   if (!state || state.state === "unavailable") return t("unavailable");
   if (state.state === "unknown") return t("unknown");
@@ -143,6 +162,8 @@ function DeviceCard({ entity, hass, language, onLongPress, t }: EntityCardProps)
       aria-label={`${entity.name}: ${status}`}
       aria-pressed={TOGGLES.has(entity.domain) ? active : undefined}
       className={`device-tile device-tile--tap ${wide ? `device-tile--wide device-tile--wide-${entity.domain}` : ""} ${active ? "device-tile--active" : ""} ${state?.state === "cleaning" ? "device-tile--cleaning" : ""} ${state?.state === "triggered" || (entity.domain === "plant" && state?.state === "problem") ? "device-tile--alert" : ""} ${unavailable ? "device-tile--unavailable" : ""}`}
+      data-domain={entity.domain}
+      data-running={isAppliance(entity) && applianceRunning(state) ? "appliance" : undefined}
       onClick={click}
       onContextMenu={(event) => { event.preventDefault(); cancelHold(); onLongPress(entity); }}
       onKeyDown={key}

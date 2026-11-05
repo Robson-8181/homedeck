@@ -77,16 +77,26 @@ export function ContextHeader({ config, hass, language, onSettings, part = "all"
           <button aria-label={t("settings")} className="round-action" onClick={onSettings} type="button"><HDIcon name="settings" size={19} /></button>
         </div>}
       </header>
-      {forecastOpen && shell && createPortal(
-        <div aria-labelledby="weather-modal-title" aria-modal="true" className="weather-modal" onMouseDown={(event) => { if (event.target === event.currentTarget) setForecastOpen(false); }} role="dialog">
-          <section className="weather-modal__panel hd-forecast">
-            <header><div><h2 id="weather-modal-title">{t("weatherForecast")}</h2></div><button aria-label={t("close")} className="hd-close" onClick={() => setForecastOpen(false)} type="button"><HDIcon name="close" size={20} /></button></header>
-            <ForecastBody condition={condition} conditionLabel={conditionLabel} daily={daily} hourly={hourly} language={language} sunrise={sunrise} sunset={sunset} t={t} temperature={temperature} weather={weather} />
-          </section>
-        </div>,
-        shell,
-      )}
+      {forecastOpen && shell && <ForecastSheet daily={daily} hourly={hourly} language={language} onClose={() => setForecastOpen(false)} shell={shell} sunrise={sunrise} sunset={sunset} t={t} weather={weather} />}
     </>
+  );
+}
+
+/** The forecast window over the whole panel (from the weather chip or the weather card on Home). */
+export function ForecastSheet({ daily, hourly, language, onClose, shell, sunrise, sunset, t, weather }: {
+  daily: WeatherForecast[]; hourly: WeatherForecast[]; language?: string; onClose: () => void; shell: Element;
+  sunrise?: string; sunset?: string; t: (key: TranslationKey) => string; weather?: WeatherNow;
+}) {
+  const condition = weather?.condition;
+  const conditionLabel = condition ? weatherConditionLabel(condition, language) : t("unavailable");
+  return createPortal(
+    <div aria-labelledby="weather-modal-title" aria-modal="true" className="weather-modal" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }} role="dialog">
+      <section className="weather-modal__panel hd-forecast">
+        <header><div><h2 id="weather-modal-title">{t("weatherForecast")}</h2></div><button aria-label={t("close")} className="hd-close" onClick={onClose} type="button"><HDIcon name="close" size={20} /></button></header>
+        <ForecastBody condition={condition} conditionLabel={conditionLabel} daily={daily} hourly={hourly} language={language} sunrise={sunrise} sunset={sunset} t={t} temperature={weather?.temperature} weather={weather} />
+      </section>
+    </div>,
+    shell,
   );
 }
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ContextHeader } from "../components/ContextHeader";
 import { EditableGrid, type GridItem } from "../components/EditableGrid";
 import { EntityCard } from "../components/EntityCard";
@@ -7,6 +7,7 @@ import { EntityPicker } from "../components/EntityPicker";
 import { HDIcon } from "../components/HDIcon";
 import { HomeStatus } from "../components/HomeStatus";
 import { todayCardAvailable } from "../components/Agenda";
+import { extraWidgets } from "../components/ExtraWidgets";
 import { HomeWidget, WIDGET_LABELS, availableWidgets } from "../components/HomeWidget";
 import { RoomCard } from "../components/RoomCard";
 import { SceneStrip } from "../components/SceneStrip";
@@ -17,10 +18,13 @@ import { usePlan } from "../plan";
 
 export function HomeScreen(props: ScreenProps & { onOpenRoom: (roomId: string) => void }) {
   const { config, data, editing, hass, language, t } = props;
-  const empty = data.rooms.length === 0 && config.visibility.visible_home_entities.length === 0 && availableWidgets(data, todayCardAvailable(config, hass)).length === 0;
+  const empty = data.rooms.length === 0 && config.visibility.visible_home_entities.length === 0 && availableWidgets(data, todayCardAvailable(config, hass), extraWidgets(config, hass)).length === 0;
+
+  const screen = useRef<HTMLElement>(null);
+  useFitToScreen(screen);
 
   return (
-    <main className={`screen home-screen ${editing ? "screen--editing" : ""}`}>
+    <main className={`screen home-screen ${editing ? "screen--editing" : ""}`} ref={screen}>
       <ContextHeader config={config} hass={hass} language={language} onSettings={props.onSettings} t={t} />
       {editing && <p className="edit-hint">{t("editHint")}</p>}
       {config.visibility.home_cards.status && <HomeStatus config={config} data={data} hass={hass} t={t} />}
@@ -30,6 +34,45 @@ export function HomeScreen(props: ScreenProps & { onOpenRoom: (roomId: string) =
         : <HomeGrid {...props} className="home-grid" />}
     </main>
   );
+}
+
+/** The size unit of every screen (theme.ts); Home scales it down a little when that makes it fit. */
+const UNIT = "clamp(4.4px, min(1vw, 1.05vh), 13px)";
+const MIN_SCALE = 0.85;
+
+/** When Home is only a little taller than the screen (a separator, one more row of text), everything on
+ * it shrinks by up to 15% so it fits without a small scroll. Bigger homes still scroll, and phones are
+ * left alone. */
+function useFitToScreen(screen: { current: HTMLElement | null }) {
+  useLayoutEffect(() => {
+    const element = screen.current;
+    if (!element) return;
+    let busy = false;
+    const fit = () => {
+      if (busy) return;
+      busy = true;
+      element.style.removeProperty("--u");
+      const target = window.innerHeight;
+      let height = element.getBoundingClientRect().height;
+      if (window.innerWidth > 720 && height > target + 0.5 && height * MIN_SCALE <= target) {
+        // Not every size follows the unit, so a few rounds get it right.
+        let scale = 1;
+        for (let round = 0; round < 4 && height > target + 0.5; round++) {
+          scale = Math.max(MIN_SCALE, scale * (target / height) - 0.002);
+          element.style.setProperty("--u", `calc(${UNIT} * ${scale.toFixed(4)})`);
+          height = element.getBoundingClientRect().height;
+          if (scale === MIN_SCALE) break;
+        }
+        if (height > target + 0.5) element.style.removeProperty("--u");
+      }
+      busy = false;
+    };
+    fit();
+    const observer = new ResizeObserver(() => fit());
+    observer.observe(element);
+    window.addEventListener("resize", fit);
+    return () => { observer.disconnect(); window.removeEventListener("resize", fit); };
+  }, []);
 }
 
 /** Rooms, widgets and shortcuts of Home in their arranged order, editable in place. */
@@ -42,7 +85,7 @@ export function HomeGrid(props: ScreenProps & { className: string; onOpenRoom: (
   const { byId, roomName } = useMemo(() => entityIndex(allRooms), [allRooms]);
   const rooms = new Map(data.rooms.map((room) => [room.id, room]));
   const homeEntities = config.visibility.visible_home_entities.filter((id) => byId.has(id));
-  const keys = [...data.rooms.map((room) => roomKey(room.id)), ...availableWidgets(data, todayCardAvailable(config, hass)), ...homeEntities.map(entityKey)];
+  const keys = [...data.rooms.map((room) => roomKey(room.id)), ...availableWidgets(data, todayCardAvailable(config, hass), extraWidgets(config, hass)), ...homeEntities.map(entityKey)];
   const { visible, hidden } = arrange(keys, layout);
 
   const label = (key: string): string => {
