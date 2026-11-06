@@ -1,6 +1,6 @@
 # HomeDeck
 
-<p align="center"><img src="https://raw.githubusercontent.com/rodrigo-wa/homedeck/main/images/home.jpg" alt="HomeDeck Home screen on a wall tablet with energy, weather, sun and room cards"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/rodrigo-wa/homedeck/main/images/home.jpg" alt="HomeDeck Home screen with weather, sun, energy and room cards"></p>
 
 <p align="center"><b>A beautiful, local dashboard for Home Assistant that builds itself.</b><br>
 No YAML, no cards to configure: add a light to an area and it shows up in the right room.</p>
@@ -29,6 +29,27 @@ someone suggests them.
 | <img src="https://raw.githubusercontent.com/rodrigo-wa/homedeck/main/images/grid.jpg" alt="Grid layout"> | <img src="https://raw.githubusercontent.com/rodrigo-wa/homedeck/main/images/sidebar.jpg" alt="Sidebar layout"> |
 | **List** | **Focus** |
 | <img src="https://raw.githubusercontent.com/rodrigo-wa/homedeck/main/images/list.jpg" alt="List layout"> | <img src="https://raw.githubusercontent.com/rodrigo-wa/homedeck/main/images/focus.jpg" alt="Focus layout"> |
+
+### Special dates
+
+HomeDeck dresses up for the holidays on its own: a countdown by the clock, a light animation and
+decorations on the cards, following your country. Each date can be turned on or off.
+
+| Christmas | New Year |
+|:---:|:---:|
+| <img src="https://raw.githubusercontent.com/rodrigo-wa/homedeck/main/images/season-christmas.jpg" alt="Christmas: presents on the cards and string lights"> | <img src="https://raw.githubusercontent.com/rodrigo-wa/homedeck/main/images/season-newyear.jpg" alt="New Year: sparkles and fireworks right after midnight"> |
+| **Halloween** | **Birthdays from your calendar** |
+| <img src="https://raw.githubusercontent.com/rodrigo-wa/homedeck/main/images/season-halloween.jpg" alt="Halloween: webs, a dangling spider and a ghost"> | <img src="https://raw.githubusercontent.com/rodrigo-wa/homedeck/main/images/season-birthday.jpg" alt="Birthday: balloons and confetti with the person's name"> |
+
+Easter, Valentine's Day, Carnival, Thanksgiving and your own dates too.
+
+### Your colors, your style
+
+| Aurora | Ocean |
+|:---:|:---:|
+| <img src="https://raw.githubusercontent.com/rodrigo-wa/homedeck/main/images/style-aurora.jpg" alt="Aurora background with energy, weather and sun cards"> | <img src="https://raw.githubusercontent.com/rodrigo-wa/homedeck/main/images/style-ocean.jpg" alt="Ocean background in the Sidebar layout with rounded cards"> |
+| **Wine** | **Graphite** |
+| <img src="https://raw.githubusercontent.com/rodrigo-wa/homedeck/main/images/style-wine.jpg" alt="Wine background in the List layout"> | <img src="https://raw.githubusercontent.com/rodrigo-wa/homedeck/main/images/style-graphite.jpg" alt="Graphite background with sensor charts on the cards"> |
 
 ### Arrange it your way
 
@@ -101,12 +122,14 @@ on macOS). Your rooms, backgrounds and preferences are kept.
   **camera full screen** including WebRTC-only cameras like newer Nest, and optional **weather, sun
   and energy cards** on Home (consumption, solar, grid and battery).
 - Optional **animations:** fans spin, lights glow and washing machines shake while they run.
-- **Special dates:** snow at Christmas, fireworks at New Year, confetti on birthdays from your
-  calendar, and more, following your country. Each one optional.
+- **Special dates:** presents and string lights at Christmas, fireworks at New Year, a spider at
+  Halloween, a bunny at Easter and balloons on birthdays from your calendar, following your
+  country. Each one optional, with a preview in Settings.
 - **Doorbell pop-up:** when the doorbell rings, its camera shows up over the panel, even on the
   screensaver.
 - **Spotify player** (with a default speaker per device), a screensaver with today's events and reminders, scene strip,
-  and, for a wall tablet, options to hide the Home Assistant sidebar and lock editing.
+  and, for a wall tablet, options to hide the Home Assistant sidebar, lock editing and keep the
+  screen on (automatic on an Echo Show).
 - **English, Portuguese, Spanish, German and Polish**, following Home Assistant's language.
 
 ## Plans
