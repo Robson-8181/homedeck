@@ -50,6 +50,10 @@ export interface HomeDeckConfig {
   rooms: Record<string, HomeDeckRoomOptions>;
   /** Nicknames given in HomeDeck, by entity id; Home Assistant keeps its own names. */
   names?: Record<string, string>;
+  /** Tiles show the entity's own icon from Home Assistant when it has one (off by default). */
+  ha_icons?: boolean;
+  /** Per device, set in its details: its icon ("ha" or a HomeDeck icon) and whether a tap asks to confirm. */
+  entity_options?: Record<string, HomeDeckEntityOptions>;
   dashboard: Record<string, unknown>;
   favorites: string[];
   /** Free plan: the controllable devices chosen to appear (empty = all of the selected rooms, when they fit). */
@@ -138,6 +142,8 @@ export interface HomeDeckConfig {
   };
   /** Sensors of the energy card; empty fields are left out. */
   energy: HomeDeckEnergy;
+  /** Pro: special dates (holidays by the home's country, birthdays from the calendar, own dates). */
+  seasons?: { enabled: boolean; off: string[]; custom: Array<{ name: string; date: string; effect: string }> };
   /** Camera cards play their live video while on screen (on by default); off shows a still every 10 s. */
   live_cameras: boolean;
   /** Pro: when the trigger (a doorbell event, or a sensor turning on) fires, the camera pops up. */
@@ -156,6 +162,11 @@ export interface HomeDeckRoomOptions {
   name?: string;
   icon?: string;
   temperature?: string;
+}
+
+export interface HomeDeckEntityOptions {
+  icon?: string;
+  confirm?: boolean;
 }
 
 export interface HomeDeckCardStyle {

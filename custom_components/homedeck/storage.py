@@ -99,6 +99,30 @@ def _normalize_names(value: Any) -> dict[str, str]:
     }
 
 
+_SEASON_IDS = {"christmas", "newyear", "halloween", "valentines", "easter", "carnival", "thanksgiving", "birthdays"}
+_SEASON_EFFECTS = {"snow", "sparkle", "halloween", "hearts", "eggs", "confetti", "bunting", "leaves"}
+_SEASON_DATE = re.compile(r"^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$")
+
+
+def _normalize_entity_options(value: Any) -> dict[str, dict[str, Any]]:
+    """Per device: its tile icon ("ha" or a HomeDeck icon name) and whether a tap asks to confirm."""
+    if not isinstance(value, dict):
+        return {}
+    result: dict[str, dict[str, Any]] = {}
+    for entity_id, options in list(value.items())[:_MAX_LAYOUT_ITEMS]:
+        if not (isinstance(entity_id, str) and "." in entity_id and len(entity_id) <= _MAX_KEY_LENGTH and isinstance(options, dict)):
+            continue
+        clean: dict[str, Any] = {}
+        icon = options.get("icon")
+        if isinstance(icon, str) and icon and len(icon) <= 32 and all(char.isalnum() or char == "-" for char in icon):
+            clean["icon"] = icon
+        if options.get("confirm") is True:
+            clean["confirm"] = True
+        if clean:
+            result[entity_id] = clean
+    return result
+
+
 def _normalize_layouts(value: Any) -> dict[str, dict[str, Any]]:
     """Return per-screen layouts: ordered, hidden and double-width item keys, and separators."""
     if not isinstance(value, dict):
@@ -187,6 +211,9 @@ def normalize_config(value: Any) -> HomeDeckConfig:
 
     config["rooms"] = _normalize_rooms(value.get("rooms"))
     config["names"] = _normalize_names(value.get("names"))
+    config["entity_options"] = _normalize_entity_options(value.get("entity_options"))
+    if isinstance(value.get("ha_icons"), bool):
+        config["ha_icons"] = value["ha_icons"]
 
     dashboard = value.get("dashboard")
     if isinstance(dashboard, dict):
@@ -315,6 +342,20 @@ def normalize_config(value: Any) -> HomeDeckConfig:
             entity_id = energy.get(key)
             if isinstance(entity_id, str) and (entity_id == "" or (entity_id.startswith("sensor.") and len(entity_id) <= _MAX_KEY_LENGTH)):
                 config["energy"][key] = entity_id
+
+    seasons = value.get("seasons")
+    if isinstance(seasons, dict):
+        if isinstance(seasons.get("enabled"), bool):
+            config["seasons"]["enabled"] = seasons["enabled"]
+        config["seasons"]["off"] = [item for item in _unique_strings(seasons.get("off")) if item in _SEASON_IDS]
+        custom = []
+        for item in seasons.get("custom") if isinstance(seasons.get("custom"), list) else []:
+            if not isinstance(item, dict):
+                continue
+            name, date, effect = item.get("name"), item.get("date"), item.get("effect")
+            if isinstance(name, str) and name.strip() and isinstance(date, str) and _SEASON_DATE.match(date) and effect in _SEASON_EFFECTS:
+                custom.append({"name": name.strip()[:40], "date": date, "effect": effect})
+        config["seasons"]["custom"] = custom[:20]
 
     if isinstance(value.get("live_cameras"), bool):
         config["live_cameras"] = value["live_cameras"]

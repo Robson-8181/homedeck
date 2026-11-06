@@ -12,12 +12,14 @@ import { ListLayout } from "./screens/layouts/ListLayout";
 import { SidebarLayout, type NavLink } from "./screens/layouts/SidebarLayout";
 import { Screensaver } from "./components/Screensaver";
 import { DoorbellPopup, useDoorbell } from "./components/Doorbell";
-import { editingLocked, useDevicePref } from "./devicePrefs";
+import { useOccasion } from "./components/Agenda";
+import { editingLocked, keepAwakeMode, useDevicePref } from "./devicePrefs";
+import { keepAwakeWanted, startKeepAwake } from "./keepAwake";
 import { createTranslator } from "./i18n";
 import { migrateLayouts, withLayout } from "./layout";
 import { effectiveConfig, freeDevices, isControllable, overFreeLimits, panelRoomIds, PlanContext, restrictRooms, type PlanState, type UpsellReason } from "./plan";
 import { availableSections } from "./security";
-import { CustomizeContext, personalize, withNickname, withRoomOptions } from "./personalize";
+import { CustomizeContext, personalize, withNickname, withEntityOptions, withRoomOptions } from "./personalize";
 import { PageScreen } from "./screens/PageScreen";
 import { pageId, type PageRef } from "./screens/pages";
 import { HomeScreen } from "./screens/HomeScreen";
@@ -53,7 +55,7 @@ export function App({ hass, version }: { hass: HomeAssistant; version?: string }
   const t = useMemo(() => createTranslator(language), [language]);
   configRef.current = config;
   // Nicknames and room options apply to every screen through the discovery data.
-  const data = useMemo(() => (rawData ? personalize(rawData, config?.names, config?.rooms) : null), [rawData, config?.names, config?.rooms]);
+  const data = useMemo(() => (rawData ? personalize(rawData, config?.names, config?.rooms, config?.entity_options, config?.ha_icons) : null), [rawData, config?.names, config?.rooms, config?.entity_options, config?.ha_icons]);
 
   const load = useCallback(async () => {
     setError(false);
@@ -156,6 +158,7 @@ export function App({ hass, version }: { hass: HomeAssistant; version?: string }
     lookup: (entityId: string) => byId.get(entityId),
     rename: (entityId: string, name: string, original: string) => void updateConfig((current) => withNickname(current, entityId, name, original)),
     setRoom: (roomId: string, change: { icon?: string; temperature?: string }) => void updateConfig((current) => withRoomOptions(current, roomId, change)),
+    setEntity: (entityId: string, change: { icon?: string; confirm?: boolean }) => void updateConfig((current) => withEntityOptions(current, entityId, change)),
     };
   }, [data, updateConfig]);
 
@@ -181,9 +184,14 @@ export function App({ hass, version }: { hass: HomeAssistant; version?: string }
   const [ringing, setRinging] = useState(false);
   // A wall tablet can lock editing: no Edit button, and Edit mode closes if it was open.
   const locked = useDevicePref(editingLocked);
+  // Echo Show and other wall screens: keep the browser open and the display on (per device).
+  const awake = useDevicePref(keepAwakeMode);
+  useEffect(() => (keepAwakeWanted(awake) ? startKeepAwake() : undefined), [awake]);
   useEffect(() => { if (locked) setEditing(false); }, [locked]);
   useDoorbell(hass, view?.doorbell, useCallback(() => { dismissSaver(); setRinging(true); }, [dismissSaver]));
   const stopRinging = useCallback(() => { lastActivity.current = Date.now(); setRinging(false); }, []);
+  // Special dates (Pro): the occasion near or happening now, and New Year's fireworks.
+  const season = useOccasion(view, hass, t);
 
   useEffect(() => {
     window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "auto" }));
@@ -320,7 +328,7 @@ export function App({ hass, version }: { hass: HomeAssistant; version?: string }
   const active = selectedRoom ? "rooms" : customPage || ["scenes", "media", "security"].includes(activePage) ? activePage : "home";
 
   return withPlan(
-    <DynamicShell config={view} data={visibleData} hass={hass} mode={mode}>
+    <DynamicShell config={view} data={visibleData} hass={hass} mode={mode} season={season}>
       {screen}
       {mode !== "sidebar" && <NavigationDock active={active} config={view} editing={editing} hasMedia={hasMedia} hasScenes={hasScenes} hasSecurity={hasSecurity} onNavigate={navigate} onOrder={(order) => void updateConfig((current) => ({ ...current, navigation: { ...current.navigation, order } }))} t={t} />}
       {!locked && <button aria-label={editing ? t("doneEditing") : t("editScreen")} aria-pressed={editing} className={editing ? "edit-fab edit-fab--on" : "edit-fab"} onClick={() => setEditing((current) => !current)} type="button">

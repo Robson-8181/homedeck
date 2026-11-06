@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { birthdayName, currentOccasion, fireworksTime, type Occasion } from "../seasons";
 import { createPortal } from "react-dom";
 import type { CSSProperties } from "react";
 import type { TranslationKey } from "../i18n";
@@ -392,4 +393,33 @@ export function SaverAgenda({ config, hass, language, showEvents, showTodo, t }:
       {more(reminders.length, "moreReminder", "moreReminders")}
     </section>}
   </div>;
+}
+
+/** The special date to show now (Pro): checked every minute, with today's birthdays from the calendars. */
+export function useOccasion(config: HomeDeckConfig | null, hass: HomeAssistant, t: (key: TranslationKey) => string): { occasion: Occasion | null; fireworks: boolean } {
+  const seasons = config?.seasons;
+  const enabled = Boolean(seasons?.enabled);
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    if (!enabled) return;
+    const timer = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(timer);
+  }, [enabled]);
+  const calendars = useCalendars(config ?? ({ agenda: { calendars: [] } } as unknown as HomeDeckConfig), hass);
+  const wantsBirthdays = enabled && !seasons?.off.includes("birthdays") && calendars.length > 0 && Boolean(hass.callApi);
+  const day = startOfDay(now).getTime();
+  const [birthdays, setBirthdays] = useState<string[]>([]);
+  useEffect(() => {
+    if (!wantsBirthdays) { setBirthdays([]); return; }
+    let cancelled = false;
+    void fetchEvents(hass, calendars, new Date(day), new Date(day + 86_400_000)).then((events) => {
+      if (cancelled) return;
+      const names = events.filter((event) => onDay(event, new Date(day))).map((event) => birthdayName(event.title)).filter((name): name is string => name != null);
+      setBirthdays(names.length > 0 ? names.map((name) => name || "") : []);
+    });
+    return () => { cancelled = true; };
+  }, [wantsBirthdays, day, calendars.map((calendar) => calendar.id).join(",")]);
+  const country = (hass.config?.country ?? "").toUpperCase();
+  const occasion = useMemo(() => (seasons ? currentOccasion(now, country, seasons, birthdays, t) : null), [now.getTime(), country, seasons, birthdays.join("|"), t]);
+  return { occasion, fireworks: enabled && !seasons?.off.includes("newyear") && fireworksTime(now) };
 }

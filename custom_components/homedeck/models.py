@@ -167,6 +167,8 @@ class HomeDeckConfig(TypedDict):
     dashboard: dict[str, Any]
     favorites: list[str]
     names: dict[str, str]
+    entity_options: dict[str, dict[str, Any]]
+    ha_icons: bool
     free_devices: list[str]
     free_rooms: list[str]
     view_mode: str
@@ -188,6 +190,7 @@ class HomeDeckConfig(TypedDict):
     energy: dict[str, str]
     doorbell: HomeDeckDoorbellConfig
     live_cameras: bool
+    seasons: dict[str, Any]
 
 
 ENERGY_FIELDS = ("consumption", "grid_import", "grid_export", "solar", "battery", "solar_today")
@@ -207,6 +210,8 @@ def default_config() -> HomeDeckConfig:
         "dashboard": {},
         "favorites": [],
         "names": {},
+        "entity_options": {},
+        "ha_icons": False,
         "free_devices": [],
         "free_rooms": [],
         "view_mode": "grid",
@@ -289,5 +294,6 @@ def default_config() -> HomeDeckConfig:
         "energy": {key: "" for key in ENERGY_FIELDS},
         "doorbell": {"enabled": False, "trigger": "", "camera": "", "seconds": 60},
         "live_cameras": True,
+        "seasons": {"enabled": False, "off": [], "custom": []},
     }
 

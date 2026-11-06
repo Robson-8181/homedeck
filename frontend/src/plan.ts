@@ -97,6 +97,7 @@ export function effectiveConfig(config: HomeDeckConfig, pro: boolean): HomeDeckC
     layouts: Object.fromEntries(Object.entries(config.layouts).map(([screen, layout]) => [screen, { ...layout, wide: [], tall: [] }])),
     widgets: { ...config.widgets, energy: false },
     doorbell: { ...config.doorbell, enabled: false },
+    seasons: config.seasons ? { ...config.seasons, enabled: false } : undefined,
   };
 }
 

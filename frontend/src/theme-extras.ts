@@ -620,4 +620,61 @@ export const themeExtras = String.raw`
 @keyframes hd-doorbell-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes hd-doorbell-ring { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(14deg); } 30% { transform: rotate(-12deg); } 45% { transform: rotate(8deg); } 60% { transform: rotate(-4deg); } }
 
+/* A protected device: a small lock on its tile, and the second-tap prompt over it. */
+.app-shell .device-tile__guard { position: absolute; top: calc(var(--u)*1.6); right: calc(var(--u)*1.6); width: calc(var(--u)*2.8); height: calc(var(--u)*2.8); display: grid; place-items: center; border-radius: 50%; background: rgba(0,0,0,.18); color: inherit; opacity: .8; }
+.app-shell .device-tile__confirm { position: absolute; inset: 0; z-index: 3; display: grid; place-items: center; padding: calc(var(--u)*1.4); border-radius: inherit; background: rgba(18,12,16,.8); color: #fff; outline: 2px solid var(--on); outline-offset: -2px; text-align: center; font: 600 calc(var(--u)*1.8)/1.25 var(--f-body); animation: hd-confirm-in .15s ease-out; pointer-events: none; }
+@keyframes hd-confirm-in { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
+.app-shell .device-tile__icon .hd-ha-icon { color: inherit; }
+/* Device options in the details: a quiet button, then the icon picker and the confirmation switch. */
+.app-shell .hd-detail__options-toggle { justify-self: center; display: inline-flex; align-items: center; gap: calc(var(--u)*.7); margin-top: calc(var(--u)*1.4); padding: calc(var(--u)*.8) calc(var(--u)*1.6); border: 0; border-radius: var(--hd-pill,99px); background: rgba(255,255,255,.07); color: var(--ink-2); font: 600 calc(var(--u)*1.5)/1 var(--f-body); cursor: pointer; }
+.app-shell .hd-detail__options { margin: calc(var(--u)*1.6) 0 0; }
+.app-shell .hd-detail__confirm { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u)*2); cursor: pointer; }
+.app-shell .hd-detail__confirm b { display: block; color: var(--ink); font: 600 calc(var(--u)*1.7)/1.25 var(--f-body); }
+.app-shell .hd-detail__confirm small { display: block; margin-top: 2px; color: var(--ink-2); font: 500 calc(var(--u)*1.45)/1.3 var(--f-body); }
+
+/* Special dates: the animation layer behind the cards, the badge by the clock and the saver greeting. */
+.app-shell .hd-season-layer { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.app-shell .hd-season-layer canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.app-shell .hd-season-bunting { position: absolute; top: 0; left: 0; width: 100%; height: calc(var(--u)*3.4); opacity: .85; }
+.app-shell .hd-season-badge { display: inline-flex; align-items: center; gap: 4px; margin-left: calc(var(--u)*1.2); padding: calc(var(--u)*.55) calc(var(--u)*1.5); line-height: 1.2; border-radius: var(--hd-pill,99px); background: rgba(255,255,255,.12); color: var(--ink); font-weight: 600; letter-spacing: 0; text-transform: none; white-space: nowrap; }
+.app-shell .hd-season-badge--day { background: var(--on); color: var(--on-ink, #2a2110); }
+.app-shell .hd-saver__season { margin-top: calc(var(--u)*2); color: #fff; font: 500 calc(var(--u)*3.2)/1.2 var(--f-display); text-align: center; }
+.app-shell .st-season-actions { display: inline-flex; align-items: center; gap: calc(var(--u)*1); flex: none; }
+.app-shell .st-season-see { padding-block: calc(var(--u)*.6); font-size: calc(var(--u)*1.45); }
+.app-shell .hd-season-preview { position: fixed; inset: 0; z-index: 700; pointer-events: none; }
+.app-shell .hd-season-preview .hd-season-layer { z-index: 0; }
+.app-shell .hd-season-preview__chip { position: absolute; left: 50%; bottom: calc(var(--u)*4); transform: translateX(-50%); display: inline-flex; align-items: center; gap: calc(var(--u)*1.2); padding: calc(var(--u)*.8) calc(var(--u)*.8) calc(var(--u)*.8) calc(var(--u)*.8); border: 0; border-radius: var(--hd-pill,99px); background: rgba(20,14,20,.85); color: #fff; font: 600 calc(var(--u)*1.6)/1 var(--f-body); pointer-events: auto; cursor: pointer; backdrop-filter: blur(10px); }
+.app-shell .hd-season-preview__chip > span:last-child { padding-right: calc(var(--u)*1); opacity: .8; }
+.app-shell .st-season-add { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr) auto; gap: calc(var(--u)*.8); align-items: center; padding: calc(var(--u)*1) 0; border-top: 1px solid rgba(255,255,255,.07); }
+.app-shell .st-season-add input { min-width: 0; height: calc(var(--u)*4.4); padding: 0 calc(var(--u)*1.2); border: 1px solid rgba(255,255,255,.2); border-radius: calc(var(--u)*1.4*var(--hd-r,1)); background: rgba(0,0,0,.18); color: var(--ink); font: 500 calc(var(--u)*1.6)/1 var(--f-body); color-scheme: dark; }
+@media (max-width: 720px) { .app-shell .st-season-add { grid-template-columns: 1fr 1fr; } }
+
+/* Special-date decorations on the cards and in the empty spaces (above the cards, under the dock, never tappable). */
+.app-shell .hd-decor { position: fixed; inset: 0; z-index: 8; pointer-events: none; overflow: hidden; }
+.app-shell .hd-decor__at { position: absolute; }
+.app-shell .hd-decor__row { display: flex; gap: 3px; align-items: flex-end; }
+.app-shell .hd-decor__webclip { width: 64px; height: 64px; overflow: hidden; }
+.app-shell .hd-decor__lights { position: absolute; top: 0; left: 0; width: 100%; height: calc(var(--u)*4.2); }
+.app-shell .hd-decor__bulb { animation: hd-bulb 2s ease-in-out infinite; }
+@keyframes hd-bulb { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.app-shell .hd-decor__ghost { position: absolute; top: 55%; left: 0; opacity: .85; animation: hd-ghost 60s linear infinite; animation-delay: 4s; transform: translateX(-80px); }
+.app-shell .hd-decor__ghost--now { animation: hd-ghost-now 8s linear 1; }
+@keyframes hd-ghost { 0% { transform: translate(-80px, 0); } 8% { transform: translate(30vw, -30px); } 16% { transform: translate(60vw, 20px); } 24% { transform: translate(calc(100vw + 20px), -20px); } 100% { transform: translate(calc(100vw + 20px), -20px); } }
+@keyframes hd-ghost-now { 0% { transform: translate(-80px, 0); } 33% { transform: translate(30vw, -30px); } 66% { transform: translate(60vw, 20px); } 100% { transform: translate(calc(100vw + 20px), -20px); } }
+.app-shell .hd-decor__ghost-body { animation: hd-ghost-wobble 1.6s ease-in-out infinite alternate; }
+@keyframes hd-ghost-wobble { from { transform: rotate(-6deg); } to { transform: rotate(6deg); } }
+.app-shell .hd-decor__dangle { transform-origin: top center; animation: hd-dangle 3.2s ease-in-out infinite alternate; }
+@keyframes hd-dangle { from { transform: translateY(-34px) scaleY(.9); } to { transform: translateY(0) scaleY(1); } }
+.app-shell .hd-decor__peek { width: 64px; overflow: hidden; }
+.app-shell .hd-decor__bunny-body { display: block; transform: translateY(100%); animation: hd-peek 6s ease-in-out infinite; }
+@keyframes hd-peek { 0%, 100% { transform: translateY(100%); } 18%, 62% { transform: translateY(14%); } 30% { transform: translateY(18%) rotate(-4deg); } 45% { transform: translateY(14%) rotate(4deg); } }
+.app-shell .hd-decor__tag { display: grid; justify-items: center; transform-origin: top center; animation: hd-swing 2.4s ease-in-out infinite alternate; }
+.app-shell .hd-decor__string { width: 1px; height: 12px; background: rgba(255,255,255,.6); }
+@keyframes hd-swing { from { transform: rotate(-9deg); } to { transform: rotate(9deg); } }
+.app-shell .hd-decor__speck { display: block; width: 7px; height: 3px; border-radius: 1px; }
+.app-shell .hd-decor__balloons { position: absolute; inset: 0; }
+.app-shell .hd-decor__balloon { position: absolute; bottom: -110px; animation: hd-balloon 16s linear infinite; }
+@keyframes hd-balloon { 0% { transform: translate(0, 0); } 50% { transform: translate(24px, -55vh); } 100% { transform: translate(-10px, calc(-100vh - 140px)); } }
+@media (prefers-reduced-motion: reduce) { .app-shell .hd-decor * { animation: none !important; } .app-shell .hd-decor__bunny-body { transform: translateY(14%); } }
+
 `;

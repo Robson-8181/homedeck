@@ -211,6 +211,20 @@ export function roomIcon(name: string): IconName {
   return "home";
 }
 
+/** Icons offered for a device's tile, in its details. */
+export const DEVICE_ICONS: IconName[] = ["light", "fan", "switch", "power", "cover", "door", "lock", "climate", "media", "speaker", "camera", "vacuum", "laundry", "kitchen", "car", "plant", "alarm", "bell", "sun", "moon", "pool", "star", "button", "sensor"];
+
+/** A device's tile icon: its chosen HomeDeck icon, Home Assistant's own icon ("ha", when it has one),
+ * or the icon of its type, as before. */
+export function EntityIcon({ entity, size = 23 }: { entity: { domain: string; icon?: string | null; display_icon?: string }; size?: number }) {
+  const choice = entity.display_icon;
+  if (choice === HA_ICON && entity.icon?.includes(":") && typeof customElements !== "undefined" && customElements.get("ha-icon")) {
+    return <ha-icon class="hd-ha-icon" icon={entity.icon} style={{ "--mdc-icon-size": `${size}px`, width: size, height: size, display: "inline-flex" } as CSSProperties} />;
+  }
+  const own = choice && choice !== HA_ICON && Object.prototype.hasOwnProperty.call(paths, choice) ? (choice as IconName) : domainIcon(entity.domain);
+  return <HDIcon name={own} size={size} />;
+}
+
 export function domainIcon(domain: string): IconName {
   const icons: Record<string, IconName> = {
     binary_sensor: "sensor",

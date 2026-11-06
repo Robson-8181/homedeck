@@ -80,8 +80,11 @@ on macOS). Your rooms, backgrounds and preferences are kept.
 - **Edit mode, arranged your way:** drag to reorder, tap − to hide, add devices from any room,
   make a card double or large, split a screen into groups with separators and reorder the bottom
   bar. Nothing is ever deleted from Home Assistant.
-- **Your names and icons:** rename devices and rooms inside HomeDeck, pick each room's icon and
-  the sensor that shows its temperature. Home Assistant keeps its own names.
+- **Your names and icons:** rename devices and rooms inside HomeDeck, pick each room's and
+  device's icon (or use Home Assistant's) and the sensor that shows a room's temperature. Home
+  Assistant keeps its own names.
+- **Protected cards:** ask for a second tap before switching a device, so a brush against the
+  screen does nothing.
 - **Calendar and reminders** beside the clock, with a full-screen month view and a
   reminders list, plus an optional **Today card** on Home.
 - **Full weather forecast:** next hours and next 7 days, using your Home Assistant weather
@@ -98,6 +101,8 @@ on macOS). Your rooms, backgrounds and preferences are kept.
   **camera full screen** including WebRTC-only cameras like newer Nest, and optional **weather, sun
   and energy cards** on Home (consumption, solar, grid and battery).
 - Optional **animations:** fans spin, lights glow and washing machines shake while they run.
+- **Special dates:** snow at Christmas, fireworks at New Year, confetti on birthdays from your
+  calendar, and more, following your country. Each one optional.
 - **Doorbell pop-up:** when the doorbell rings, its camera shows up over the panel, even on the
   screensaver.
 - **Spotify player** (with a default speaker per device), a screensaver with today's events and reminders, scene strip,
@@ -109,7 +114,7 @@ on macOS). Your rooms, backgrounds and preferences are kept.
 - **Free:** up to 4 rooms and 10 controllable devices (lights, switches, fans, covers,
   climate, media and locks). Sensors and scenes don't count. Grid and List layouts.
 - **Pro:** unlimited rooms and devices, all four layouts, double and large cards, your own pages,
-  the energy card, animations, sensor charts on cards, the doorbell pop-up, the Spotify player, the screensaver with
+  the energy card, animations, sensor charts on cards, the doorbell pop-up, special dates, the Spotify player, the screensaver with
   today's agenda, every background and color, the style (corners, frame and glass) and feedback
   straight to support. US$ 14.99 once or
   US$ 7.99 per year, per home (R$ 59.90 or R$ 29.90 per year in Brazil).

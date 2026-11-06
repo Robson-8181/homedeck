@@ -4,7 +4,7 @@ import { SceneStrip } from "../../components/SceneStrip";
 import { EditableGrid } from "../../components/EditableGrid";
 import { displayState, TOGGLES } from "../../components/EntityCard";
 import { EntityModal } from "../../components/EntityModal";
-import { HDIcon, RoomIcon, domainIcon } from "../../components/HDIcon";
+import { EntityIcon, HDIcon, RoomIcon } from "../../components/HDIcon";
 import { HomeStatus } from "../../components/HomeStatus";
 import { roomKey } from "../../layout";
 import type { DiscoveredEntity, Room } from "../../types/discovery";
@@ -35,7 +35,7 @@ function useRow(props: ScreenProps, onDetails: (entity: DiscoveredEntity) => voi
     const state = hass.states[entity.entity_id];
     const switchable = TOGGLES.has(entity.domain);
     return <div className={`ls-row ${on ? "ls-row--on" : ""} ${!state || state.state === "unavailable" ? "ls-row--off" : ""}`} key={entity.entity_id} role="button" tabIndex={0} {...hold(() => tapEntity(hass, entity, onDetails), () => onDetails(entity))}>
-      <span className="ls-row__icon"><HDIcon name={domainIcon(entity.domain)} size={18} /></span>
+      <span className="ls-row__icon"><EntityIcon entity={entity} size={18} /></span>
       <span className="ls-row__copy"><b>{entity.name}</b>{entity.domain !== "scene" && <small>{displayState(state, entity, t, language)}</small>}</span>
       {editing
         ? <span className="ls-row__grip"><HDIcon name="grip" size={18} /></span>

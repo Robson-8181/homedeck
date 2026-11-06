@@ -35,6 +35,8 @@ export function isOn(hass: HomeAssistant, entity: DiscoveredEntity): boolean {
 export function tapEntity(hass: HomeAssistant, entity: DiscoveredEntity, openDetails: (entity: DiscoveredEntity) => void): void {
   const state = hass.states[entity.entity_id]?.state;
   if (!state || ["unavailable", "unknown"].includes(state)) return;
+  // A protected device never switches from a row or chip: it opens its details, where acting is deliberate.
+  if (entity.confirm) { openDetails(entity); return; }
   if (TOGGLES.has(entity.domain)) void hass.callService("homeassistant", "toggle", { entity_id: entity.entity_id });
   else if (entity.domain === "scene") void hass.callService("scene", "turn_on", { entity_id: entity.entity_id });
   else if (RUNNABLE.has(entity.domain)) void runEntity(hass, entity.entity_id);

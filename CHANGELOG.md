@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.16.3
+
+- First-time setup has two new steps: pick the layout (Grid and List on Free, Sidebar and Focus on Pro), and "Going on a wall tablet?", with hiding the Home Assistant sidebar, keeping the screen on and the screensaver. Just tapping Continue gives the same result as before.
+- Keep the screen on, in Settings → This device: the Echo Show's Silk browser closes the page after a while. In Automatic mode (the default, only on an Echo Show), a silent sound loops in the background to keep the browser open and the display lit, like the Keep Silk Open project. You can also choose Always (other tablets) or Off.
+- Special dates (Pro), in Settings → Calendar → Special dates, off by default: a countdown by the clock, a light animation on the day and a greeting on the screensaver. Christmas (snow), New Year (sparkles, a countdown to midnight on the screensaver and fireworks in the first minutes), Valentine's Day (June 12 in Brazil, February 14 elsewhere), Halloween, Easter, Carnival (Brazil), Thanksgiving (US), birthdays from your calendars ("Happy birthday, Grandma!", with confetti) and your own dates with the animation you pick. Each date has its own switch, follows the country set in Home Assistant, pauses while the panel isn't visible and respects "reduce motion". A See button previews each date's animation for a few seconds in Settings. Decorations live on the cards and in empty spaces: presents on the cards and string lights at Christmas; webs, a dangling spider and a ghost at Halloween; a bunny peeking over the cards and eggs at Easter; hanging hearts on Valentine's Day; streamers at Carnival; leaves on the cards at Thanksgiving; balloons and confetti on birthdays.
+- Confirm before toggling, in each device's details (Card options), off by default: the first tap only shows “Tap again to turn off” for 3 seconds and the second one acts. The card gets a small lock. In the List and Focus layouts, a tap opens the details instead.
+- Card icon: in Card options, pick Automatic, the Home Assistant icon or one of HomeDeck's icons. In Appearance → Icons, an option (off by default) uses the Home Assistant icon on every card that has one.
+
 ## 0.16.2
 
 - Settings reorganized: new Weather, Calendar, Cameras, Screensaver and This device sections (choices that apply only to the device in use). On a phone the menu scrolls sideways to the chosen section.

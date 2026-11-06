@@ -62,6 +62,8 @@ export interface HomeAssistant {
   config?: {
     latitude?: number;
     longitude?: number;
+    /** The home's country (ISO code, e.g. "BR"), for the special dates. */
+    country?: string;
   };
   locale?: {
     language?: string;

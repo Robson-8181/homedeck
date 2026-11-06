@@ -7,6 +7,9 @@ export interface DiscoveredEntity {
   device_class: string | null;
   icon: string | null;
   platform?: string | null;
+  /** HomeDeck's options for it: the icon on its tile ("ha" or a HomeDeck icon) and tap confirmation. */
+  display_icon?: string;
+  confirm?: boolean;
   /** Name in Home Assistant, when a nickname was given in HomeDeck. */
   original_name?: string;
 }

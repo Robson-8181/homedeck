@@ -4,7 +4,7 @@ import type { CSSProperties, KeyboardEvent } from "react";
 import { domainLabel, hvacLabel, type TranslationKey } from "../i18n";
 import type { DiscoveredEntity } from "../types/discovery";
 import type { HassEntity, HomeAssistant } from "../types/home-assistant";
-import { domainIcon, HDIcon } from "./HDIcon";
+import { DEVICE_ICONS, domainIcon, EntityIcon, HA_ICON, HDIcon } from "./HDIcon";
 import { VolumeButtons } from "./WideControls";
 import { SpotifyPlayer } from "./SpotifyPlayer";
 import { isSpotify } from "../spotify";
@@ -61,6 +61,7 @@ export function EntityModal(props: EntityModalProps) {
 }
 
 function EntityDetails({ entity, hass, language, onClose, roomName, t }: EntityModalProps) {
+  const customize = useCustomize();
   const state = hass.states[entity.entity_id];
   const attrs = state?.attributes ?? {};
   const unavailable = !state || ["unavailable", "unknown"].includes(state.state);
@@ -130,7 +131,7 @@ function EntityDetails({ entity, hass, language, onClose, roomName, t }: EntityM
   return <div aria-labelledby="hd-detail-title" aria-modal="true" className="hd-sheet-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }} role="dialog">
     <section className={`hd-sheet hd-detail ${domain === "camera" ? "hd-detail--camera" : ""} ${busy ? "hd-detail--busy" : ""}`}>
       <header className="hd-detail__header">
-        <span className={on ? "hd-detail__icon hd-detail__icon--on" : "hd-detail__icon"}><HDIcon name={domainIcon(domain)} size={24} /></span>
+        <span className={on ? "hd-detail__icon hd-detail__icon--on" : "hd-detail__icon"}><EntityIcon entity={customize?.lookup(entity.entity_id) ?? entity} size={24} /></span>
         <div><span className="eyebrow">{roomName ?? domainLabel(domain, language)}</span><EntityName entity={entity} t={t} /><p>{status}</p></div>
         <button aria-label={t("close")} className="hd-close" onClick={onClose} type="button"><HDIcon name="close" size={20} /></button>
       </header>
@@ -190,8 +191,34 @@ function EntityDetails({ entity, hass, language, onClose, roomName, t }: EntityM
       </div>}
 
       {primary && <button className={on ? "hd-detail__primary" : "hd-detail__primary hd-detail__primary--off"} disabled={busy} onClick={() => void primary.run()} type="button"><HDIcon name={domain === "scene" ? "scene" : domain === "lock" ? "lock" : RUNNABLE.has(domain) ? "play" : "power"} size={18} />{primary.label}</button>}
+      <DeviceOptions entity={entity} t={t} />
     </section>
   </div>;
+}
+
+/** The device's own options, behind a small button: its tile icon (automatic, Home Assistant's, or a
+ * HomeDeck icon) and, for what a tap switches, asking for a second tap first. */
+function DeviceOptions({ entity: opened, t }: { entity: DiscoveredEntity; t: (key: TranslationKey) => string }) {
+  const customize = useCustomize();
+  const [open, setOpen] = useState(false);
+  if (!customize) return null;
+  const entity = customize.lookup(opened.entity_id) ?? opened;
+  const chosen = entity.display_icon ?? "";
+  const switches = ["light", "switch", "fan", "input_boolean", "automation", "scene", "cover", ...RUNNABLE].includes(entity.domain);
+  const haIcon = entity.icon?.includes(":") && typeof customElements !== "undefined" && customElements.get("ha-icon") ? entity.icon : null;
+  const pick = (icon: string) => customize.setEntity(entity.entity_id, { icon });
+  if (!open) return <button className="hd-detail__options-toggle" onClick={() => setOpen(true)} type="button"><HDIcon name="settings" size={15} />{t("deviceOptions")}{entity.confirm && <HDIcon name="lock" size={13} />}</button>;
+  return <section className="room-options hd-detail__options" aria-label={t("deviceOptions")}>
+    <div className="room-options__row">
+      <span className="eyebrow">{t("tileIcon")}</span>
+      <div className="room-options__icons" role="radiogroup" aria-label={t("tileIcon")}>
+        <button aria-checked={chosen === ""} aria-label={t("iconAuto")} className="room-options__auto" onClick={() => pick("")} role="radio" type="button"><HDIcon name={domainIcon(entity.domain)} size={18} /><span>{t("iconAuto")}</span></button>
+        {haIcon && <button aria-checked={chosen === HA_ICON} aria-label={t("iconFromArea")} className="room-options__auto" onClick={() => pick(HA_ICON)} role="radio" type="button"><EntityIcon entity={{ ...entity, display_icon: HA_ICON }} size={18} /><span>{t("iconFromArea")}</span></button>}
+        {DEVICE_ICONS.map((icon) => <button aria-checked={chosen === icon} aria-label={icon} key={icon} onClick={() => pick(icon)} role="radio" type="button"><HDIcon name={icon} size={18} /></button>)}
+      </div>
+    </div>
+    {switches && <label className="hd-detail__confirm"><span><b>{t("confirmToggle")}</b><small>{t("confirmToggleDescription")}</small></span><input checked={Boolean(entity.confirm)} className="st-switch" onChange={(event) => customize.setEntity(entity.entity_id, { confirm: event.target.checked })} type="checkbox" /></label>}
+  </section>;
 }
 
 /** Arm in the modes the panel supports, or disarm; the code field appears when the panel asks for

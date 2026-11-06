@@ -5,7 +5,7 @@ import { EditableGrid } from "../../components/EditableGrid";
 import { SceneStrip } from "../../components/SceneStrip";
 import { displayState } from "../../components/EntityCard";
 import { EntityModal } from "../../components/EntityModal";
-import { HDIcon, RoomIcon, domainIcon } from "../../components/HDIcon";
+import { EntityIcon, HDIcon, RoomIcon } from "../../components/HDIcon";
 import { weatherConditionLabel } from "../../i18n";
 import { useWeather } from "../../weather";
 import { roomKey } from "../../layout";
@@ -34,7 +34,7 @@ function useChip(props: ScreenProps, onDetails: (entity: DiscoveredEntity) => vo
   return (entity: DiscoveredEntity) => {
     const active = isOn(hass, entity);
     return <button className={active ? "fc-chip fc-chip--on" : "fc-chip"} type="button" {...hold(() => tapEntity(hass, entity, onDetails), () => onDetails(entity))}>
-      <span className="fc-chip__icon"><HDIcon name={domainIcon(entity.domain)} size={20} /></span>
+      <span className="fc-chip__icon"><EntityIcon entity={entity} size={20} /></span>
       <span className="fc-chip__copy"><b>{entity.name}</b>{entity.domain !== "scene" && <small>{displayState(hass.states[entity.entity_id], entity, t, language)}</small>}</span>
     </button>;
   };

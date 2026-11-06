@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { HomeDeckConfig, HomeDeckRoomOptions } from "./types/config";
+import type { HomeDeckConfig, HomeDeckEntityOptions, HomeDeckRoomOptions } from "./types/config";
 import type { DiscoveredEntity, DiscoveryResponse } from "./types/discovery";
 import type { HassEntity, HomeAssistant } from "./types/home-assistant";
 
@@ -9,10 +9,11 @@ import type { HassEntity, HomeAssistant } from "./types/home-assistant";
 export const MAX_NAME = 60;
 
 /** Discovery with the nicknames and room options applied, so every screen and layout shows them. */
-export function personalize(data: DiscoveryResponse, names: HomeDeckConfig["names"], rooms: HomeDeckConfig["rooms"] | undefined): DiscoveryResponse {
+export function personalize(data: DiscoveryResponse, names: HomeDeckConfig["names"], rooms: HomeDeckConfig["rooms"] | undefined, entityOptions?: HomeDeckConfig["entity_options"], haIcons = false): DiscoveryResponse {
   const nicknames = names ?? {};
   const options = rooms ?? {};
-  if (Object.keys(nicknames).length === 0 && Object.keys(options).length === 0) return data;
+  const perEntity = entityOptions ?? {};
+  if (Object.keys(nicknames).length === 0 && Object.keys(options).length === 0 && Object.keys(perEntity).length === 0 && !haIcons) return data;
   return {
     ...data,
     rooms: data.rooms.map((room) => {
@@ -25,7 +26,11 @@ export function personalize(data: DiscoveryResponse, names: HomeDeckConfig["name
         temperature_entity: typeof own.temperature === "string" && own.temperature ? own.temperature : undefined,
         entities: room.entities.map((entity) => {
           const nickname = nicknames[entity.entity_id];
-          return nickname ? { ...entity, name: nickname, original_name: entity.name } : entity;
+          const own = perEntity[entity.entity_id] ?? {};
+          // The tile's icon: the one chosen for this device, else Home Assistant's when that option is on.
+          const icon = own.icon || (haIcons && entity.icon?.includes(":") ? "ha" : undefined);
+          if (!nickname && !icon && !own.confirm) return entity;
+          return { ...entity, ...(nickname ? { name: nickname, original_name: entity.name } : {}), ...(icon ? { display_icon: icon } : {}), ...(own.confirm ? { confirm: true } : {}) };
         }),
       };
     }),
@@ -36,6 +41,13 @@ export function withNickname(config: HomeDeckConfig, entityId: string, name: str
   const { [entityId]: _previous, ...names } = config.names ?? {};
   const clean = name.trim().slice(0, MAX_NAME);
   return { ...config, names: clean && clean !== original ? { ...names, [entityId]: clean } : names };
+}
+
+export function withEntityOptions(config: HomeDeckConfig, entityId: string, change: HomeDeckEntityOptions): HomeDeckConfig {
+  const next = { ...(config.entity_options?.[entityId] ?? {}), ...change };
+  const clean = Object.fromEntries(Object.entries(next).filter(([, value]) => value === true || (typeof value === "string" && value)));
+  const { [entityId]: _previous, ...rest } = config.entity_options ?? {};
+  return { ...config, entity_options: Object.keys(clean).length > 0 ? { ...rest, [entityId]: clean } : rest };
 }
 
 export function withRoomOptions(config: HomeDeckConfig, roomId: string, change: HomeDeckRoomOptions): HomeDeckConfig {
@@ -67,5 +79,7 @@ export const CustomizeContext = createContext<{
   lookup: (entityId: string) => DiscoveredEntity | undefined;
   rename: (entityId: string, name: string, original: string) => void;
   setRoom: (roomId: string, change: HomeDeckRoomOptions) => void;
+  /** A device's own options: its tile icon and tap confirmation. */
+  setEntity: (entityId: string, change: HomeDeckEntityOptions) => void;
 } | null>(null);
 export const useCustomize = () => useContext(CustomizeContext);

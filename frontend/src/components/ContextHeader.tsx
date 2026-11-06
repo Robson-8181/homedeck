@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useContext } from "react";
+import { OccasionContext } from "./SeasonLayer";
 import { createPortal } from "react-dom";
 import type { CSSProperties } from "react";
 import { weatherConditionLabel, type TranslationKey } from "../i18n";
@@ -40,6 +41,7 @@ export function conditionIcon(condition?: string): IconName {
 }
 
 export function ContextHeader({ config, hass, language, onSettings, part = "all", t }: ContextHeaderProps) {
+  const occasion = useContext(OccasionContext);
   const [now, setNow] = useState(() => new Date());
   const [forecastOpen, setForecastOpen] = useState(false);
   // The forecast opens at the shell, so the dock and the Edit button stay behind it.
@@ -63,7 +65,7 @@ export function ContextHeader({ config, hass, language, onSettings, part = "all"
   return (
     <>
       <header className={part === "all" ? "context-header" : `context-header context-header--${part}`} ref={headerRef}>
-        {part !== "status" && <div className="context-header__clock"><span>{date}</span><div className="context-header__time">{config.home.show_clock && <strong>{time}</strong>}<AgendaButtons config={config} hass={hass} language={language} t={t} /></div></div>}
+        {part !== "status" && <div className="context-header__clock"><span>{date}{occasion && <b className={occasion.phase === "day" ? "hd-season-badge hd-season-badge--day" : "hd-season-badge"}>{occasion.badge}</b>}</span><div className="context-header__time">{config.home.show_clock && <strong>{time}</strong>}<AgendaButtons config={config} hass={hass} language={language} t={t} /></div></div>}
         {part !== "clock" && <div className="context-header__right">
           {config.home.show_weather && weather && (
             <button className="weather-chip" onClick={() => setForecastOpen(true)} title={t("weatherForecast")} type="button">

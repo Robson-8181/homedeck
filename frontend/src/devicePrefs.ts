@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 const LOCK_KEY = "homedeck-lock-editing";
 const SPEAKER_KEY = "homedeck-spotify-speaker";
+const AWAKE_KEY = "homedeck-keep-awake";
 const PREF_EVENT = "homedeck-device-pref";
 
 function read(key: string): string | null {
@@ -19,6 +20,10 @@ export const editingLocked = () => read(LOCK_KEY) === "1";
 export const setEditingLocked = (locked: boolean) => write(LOCK_KEY, locked ? "1" : null);
 
 export const spotifySpeaker = () => read(SPEAKER_KEY) ?? "";
+
+/** Keep the screen on: "auto" (the default, only on an Echo Show), "on" or "off". */
+export const keepAwakeMode = (): "auto" | "on" | "off" => { const value = read(AWAKE_KEY); return value === "on" || value === "off" ? value : "auto"; };
+export const setKeepAwakeMode = (mode: "auto" | "on" | "off") => write(AWAKE_KEY, mode === "auto" ? null : mode);
 export const setSpotifySpeaker = (speaker: string) => write(SPEAKER_KEY, speaker || null);
 
 /** Re-renders when a device choice changes (in Settings, or in another tab of the same browser). */

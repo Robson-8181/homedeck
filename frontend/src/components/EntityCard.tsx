@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent, MouseEvent, PointerEvent } from "react";
 import { hvacLabel, type TranslationKey } from "../i18n";
 import type { DiscoveredEntity } from "../types/discovery";
@@ -6,7 +6,7 @@ import type { HassEntity, HomeAssistant } from "../types/home-assistant";
 import { useTallTile, useWideTile } from "./EditableGrid";
 import { isNumericState, useHistory, useSparklines } from "../history";
 import { Sparkline } from "./HistoryChart";
-import { domainIcon, HDIcon } from "./HDIcon";
+import { EntityIcon, HDIcon } from "./HDIcon";
 import { WideControls } from "./WideControls";
 import { CameraCard } from "./CameraCard";
 import { HDSelect } from "./HDSelect";
@@ -119,7 +119,21 @@ function DeviceCard({ entity, hass, language, onLongPress, t }: EntityCardProps)
     try { await action(); } finally { setBusy(false); }
   };
 
+  // A protected device ("Confirm before toggling" in its details) acts only on a second tap within 3 s.
+  const [confirming, setConfirming] = useState(false);
+  const confirmTimer = useRef<number | null>(null);
+  useEffect(() => () => { if (confirmTimer.current != null) window.clearTimeout(confirmTimer.current); }, []);
+  const acts = TOGGLES.has(entity.domain) || ["scene", "cover"].includes(entity.domain) || RUNNABLE.has(entity.domain);
+  const confirmLabel = entity.domain === "cover" ? (state?.state === "open" || state?.state === "opening" ? t("confirmClose") : t("confirmOpen"))
+    : entity.domain === "scene" || RUNNABLE.has(entity.domain) ? t("confirmRun")
+        : active ? t("confirmTurnOff") : t("confirmTurnOn");
   const tap = () => {
+    if (entity.confirm && acts && !unavailable && !confirming) {
+      setConfirming(true);
+      confirmTimer.current = window.setTimeout(() => setConfirming(false), 3000);
+      return;
+    }
+    if (confirming) { setConfirming(false); if (confirmTimer.current != null) window.clearTimeout(confirmTimer.current); }
     const domain = entity.domain;
     if (TOGGLES.has(domain)) return void run(() => hass.callService("homeassistant", "toggle", { entity_id: entity.entity_id }));
     if (domain === "scene") return void run(() => hass.callService("scene", "turn_on", { entity_id: entity.entity_id }));
@@ -178,9 +192,10 @@ function DeviceCard({ entity, hass, language, onLongPress, t }: EntityCardProps)
       tabIndex={0}
     >
       {busy && <span className="device-tile__busy" />}
+      {confirming && <span aria-live="polite" className="device-tile__confirm">{confirmLabel}</span>}
       <div className="device-tile__top">{entity.domain === "media_player" && mediaArt(state)
         ? <span className="device-tile__icon device-tile__icon--art" style={{ backgroundImage: mediaArt(state)! }} />
-        : <span className="device-tile__icon"><HDIcon name={domainIcon(entity.domain)} size={23} /></span>}</div>
+        : <span className="device-tile__icon"><EntityIcon entity={entity} /></span>}{entity.confirm && <span aria-hidden="true" className="device-tile__guard"><HDIcon name="lock" size={13} /></span>}</div>
       <div className="device-tile__copy"><strong>{entity.name}</strong>{entity.domain !== "scene" && !(SELECTS.has(entity.domain) && !wide) && <span>{status}</span>}</div>
 
       {wide && entity.domain === "sensor" && isNumericState(state) && <SensorSpark entityId={entity.entity_id} language={language} hass={hass} unit={typeof state?.attributes.unit_of_measurement === "string" ? state.attributes.unit_of_measurement : undefined} />}

@@ -4,6 +4,9 @@ import type { DiscoveryResponse } from "../types/discovery";
 import type { HomeAssistant } from "../types/home-assistant";
 import { SparklinesContext } from "../history";
 import { LiveCamerasContext } from "./CameraCard";
+import { OccasionContext, SeasonLayer } from "./SeasonLayer";
+import { SeasonDecor } from "./SeasonDecor";
+import type { Occasion } from "../seasons";
 
 type Palette = [string, string, string, string];
 type Stop = [number, Palette];
@@ -120,7 +123,7 @@ function activityLevel(config: HomeDeckConfig, data: DiscoveryResponse, hass: Ho
   return Math.max(0, Math.min(1, total / eligible.length));
 }
 
-export function DynamicShell({ children, config, data, hass, mode = "grid" }: { children: ReactNode; config: HomeDeckConfig; data: DiscoveryResponse; hass: HomeAssistant; mode?: string }) {
+export function DynamicShell({ children, config, data, hass, mode = "grid", season }: { children: ReactNode; config: HomeDeckConfig; data: DiscoveryResponse; hass: HomeAssistant; mode?: string; season?: { occasion: Occasion | null; fireworks: boolean } }) {
   const level = activityLevel(config, data, hass);
   const highlight = /^#[0-9a-f]{6}$/i.test(config.highlight_color ?? "") ? config.highlight_color : "#ffc94d";
   const palette = FIXED[config.background.preset] ?? paletteAt(ADAPTIVE[config.background.preset] ?? ADAPTIVE.adaptive_ember, level);
@@ -140,7 +143,9 @@ export function DynamicShell({ children, config, data, hass, mode = "grid" }: { 
   return (
     <div className={`app-shell theme-${config.theme} view-${mode} ${config.background.animated ? "ambient-animated" : "ambient-still"} ${config.cards?.animations ? "hd-anim" : ""}`} data-activity={level.toFixed(2)} style={style}>
       <div aria-hidden="true" className="ambient-background"><i /><i /><i /></div>
-      <SparklinesContext.Provider value={Boolean(config.cards?.sparklines)}><LiveCamerasContext.Provider value={config.live_cameras !== false}>{children}</LiveCamerasContext.Provider></SparklinesContext.Provider>
+      {season && (season.occasion?.effect || season.fireworks) && <SeasonLayer effect={season.occasion?.effect ?? null} fireworks={season.fireworks} intensity={season.occasion?.phase === "lead" ? 0.45 : 1} />}
+      {season?.occasion && (season.occasion.phase === "day" || season.occasion.id === "christmas") && <SeasonDecor id={season.occasion.id} />}
+      <OccasionContext.Provider value={season?.occasion ?? null}><SparklinesContext.Provider value={Boolean(config.cards?.sparklines)}><LiveCamerasContext.Provider value={config.live_cameras !== false}>{children}</LiveCamerasContext.Provider></SparklinesContext.Provider></OccasionContext.Provider>
     </div>
   );
 }

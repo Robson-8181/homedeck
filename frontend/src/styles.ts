@@ -1457,6 +1457,14 @@ button:focus-visible, input:focus-visible, select:focus-visible, .room-card:focu
 .onboarding-toggle-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
 .onboarding-toggle { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 0 14px; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: calc(14px*var(--hd-r,1)); background: rgba(255, 255, 255, 0.035); font-size: 11px; }
 .onboarding-toggle input { width: 18px; height: 18px; }
+.onboarding-device { display: grid; gap: 10px; margin-top: 22px; }
+.onboarding-toggle--described, .onboarding-select--described { min-height: 72px; font-size: 14px; padding: 12px 16px; text-align: left; font: inherit; color: inherit; width: 100%; cursor: pointer; }
+.onboarding-toggle--described > span, .onboarding-select--described > span { display: grid; gap: 4px; min-width: 0; font-weight: 600; }
+.onboarding-toggle--described small, .onboarding-select--described small { font-weight: 400; font-size: 12.5px; line-height: 1.35; opacity: .62; }
+.onboarding-toggle--pro b { flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,.1); font-size: 12px; }
+.onboarding-select.onboarding-select--described { flex-direction: row; align-items: center; justify-content: space-between; gap: 14px; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: calc(14px*var(--hd-r,1)); background: rgba(255, 255, 255, 0.045); color: inherit; font-size: inherit; cursor: default; }
+.onboarding-screen .onboarding-select--described > span { flex: 1 1 auto; }
+.onboarding-screen .onboarding-select--described > :last-child { flex: 0 0 230px; width: 230px; }
 .onboarding-inline-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
 .onboarding-inline-options label, .onboarding-select { display: flex; flex-direction: column; gap: 7px; color: rgba(255, 255, 255, 0.56); font-size: 10px; }
 .onboarding-inline-options select, .onboarding-select select { width: 100%; padding: 11px 12px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: calc(12px*var(--hd-r,1)); color: #fff; background: #171519; }
@@ -1467,7 +1475,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, .room-card:focu
 .onboarding-pages-hint { margin-top: 16px; padding: 13px 15px; border-radius: calc(14px*var(--hd-r,1)); color: rgba(255, 255, 255, 0.58); background: rgba(255, 255, 255, 0.04); font-size: 10px; }
 .setup-panel--ready { max-width: 720px; text-align: center; }
 .setup-panel--ready .welcome-panel__mark { margin: 0 auto 18px; }
-.setup-ready-summary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin-top: 24px; }
+.setup-ready-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 24px; }
 .setup-ready-summary span { display: flex; flex-direction: column; gap: 5px; padding: 17px; border-radius: calc(17px*var(--hd-r,1)); background: rgba(255, 255, 255, 0.05); font-size: 10px; text-transform: capitalize; }
 .setup-ready-summary strong { color: var(--hd-accent); font-size: 22px; }
 .setup-restart-panel { display: flex; align-items: center; justify-content: space-between; gap: 20px; }

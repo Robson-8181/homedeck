@@ -1,48 +1,49 @@
 // Alternative layouts (Lateral, Lista, Foco) and the layout picker.
 export const themeLayouts = String.raw`
 /* ---------- Layout picker ---------- */
-.app-shell .lp-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 10px; }
-.app-shell .lp-option {
+:is(.app-shell, .onboarding-screen) .lp-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 10px; }
+.onboarding-screen .onboarding-layout .lp-options { margin-top: 22px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); }
+:is(.app-shell, .onboarding-screen) .lp-option {
   position: relative; display: flex; align-items: center; gap: 14px; padding: 10px 40px 10px 10px; border-radius: calc(18px*var(--hd-r,1)); text-align: left; cursor: pointer;
   border: 1.5px solid rgba(255,255,255,.14); background: rgba(255,255,255,.06); color: var(--ink); transition: border-color .2s, background .2s, transform .15s;
 }
-.app-shell .lp-option:hover { background: rgba(255,255,255,.1); }
-.app-shell .lp-option[aria-checked="true"] { border-color: var(--on); background: color-mix(in srgb, var(--on) 12%, transparent); }
-.app-shell .lp-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.app-shell .lp-copy b { font: 600 15px/1.2 var(--f-body); }
-.app-shell .lp-copy small { color: var(--ink-2); font: 500 12.5px/1.35 var(--f-body); }
-.app-shell .lp-pro { position: absolute; top: 10px; right: 10px; display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: var(--hd-pill,99px); font-size: 11px; font-weight: 700; letter-spacing: .04em; background: rgba(0,0,0,.45); color: var(--on); backdrop-filter: blur(8px); }
-.app-shell .lp-check { position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; border-radius: var(--hd-round,50%); display: grid; place-items: center; background: var(--on); color: var(--on-ink); box-shadow: 0 2px 8px rgba(0,0,0,.3); }
-.app-shell .lp-thumb {
+:is(.app-shell, .onboarding-screen) .lp-option:hover { background: rgba(255,255,255,.1); }
+:is(.app-shell, .onboarding-screen) .lp-option[aria-checked="true"] { border-color: var(--on); background: color-mix(in srgb, var(--on) 12%, transparent); }
+:is(.app-shell, .onboarding-screen) .lp-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+:is(.app-shell, .onboarding-screen) .lp-copy b { font: 600 15px/1.2 var(--f-body); }
+:is(.app-shell, .onboarding-screen) .lp-copy small { color: var(--ink-2); font: 500 12.5px/1.35 var(--f-body); }
+:is(.app-shell, .onboarding-screen) .lp-pro { position: absolute; top: 10px; right: 10px; display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: var(--hd-pill,99px); font-size: 11px; font-weight: 700; letter-spacing: .04em; background: rgba(0,0,0,.45); color: var(--on); backdrop-filter: blur(8px); }
+:is(.app-shell, .onboarding-screen) .lp-check { position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; border-radius: var(--hd-round,50%); display: grid; place-items: center; background: var(--on); color: var(--on-ink); box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+:is(.app-shell, .onboarding-screen) .lp-thumb {
   position: relative; flex: none; width: 128px; display: flex; gap: 5px; aspect-ratio: 16 / 10; padding: 8px; border-radius: calc(11px*var(--hd-r,1)); overflow: hidden;
   background: radial-gradient(circle at 20% 20%, #8a4a5a, transparent 60%), radial-gradient(circle at 85% 85%, #4b3b70, transparent 55%), #241a30;
 }
-.app-shell .lp-thumb i, .app-shell .lp-thumb b, .app-shell .lp-thumb em, .app-shell .lp-thumb strong { display: block; font-style: normal; }
-.app-shell .lp-on { background: #f4edd9 !important; }
-.app-shell .lp-thumb--grid, .app-shell .lp-thumb--list { flex-direction: column; }
-.app-shell .lp-line { width: 38%; height: 7px; border-radius: calc(4px*var(--hd-r,1)); background: rgba(255,255,255,.55); }
-.app-shell .lp-grid { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
-.app-shell .lp-grid i { border-radius: calc(6px*var(--hd-r,1)); background: rgba(255,255,255,.22); }
-.app-shell .lp-dock { align-self: center; width: 46%; height: 7px; border-radius: var(--hd-pill,99px); background: rgba(255,255,255,.4); }
-.app-shell .lp-side { width: 32%; display: flex; flex-direction: column; gap: 4px; padding: 6px; border-radius: calc(8px*var(--hd-r,1)); background: rgba(255,255,255,.14); }
-.app-shell .lp-side b { height: 12px; width: 70%; border-radius: calc(3px*var(--hd-r,1)); background: rgba(255,255,255,.7); margin-bottom: 3px; }
-.app-shell .lp-side i { height: 6px; border-radius: calc(3px*var(--hd-r,1)); background: rgba(255,255,255,.3); }
-.app-shell .lp-side i:nth-child(2) { background: #fff; }
-.app-shell .lp-main { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-.app-shell .lp-main i { border-radius: calc(6px*var(--hd-r,1)); background: rgba(255,255,255,.22); }
-.app-shell .lp-rows { flex: 1; display: flex; flex-direction: column; gap: 3px; padding: 4px; border-radius: calc(8px*var(--hd-r,1)); background: rgba(255,255,255,.12); }
-.app-shell .lp-rows i { flex: 1; position: relative; border-radius: calc(3px*var(--hd-r,1)); background: rgba(255,255,255,.12); }
-.app-shell .lp-rows i.lp-head { background: rgba(255,255,255,.3); }
-.app-shell .lp-sw { position: absolute; right: 4px; top: 50%; width: 14px; height: 7px; margin-top: -3.5px; border-radius: var(--hd-pill,99px); background: rgba(255,255,255,.35); }
-.app-shell .lp-sw--on { background: #ffc94d; }
-.app-shell .lp-thumb--focus { flex-direction: column; justify-content: center; }
-.app-shell .lp-hero { display: flex; align-items: center; gap: 8px; padding: 0 4px; }
-.app-shell .lp-hero b { height: 18px; flex: 1; border-radius: calc(4px*var(--hd-r,1)); background: rgba(255,255,255,.75); }
-.app-shell .lp-hero strong { width: 28px; height: 28px; border-radius: var(--hd-round,50%); background: #ffc94d; box-shadow: 0 0 14px rgba(255,201,77,.6); }
-.app-shell .lp-hero em { display: none; }
-.app-shell .lp-dots { position: absolute; bottom: 9px; left: 50%; transform: translateX(-50%); display: flex; gap: 4px; }
-.app-shell .lp-dots i { width: 5px; height: 5px; border-radius: var(--hd-pill,99px); background: rgba(255,255,255,.4); }
-.app-shell .lp-dots i.lp-on { width: 14px; background: #fff !important; }
+:is(.app-shell, .onboarding-screen) .lp-thumb i, :is(.app-shell, .onboarding-screen) .lp-thumb b, :is(.app-shell, .onboarding-screen) .lp-thumb em, :is(.app-shell, .onboarding-screen) .lp-thumb strong { display: block; font-style: normal; }
+:is(.app-shell, .onboarding-screen) .lp-on { background: #f4edd9 !important; }
+:is(.app-shell, .onboarding-screen) .lp-thumb--grid, :is(.app-shell, .onboarding-screen) .lp-thumb--list { flex-direction: column; }
+:is(.app-shell, .onboarding-screen) .lp-line { width: 38%; height: 7px; border-radius: calc(4px*var(--hd-r,1)); background: rgba(255,255,255,.55); }
+:is(.app-shell, .onboarding-screen) .lp-grid { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; }
+:is(.app-shell, .onboarding-screen) .lp-grid i { border-radius: calc(6px*var(--hd-r,1)); background: rgba(255,255,255,.22); }
+:is(.app-shell, .onboarding-screen) .lp-dock { align-self: center; width: 46%; height: 7px; border-radius: var(--hd-pill,99px); background: rgba(255,255,255,.4); }
+:is(.app-shell, .onboarding-screen) .lp-side { width: 32%; display: flex; flex-direction: column; gap: 4px; padding: 6px; border-radius: calc(8px*var(--hd-r,1)); background: rgba(255,255,255,.14); }
+:is(.app-shell, .onboarding-screen) .lp-side b { height: 12px; width: 70%; border-radius: calc(3px*var(--hd-r,1)); background: rgba(255,255,255,.7); margin-bottom: 3px; }
+:is(.app-shell, .onboarding-screen) .lp-side i { height: 6px; border-radius: calc(3px*var(--hd-r,1)); background: rgba(255,255,255,.3); }
+:is(.app-shell, .onboarding-screen) .lp-side i:nth-child(2) { background: #fff; }
+:is(.app-shell, .onboarding-screen) .lp-main { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+:is(.app-shell, .onboarding-screen) .lp-main i { border-radius: calc(6px*var(--hd-r,1)); background: rgba(255,255,255,.22); }
+:is(.app-shell, .onboarding-screen) .lp-rows { flex: 1; display: flex; flex-direction: column; gap: 3px; padding: 4px; border-radius: calc(8px*var(--hd-r,1)); background: rgba(255,255,255,.12); }
+:is(.app-shell, .onboarding-screen) .lp-rows i { flex: 1; position: relative; border-radius: calc(3px*var(--hd-r,1)); background: rgba(255,255,255,.12); }
+:is(.app-shell, .onboarding-screen) .lp-rows i.lp-head { background: rgba(255,255,255,.3); }
+:is(.app-shell, .onboarding-screen) .lp-sw { position: absolute; right: 4px; top: 50%; width: 14px; height: 7px; margin-top: -3.5px; border-radius: var(--hd-pill,99px); background: rgba(255,255,255,.35); }
+:is(.app-shell, .onboarding-screen) .lp-sw--on { background: #ffc94d; }
+:is(.app-shell, .onboarding-screen) .lp-thumb--focus { flex-direction: column; justify-content: center; }
+:is(.app-shell, .onboarding-screen) .lp-hero { display: flex; align-items: center; gap: 8px; padding: 0 4px; }
+:is(.app-shell, .onboarding-screen) .lp-hero b { height: 18px; flex: 1; border-radius: calc(4px*var(--hd-r,1)); background: rgba(255,255,255,.75); }
+:is(.app-shell, .onboarding-screen) .lp-hero strong { width: 28px; height: 28px; border-radius: var(--hd-round,50%); background: #ffc94d; box-shadow: 0 0 14px rgba(255,201,77,.6); }
+:is(.app-shell, .onboarding-screen) .lp-hero em { display: none; }
+:is(.app-shell, .onboarding-screen) .lp-dots { position: absolute; bottom: 9px; left: 50%; transform: translateX(-50%); display: flex; gap: 4px; }
+:is(.app-shell, .onboarding-screen) .lp-dots i { width: 5px; height: 5px; border-radius: var(--hd-pill,99px); background: rgba(255,255,255,.4); }
+:is(.app-shell, .onboarding-screen) .lp-dots i.lp-on { width: 14px; background: #fff !important; }
 
 /* ---------- Lateral ---------- */
 .app-shell.view-sidebar > .screen.sb-layout {

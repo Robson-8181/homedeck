@@ -7,10 +7,13 @@ import type { HomeDeckBackgroundPreset, HomeDeckCardStyle, HomeDeckConfig, HomeD
 import { withRoomOptions } from "../personalize";
 import { energyCandidates } from "../components/ExtraWidgets";
 import { cameraIds, DoorbellPopup, doorbellCandidates, guessDoorbellCamera } from "../components/Doorbell";
+import { occasionsFor, RULES, SEASON_EFFECTS, type SeasonEffect } from "../seasons";
+import { SeasonPreview } from "../components/SeasonLayer";
 import type { Room } from "../types/discovery";
 import type { HomeAssistant } from "../types/home-assistant";
 import { hideSidebarPreferred, setHideSidebarPreferred } from "../sidebar";
-import { editingLocked, setEditingLocked, setSpotifySpeaker, spotifySpeaker, useDevicePref } from "../devicePrefs";
+import { editingLocked, keepAwakeMode, setEditingLocked, setKeepAwakeMode, setSpotifySpeaker, spotifySpeaker, useDevicePref } from "../devicePrefs";
+import { isSilk } from "../keepAwake";
 import { deactivateLicense, getLicense, openPortal, type LicenseStatus } from "../api/license";
 import { LICENSE_ERRORS } from "../components/ProSheet";
 import { getDefaultPanel, setSystemDefault, setUserDefault, type DefaultPanelState } from "../api/defaultPanel";
@@ -211,6 +214,10 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
               <div className="st-swatches st-swatches--vivid">{HIGHLIGHTS.map((color) => <button aria-label={`${t("highlightColor")} ${color}`} aria-pressed={draft.highlight_color === color} key={color} onClick={() => (locked(color !== DEFAULT_HIGHLIGHT) ? plan.upsell("feature") : update({ highlight_color: color }))} style={{ background: color }} type="button">{draft.highlight_color === color ? <HDIcon name="check" size={16} /> : locked(color !== DEFAULT_HIGHLIGHT) && <Lock />}</button>)}</div>
             </div>
           </section>
+          <section className="st-panel">
+            <h2>{t("iconsTitle")}</h2>
+            <Row description={t("haIconsDescription")} label={t("haIcons")}><Switch checked={Boolean(draft.ha_icons)} label={t("haIcons")} onChange={(ha_icons) => update({ ha_icons })} /></Row>
+          </section>
           <CardStylePanel cards={draft.cards} locked={!plan.pro} onChange={(cards) => update({ cards })} onUpsell={() => plan.upsell("feature")} t={t} />
           <section className="st-panel">
             <h2>{t("background")}</h2><p>{t("lightsOnly")}</p>
@@ -251,7 +258,10 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
             <Row label={t("weatherSource")}><HDSelect ariaLabel={t("weatherSource")} onChange={(entity_id) => update({ weather: { ...draft.weather, entity_id } })} options={[{ value: "auto", label: t("automatic") }, { value: OPEN_METEO, label: t("openMeteoSource") }, ...weatherEntities.map((entity) => ({ value: entity.entity_id, label: `${String(entity.attributes.friendly_name ?? entity.entity_id)}${["unknown", "unavailable"].includes(entity.state) ? ` · ${t("unavailable")}` : ""}` }))]} value={draft.weather.entity_id === OPEN_METEO || weatherEntities.some((entity) => entity.entity_id === draft.weather.entity_id) ? draft.weather.entity_id : "auto"} /></Row>
           </section>}
 
-        {section === "agenda" && <AgendaPanel draft={draft} hass={hass} t={t} update={update} />}
+        {section === "agenda" && <>
+          <AgendaPanel draft={draft} hass={hass} t={t} update={update} />
+          <SeasonsPanel draft={draft} hass={hass} onUpsell={() => plan.upsell("feature")} pro={plan.pro} t={t} update={update} />
+        </>}
 
         {section === "cameras" && <>
           <section className="st-panel">
@@ -417,13 +427,58 @@ function ExtraCardsPanel({ draft, hass, onUpsell, pro, t, update }: { draft: Hom
   </section>;
 }
 
+/** Pro: special dates. One switch for all, one per occasion (those of the home's country), and the
+ * user's own dates with the animation each one gets. */
+function SeasonsPanel({ draft, hass, onUpsell, pro, t, update }: { draft: HomeDeckConfig; hass: HomeAssistant; onUpsell: () => void; pro: boolean; t: (key: TranslationKey) => string; update: (patch: Partial<HomeDeckConfig>) => void }) {
+  const seasons = draft.seasons ?? { enabled: false, off: [], custom: [] };
+  const set = (patch: Partial<typeof seasons>) => update({ seasons: { ...seasons, ...patch } });
+  const country = (hass.config?.country ?? "").toUpperCase();
+  const [name, setName] = useState("");
+  const [date, setDate] = useState("");
+  const [effect, setEffect] = useState("confetti");
+  const add = () => {
+    const match = /^\d{4}-(\d{2})-(\d{2})$/.exec(date);
+    if (!name.trim() || !match) return;
+    set({ custom: [...seasons.custom, { name: name.trim().slice(0, 40), date: `${match[1]}-${match[2]}`, effect }] });
+    setName(""); setDate("");
+  };
+  const effects = SEASON_EFFECTS.map((value) => ({ value, label: t(`seasonEffect_${value}` as TranslationKey) }));
+  // "See" plays an occasion's animation for a few seconds over the settings, with its greeting.
+  const [preview, setPreview] = useState<{ id: string; effect: SeasonEffect | null; fireworks: boolean; label: string } | null>(null);
+  const greetingOf = (id: string) => id === "birthdays" ? t("seasonBirthdayOf").replace("{name}", t("seasonsSampleName")) : id === "newyear" ? t("seasonNewYear") : t(`seasonGreeting_${id}` as TranslationKey);
+  const effectOf = (id: string): SeasonEffect => id === "birthdays" ? "confetti" : RULES.find((rule) => rule.id === id)?.effect ?? "confetti";
+  const see = (label: string) => <button className="hd-pill st-season-see" onClick={(event) => { event.preventDefault(); const id = label; setPreview({ id, effect: effectOf(id), fireworks: id === "newyear", label: greetingOf(id) }); }} type="button"><HDIcon name="eye" size={15} />{t("seasonsSee")}</button>;
+  return <section className="st-panel">
+    <h2>{t("seasonsTitle")}</h2><p>{t("seasonsDescription")}</p>
+    <Row label={t("seasonsEnable")}>{pro ? <Switch checked={seasons.enabled} label={t("seasonsEnable")} onChange={(enabled) => set({ enabled })} /> : <button className="hd-pill" onClick={onUpsell} type="button"><HDIcon name="lock" size={14} />Pro</button>}</Row>
+    {pro && seasons.enabled && <>
+      <div className="st-sub">
+        {occasionsFor(country).map((id) => <div className="st-sub__row" key={id}><span>{t(`season_${id}` as TranslationKey)}</span><span className="st-season-actions">{see(id)}<input aria-label={t(`season_${id}` as TranslationKey)} checked={!seasons.off.includes(id)} className="st-switch" onChange={(event) => set({ off: event.target.checked ? seasons.off.filter((item) => item !== id) : [...seasons.off, id] })} type="checkbox" /></span></div>)}
+      </div>
+      <div className="st-sub">
+        <div className="st-sub__title">{t("seasonsCustom")}</div>
+        {seasons.custom.map((item, index) => <div className="st-sub__row" key={`${item.name}-${index}`}><span>{item.name} · {item.date.split("-").reverse().join("/")} · {t(`seasonEffect_${item.effect}` as TranslationKey)}</span><span className="st-season-actions"><button className="hd-pill st-season-see" onClick={() => setPreview({ id: `custom:${item.name}`, effect: (SEASON_EFFECTS as string[]).includes(item.effect) ? item.effect as SeasonEffect : "confetti", fireworks: false, label: item.name })} type="button"><HDIcon name="eye" size={15} />{t("seasonsSee")}</button><button aria-label={`${t("removeItem")}: ${item.name}`} className="hd-pill" onClick={() => set({ custom: seasons.custom.filter((_, position) => position !== index) })} type="button"><HDIcon name="trash" size={15} /></button></span></div>)}
+        <div className="st-season-add">
+          <input aria-label={t("seasonsName")} maxLength={40} onChange={(event) => setName(event.target.value)} placeholder={t("seasonsName")} value={name} />
+          <input aria-label={t("seasonsDate")} onChange={(event) => setDate(event.target.value)} type="date" value={date} />
+          <HDSelect ariaLabel={t("seasonsEffect")} onChange={setEffect} options={effects} value={effect} />
+          <button className="hd-pill" disabled={!name.trim() || !date} onClick={add} type="button"><HDIcon name="plus" size={15} />{t("addItem")}</button>
+        </div>
+      </div>
+    </>}
+    {preview && <SeasonPreview closeLabel={t("close")} effect={preview.effect} id={preview.id} fireworks={preview.fireworks} label={preview.label} onClose={() => setPreview(null)} />}
+  </section>;
+}
+
 /** Choices for this device only: lock editing, and the speaker Spotify starts on from here. */
 function DevicePrefsRows({ hass, t }: { hass: HomeAssistant; t: (key: TranslationKey) => string }) {
   const locked = useDevicePref(editingLocked);
   const speaker = useDevicePref(spotifySpeaker);
+  const awake = useDevicePref(keepAwakeMode);
   const spotify = Object.values(hass.states).find((state) => state.entity_id.startsWith("media_player.") && (state.entity_id.includes("spotify") || state.attributes.source === "Spotify" || String(state.attributes.friendly_name ?? "").toLowerCase().includes("spotify")));
   const sources = Array.isArray(spotify?.attributes.source_list) ? spotify.attributes.source_list.map(String) : [];
   return <>
+    <Row description={`${t("keepAwakeDescription")}${isSilk() ? ` ${t("keepAwakeEcho")}` : ""}`} label={t("keepAwake")}><HDSelect ariaLabel={t("keepAwake")} onChange={(mode) => setKeepAwakeMode(mode as "auto" | "on" | "off")} options={[{ value: "auto", label: t("keepAwakeAuto") }, { value: "on", label: t("keepAwakeOn") }, { value: "off", label: t("keepAwakeOff") }]} value={awake} /></Row>
     <Row description={t("lockEditingDescription")} label={t("lockEditing")}><Switch checked={locked} label={t("lockEditing")} onChange={setEditingLocked} /></Row>
     {spotify && <Row description={t("spotifySpeakerDescription")} label={t("spotifySpeaker")}><HDSelect ariaLabel={t("spotifySpeaker")} onChange={setSpotifySpeaker} options={[{ value: "", label: t("spotifySpeakerAny") }, ...[...new Set([...(speaker ? [speaker] : []), ...sources])].map((source) => ({ value: source, label: source }))]} value={speaker} /></Row>}
   </>;
