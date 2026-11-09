@@ -89,7 +89,33 @@ function PlantControls({ hass, state, t }: WideProps) {
   return <ul className="widget-list">{readings.map((reading) => <li key={reading.key}><button className={reading.problem ? "widget-list--alert" : undefined} tabIndex={-1} type="button"><span>{t(reading.label)}</span><small>{reading.value}</small></button></li>)}</ul>;
 }
 
-function LightControls({ entity, state, t, call }: WideProps & { call: Call }) {
+// Names lights use for "no effect"; when the list has one, it stands for "No effect" in the menu.
+const NO_EFFECT = new Set(["none", "off", "no effect", "solid", "static", "normal"]);
+
+/** The light's effects (Thanksgiving, Rainbow...), when it has any, always with "No effect" to go back.
+ * Picking an effect turns the light on with it; "No effect" uses the light's own "none" entry when it
+ * has one, or else sets its current color again, which ends the effect on most lights. (Sending an
+ * effect the light doesn't list makes Home Assistant show an error.) */
+export function LightEffect({ className = "device-select", hass, label, state, t }: { className?: string; hass: HomeAssistant; label: string; state: HassEntity; t: (key: TranslationKey) => string }) {
+  const all = Array.isArray(state.attributes.effect_list) ? state.attributes.effect_list.map(String).filter(Boolean) : [];
+  if (all.length === 0) return null;
+  const plain = all.find((effect) => NO_EFFECT.has(effect.toLowerCase()));
+  const effects = all.filter((effect) => effect !== plain);
+  const raw = typeof state.attributes.effect === "string" && state.state === "on" ? state.attributes.effect : "";
+  const current = raw && effects.includes(raw) ? raw : "";
+  const turnOn = (data: Record<string, unknown>) => hass.callService("light", "turn_on", { entity_id: state.entity_id, ...data });
+  const clear = () => {
+    if (plain) return void turnOn({ effect: plain }).catch(() => undefined);
+    const attrs = state.attributes;
+    const color = attrs.color_mode === "color_temp" && typeof attrs.color_temp_kelvin === "number" ? { color_temp_kelvin: attrs.color_temp_kelvin }
+      : Array.isArray(attrs.rgb_color) ? { rgb_color: attrs.rgb_color } : typeof attrs.brightness === "number" ? { brightness: attrs.brightness } : {};
+    void turnOn(color).catch(() => undefined);
+  };
+  const options = [{ value: "", label: t("noEffect") }, ...effects.map((effect) => ({ value: effect, label: effect }))];
+  return <HDSelect ariaLabel={label} className={className} onChange={(effect) => { if (effect === current) return; if (effect) void turnOn({ effect }).catch(() => undefined); else clear(); }} options={options} value={current} />;
+}
+
+function LightControls({ entity, hass, state, t, call }: WideProps & { call: Call }) {
   const on = state.state === "on";
   const modes = state.attributes.supported_color_modes ?? [];
   const brightness = num(state.attributes.brightness);
@@ -106,6 +132,7 @@ function LightControls({ entity, state, t, call }: WideProps & { call: Call }) {
       {temps.map(([kelvin, swatch]) => <button aria-label={`${kelvin} K`} aria-pressed={on && currentK != null && Math.abs(currentK - kelvin) < 300} key={kelvin} onClick={() => call("light", "turn_on", { color_temp_kelvin: kelvin })} style={{ background: swatch }} type="button" />)}
       {colors.map((rgb) => <button aria-label={`RGB ${rgb.join(", ")}`} aria-pressed={on && Array.isArray(currentRgb) && currentRgb.every((value, index) => Math.abs(Number(value) - rgb[index]) < 40)} key={rgb.join()} onClick={() => call("light", "turn_on", { rgb_color: rgb })} style={{ background: `rgb(${rgb.join(",")})` }} type="button" />)}
     </div>}
+    <LightEffect hass={hass} label={`${t("lightEffect")}: ${entity.name}`} state={state} t={t} />
   </div>;
 }
 

@@ -1,3 +1,4 @@
+import { isRoomLight } from "../personalize";
 import { useMemo, useState } from "react";
 import type { TranslationKey } from "../i18n";
 import type { HomeDeckConfig } from "../types/config";
@@ -14,7 +15,7 @@ interface HomeStatusProps {
 
 export function HomeStatus({ config, data, hass, t }: HomeStatusProps) {
   const [busy, setBusy] = useState(false);
-  const lightIds = useMemo(() => Array.from(new Set(data.rooms.flatMap((room) => room.entities.filter((entity) => entity.domain === "light").map((entity) => entity.entity_id)))), [data.rooms]);
+  const lightIds = useMemo(() => Array.from(new Set(data.rooms.flatMap((room) => room.entities.filter(isRoomLight).map((entity) => entity.entity_id)))), [data.rooms]);
   const activeLights = lightIds.filter((id) => hass.states[id]?.state === "on").length;
 
   const setLights = async (service: "turn_on" | "turn_off") => {

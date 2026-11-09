@@ -1,3 +1,4 @@
+import { isRoomLight } from "../../personalize";
 import { useRef } from "react";
 import type { MouseEvent, PointerEvent } from "react";
 import { arrange, entityKey, getLayout, HOME_SCREEN, keyId, roomKey, roomScreen } from "../../layout";
@@ -23,7 +24,7 @@ export function orderedEntities(config: HomeDeckConfig, room: Room, allRooms: Ro
 }
 
 export function roomLights(hass: HomeAssistant, room: Room) {
-  const lights = room.entities.filter((entity) => entity.domain === "light");
+  const lights = room.entities.filter(isRoomLight);
   return { lights, on: lights.filter((entity) => hass.states[entity.entity_id]?.state === "on") };
 }
 
@@ -45,7 +46,7 @@ export function tapEntity(hass: HomeAssistant, entity: DiscoveredEntity, openDet
 }
 
 export function setRoomLights(hass: HomeAssistant, room: Room, on: boolean): void {
-  const ids = room.entities.filter((entity) => entity.domain === "light").map((entity) => entity.entity_id);
+  const ids = room.entities.filter(isRoomLight).map((entity) => entity.entity_id);
   if (ids.length > 0) void hass.callService("light", on ? "turn_on" : "turn_off", { entity_id: ids });
 }
 

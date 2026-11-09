@@ -94,14 +94,16 @@ function wmoCondition(code: number, day = true): string {
 
 const openMeteoCache = new Map<string, { at: number; data: Promise<OpenMeteo | null> }>();
 
-function loadOpenMeteo(latitude: number, longitude: number): Promise<OpenMeteo | null> {
-  const key = `${latitude.toFixed(2)},${longitude.toFixed(2)}`;
+/** Open-Meteo answers in °C and km/h unless asked; homes set to °F get °F and mph, like the rest of the panel. */
+function loadOpenMeteo(latitude: number, longitude: number, fahrenheit = false): Promise<OpenMeteo | null> {
+  const key = `${latitude.toFixed(2)},${longitude.toFixed(2)},${fahrenheit ? "F" : "C"}`;
   const cached = openMeteoCache.get(key);
   if (cached && Date.now() - cached.at < OPEN_METEO_TTL) return cached.data;
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}`
     + "&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code,is_day"
     + "&hourly=temperature_2m,weather_code,precipitation_probability,is_day"
-    + "&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max,sunrise,sunset&timezone=auto&forecast_days=7";
+    + "&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_probability_max,sunrise,sunset&timezone=auto&forecast_days=7"
+    + (fahrenheit ? "&temperature_unit=fahrenheit&wind_speed_unit=mph" : "");
   const data = fetch(url).then((response) => response.ok ? response.json() : null).then((json) => {
     if (!json?.current) return null;
     const now = Date.now();
@@ -125,7 +127,7 @@ function loadOpenMeteo(latitude: number, longitude: number): Promise<OpenMeteo |
         condition: wmoCondition(json.current.weather_code, Boolean(json.current.is_day)),
         apparent: json.current.apparent_temperature,
         humidity: json.current.relative_humidity_2m,
-        wind: `${Math.round(json.current.wind_speed_10m)} km/h`,
+        wind: `${Math.round(json.current.wind_speed_10m)} ${fahrenheit ? "mph" : "km/h"}`,
       },
       daily,
       hourly,
@@ -151,14 +153,17 @@ export function useWeather(hass: HomeAssistant, config: HomeDeckConfig, withFore
   // Open-Meteo fills in whatever the entities cannot: everything without an entity, and the forecast,
   // sunrise and sunset while the forecast is shown.
   const needsMeteo = (!entity || withForecast) && latitude != null && longitude != null;
+  // The weather entity's own unit wins (it is what the rest of the card shows), then the home's.
+  const unit = String(entity?.attributes.temperature_unit ?? hass.config?.unit_system?.temperature ?? "");
+  const fahrenheit = /F/i.test(unit);
 
   useEffect(() => {
     if (!needsMeteo) { setMeteo(null); return; }
     let cancelled = false;
-    void loadOpenMeteo(latitude!, longitude!).then((data) => { if (!cancelled) setMeteo(data); });
-    const timer = window.setInterval(() => void loadOpenMeteo(latitude!, longitude!).then((data) => { if (!cancelled) setMeteo(data); }), OPEN_METEO_TTL);
+    void loadOpenMeteo(latitude!, longitude!, fahrenheit).then((data) => { if (!cancelled) setMeteo(data); });
+    const timer = window.setInterval(() => void loadOpenMeteo(latitude!, longitude!, fahrenheit).then((data) => { if (!cancelled) setMeteo(data); }), OPEN_METEO_TTL);
     return () => { cancelled = true; window.clearInterval(timer); };
-  }, [needsMeteo, latitude, longitude]);
+  }, [needsMeteo, latitude, longitude, fahrenheit]);
 
   useEffect(() => {
     const legacy = entity?.attributes.forecast;

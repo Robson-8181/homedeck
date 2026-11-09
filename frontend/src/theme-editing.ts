@@ -35,6 +35,13 @@ export const themeEditing = String.raw`
 }
 .app-shell .hd-item__badge--remove { top: calc(var(--u)*-1); left: calc(var(--u)*-1); background: #d9534f; color: #fff; }
 .app-shell .hd-item__badge--size { bottom: calc(var(--u)*-1); right: calc(var(--u)*-1); background: rgba(255,255,255,.95); color: #1d1a17; }
+.app-shell .hd-item--sizing { z-index: 40; }
+/* Size menu: a slim column of round buttons (½×, 1×, 2×, 4×) rising from the size button. */
+.app-shell .hd-sizemenu { position: absolute; z-index: 30; right: calc(var(--u)*-1.3); bottom: calc(var(--u)*3.6); display: flex; flex-direction: column; gap: calc(var(--u)*.7); animation: hd-sizemenu-in .16s ease-out; }
+@keyframes hd-sizemenu-in { from { opacity: 0; transform: translateY(8px); } }
+.app-shell .hd-sizemenu__option { width: calc(var(--u)*4.4); height: calc(var(--u)*4.4); display: grid; place-items: center; padding: 0; border: 1px solid rgba(255,255,255,.3); border-radius: 50%; background: rgba(60,54,64,.9); backdrop-filter: blur(14px); box-shadow: 0 4px 14px rgba(0,0,0,.3); color: rgba(255,255,255,.88); font: 700 calc(var(--u)*1.45)/1 var(--f-body); cursor: pointer; }
+.app-shell .hd-sizemenu__option--on { background: rgba(255,255,255,.95); border-color: transparent; color: #1d1a17; }
+.app-shell .hd-sizemenu__option--locked { opacity: .45; }
 @keyframes hd-pop { from { transform: scale(.4); opacity: 0; } }
 .app-shell .hd-add-tile {
   min-height: calc(var(--u)*18); border-radius: calc(var(--u)*3.4*var(--hd-r,1)); border: 1.5px dashed rgba(255,255,255,.35); background: rgba(255,255,255,.05);

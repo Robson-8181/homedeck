@@ -67,13 +67,71 @@ function fetchEvents(hass: HomeAssistant, calendars: Calendar[], start: Date, en
   return events;
 }
 
-/** The calendars to show: the chosen ones, or every calendar entity. */
+// Home Assistant's named colors (Settings → Entities → calendar → Color), with its theme variable
+// first so a custom theme still wins.
+const HA_COLORS: Record<string, string> = {
+  primary: "#03a9f4", accent: "#ff9800", red: "#f44336", pink: "#e91e63", purple: "#926bc7", "deep-purple": "#6e41ab",
+  indigo: "#3f51b5", blue: "#2196f3", "light-blue": "#03a9f4", cyan: "#00bcd4", teal: "#009688", green: "#4caf50",
+  "light-green": "#8bc34a", lime: "#cddc39", yellow: "#ffeb3b", amber: "#ffc107", orange: "#ff9800", "deep-orange": "#ff6f22",
+  brown: "#795548", "light-grey": "#bdbdbd", grey: "#9e9e9e", "dark-grey": "#606060", "blue-grey": "#607d8b", black: "#000000", white: "#ffffff",
+};
+const haColor = (value: unknown): string | undefined => {
+  if (typeof value !== "string" || !value.trim()) return undefined;
+  const color = value.trim();
+  if (HA_COLORS[color]) return `var(--${color}-color, ${HA_COLORS[color]})`;
+  return /^#[0-9a-f]{3,8}$/i.test(color) || /^(rgb|hsl)a?\(/i.test(color) ? color : undefined;
+};
+/** A calendar without a color of its own keeps the same one, whatever other calendars come and go. */
+const fallbackColor = (id: string) => {
+  let hash = 0;
+  for (const char of id) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return PALETTE[hash % PALETTE.length];
+};
+
+type RegistryEntry = { options?: { calendar?: { color?: unknown } } } | null;
+const colorCache = new Map<string, Promise<Record<string, string>>>();
+
+/** The colors chosen in Home Assistant for these calendars (read once per set of calendars). */
+function calendarColors(hass: HomeAssistant, ids: string[]): Promise<Record<string, string>> {
+  const key = ids.join(",");
+  const cached = colorCache.get(key);
+  if (cached) return cached;
+  const read = (entries: Record<string, RegistryEntry>) => Object.fromEntries(ids.flatMap((id) => { const color = haColor(entries[id]?.options?.calendar?.color); return color ? [[id, color]] : []; }));
+  const colors = hass.connection.sendMessagePromise<Record<string, RegistryEntry>>({ type: "config/entity_registry/get_entries", entity_ids: ids })
+    .catch(() => Promise.all(ids.map((id) => hass.connection.sendMessagePromise<RegistryEntry>({ type: "config/entity_registry/get", entity_id: id }).then((entry) => [id, entry] as const).catch(() => [id, null] as const))).then(Object.fromEntries))
+    .then(read)
+    .catch(() => ({}));
+  colorCache.set(key, colors);
+  return colors;
+}
+
+const COLORS_EVENT = "homedeck-calendar-colors";
+/** A calendar's color was changed in Home Assistant: read them again. */
+export function forgetCalendarColors(): void {
+  colorCache.clear();
+  window.dispatchEvent(new Event(COLORS_EVENT));
+}
+
+/** The calendars to show: the chosen ones, or every calendar entity, in Home Assistant's colors. */
 function useCalendars(config: HomeDeckConfig, hass: HomeAssistant): Calendar[] {
   const chosen = config.agenda.calendars;
   const ids = Object.keys(hass.states).filter((id) => id.startsWith("calendar.")).sort().join(",");
+  const [colors, setColors] = useState<Record<string, string>>({});
+  const [round, setRound] = useState(0);
+  useEffect(() => {
+    const again = () => setRound((value) => value + 1);
+    window.addEventListener(COLORS_EVENT, again);
+    return () => window.removeEventListener(COLORS_EVENT, again);
+  }, []);
+  useEffect(() => {
+    if (!ids || !hass.connection) return;
+    let live = true;
+    void calendarColors(hass, ids.split(",")).then((found) => { if (live) setColors(found); });
+    return () => { live = false; };
+  }, [ids, round]);
   return useMemo(() => ids.split(",").filter(Boolean)
-    .map((id, index) => ({ id, name: String(hass.states[id]?.attributes.friendly_name ?? id.split(".")[1]), color: PALETTE[index % PALETTE.length] }))
-    .filter((calendar) => chosen.length === 0 || chosen.includes(calendar.id)), [ids, chosen.join(",")]);
+    .map((id) => ({ id, name: String(hass.states[id]?.attributes.friendly_name ?? id.split(".")[1]), color: colors[id] ?? fallbackColor(id) }))
+    .filter((calendar) => chosen.length === 0 || chosen.includes(calendar.id)), [ids, chosen.join(","), colors]);
 }
 
 /** The chosen to-do list, or the first one. */

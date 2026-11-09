@@ -8,6 +8,7 @@ declare module "react" {
     interface IntrinsicElements {
       "ha-icon": { class?: string; icon?: string; style?: CSSProperties };
       "ha-camera-stream": { class?: string; ref?: Ref<HTMLElement & Record<string, unknown>> };
+      "ha-state-icon": { class?: string; ref?: Ref<HTMLElement & { hass?: unknown; stateObj?: unknown }> };
     }
   }
 }

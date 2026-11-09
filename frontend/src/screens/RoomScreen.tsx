@@ -1,3 +1,4 @@
+import { isRoomLight } from "../personalize";
 import { useState } from "react";
 import { ContextHeader } from "../components/ContextHeader";
 import { EditableGrid } from "../components/EditableGrid";
@@ -22,7 +23,7 @@ export function RoomScreen(props: ScreenProps & { onSelectRoom: (roomId: string)
   const screen = roomScreen(room.id);
   const layout = getLayout(config, screen);
   const roomName = room.id === "__unassigned__" ? t("unassigned") : room.name;
-  const lights = room.entities.filter((entity) => entity.domain === "light");
+  const lights = room.entities.filter(isRoomLight);
   const activeLights = lights.filter((entity) => hass.states[entity.entity_id]?.state === "on");
   const natural = [...room.entities].sort((a, b) => DOMAIN_ORDER.indexOf(a.domain) - DOMAIN_ORDER.indexOf(b.domain) || a.name.localeCompare(b.name));
   const everywhere = entityIndex(allRooms);
@@ -46,7 +47,7 @@ export function RoomScreen(props: ScreenProps & { onSelectRoom: (roomId: string)
         <aside className="room-selector" aria-label={t("roomsNavigation")}>
           <div className="room-selector__list" role="tablist">
             {data.rooms.map((item) => {
-              const count = item.entities.filter((entity) => entity.domain === "light" && hass.states[entity.entity_id]?.state === "on").length;
+              const count = item.entities.filter((entity) => isRoomLight(entity) && hass.states[entity.entity_id]?.state === "on").length;
               return <button aria-selected={item.id === room.id} key={item.id} onClick={() => onSelectRoom(item.id)} role="tab" type="button"><span className="room-selector__icon"><RoomIcon room={item} size={19} /></span><span>{item.id === "__unassigned__" ? t("unassigned") : item.name}</span>{count > 0 && <i>{count}</i>}</button>;
             })}
           </div>

@@ -9,6 +9,12 @@ import { isSectionKey, SECTION_PREFIX, showItem, withSections } from "../layout"
 /** True inside a double-size tile, so cards can offer more controls there. */
 const WideTile = createContext(false);
 export const useWideTile = () => useContext(WideTile);
+/** Sensors can also be small: half the height of a normal card. */
+const canBeSmall = (key: string) => /^entity:(sensor|binary_sensor)\./.test(key);
+type CardSize = "small" | "normal" | "double" | "large";
+const SIZE_LABELS: Record<CardSize, TranslationKey> = { small: "sizeSmall", normal: "sizeNormal", double: "sizeDouble", large: "sizeLarge" };
+const SIZE_MARKS: Record<CardSize, string> = { small: "½×", normal: "1×", double: "2×", large: "4×" };
+
 /** True inside a large tile (two columns and two rows). */
 const TallTile = createContext(false);
 export const useTallTile = () => useContext(TallTile);
@@ -57,6 +63,17 @@ export function EditableGrid({ addLabel, className, editing, hiddenItems = [], i
   const drag = useRef<Drag | null>(null);
   const [order, setOrder] = useState<string[] | null>(null);
   const [dragKey, setDragKey] = useState<string | null>(null);
+  // The card whose size menu is open; a tap elsewhere or Escape closes it.
+  const [sizing, setSizing] = useState<string | null>(null);
+  useEffect(() => {
+    if (!sizing) return;
+    const outside = (event: PointerEvent) => { if (!event.composedPath().some((node) => node instanceof HTMLElement && (node.classList.contains("hd-sizemenu") || node.classList.contains("hd-item__badge--size")))) setSizing(null); };
+    const escape = (event: KeyboardEvent) => { if (event.key === "Escape") setSizing(null); };
+    window.addEventListener("pointerdown", outside, true);
+    window.addEventListener("keydown", escape);
+    return () => { window.removeEventListener("pointerdown", outside, true); window.removeEventListener("keydown", escape); };
+  }, [sizing]);
+  useEffect(() => { if (!editing) setSizing(null); }, [editing]);
   const titles = sections ? layout.sections ?? {} : {};
   const keys = withSections(cards.map((item) => item.key), sections ? layout : { ...layout, sections: {} });
   const setTitle = (key: string, title: string) => onLayout({ ...layout, sections: { ...titles, [key]: title.trim().slice(0, 60) || t("newSection") } });
@@ -107,7 +124,7 @@ export function EditableGrid({ addLabel, className, editing, hiddenItems = [], i
   };
 
   const start = (key: string) => (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (!editing || (event.target as HTMLElement).closest(".hd-item__badge, .hd-add-tile, .hd-hidden-tray, .hd-section__input")) return;
+    if (!editing || (event.target as HTMLElement).closest(".hd-item__badge, .hd-sizemenu, .hd-add-tile, .hd-hidden-tray, .hd-section__input")) return;
     // Grids can be nested (rows inside a section): the innermost one takes the drag.
     event.stopPropagation();
     const rect = event.currentTarget.getBoundingClientRect();
@@ -184,13 +201,25 @@ export function EditableGrid({ addLabel, className, editing, hiddenItems = [], i
     const section = isSectionKey(key);
     const wide = !section && layout.wide.includes(key);
     const tall = wide && (layout.tall ?? []).includes(key);
-    // The size badge goes normal → double → large → normal.
-    const nextSize = () => wide && !tall
-      ? { ...layout, tall: [...(layout.tall ?? []).filter((entry) => entry !== key), key] }
-      : wide ? { ...layout, wide: layout.wide.filter((entry) => entry !== key), tall: (layout.tall ?? []).filter((entry) => entry !== key) }
-        : { ...layout, wide: [...layout.wide, key] };
+    const small = !section && !wide && canBeSmall(key) && (layout.small ?? []).includes(key);
+    const size: CardSize = small ? "small" : tall ? "large" : wide ? "double" : "normal";
+    const without = (list?: string[]) => (list ?? []).filter((entry) => entry !== key);
+    // The size badge opens a menu with every size (small only for sensors), the current one marked.
+    // Largest at the top, so the stack grows up from the button.
+    const sizes: CardSize[] = canBeSmall(key) ? ["large", "double", "normal", "small"] : ["large", "double", "normal"];
+    const choose = (next: CardSize) => {
+      setSizing(null);
+      if (next === size) return;
+      if (next !== "normal" && !plan.pro) { plan.upsell("feature"); return; }
+      onLayout({
+        ...layout,
+        wide: next === "double" || next === "large" ? [...without(layout.wide), key] : without(layout.wide),
+        tall: next === "large" ? [...without(layout.tall), key] : without(layout.tall),
+        small: next === "small" ? [...without(layout.small), key] : without(layout.small),
+      });
+    };
     return <div
-      className={`hd-item ${wide ? "hd-item--wide" : ""} ${tall ? "hd-item--tall" : ""} ${section ? "hd-item--section" : ""} ${dragKey === key ? "hd-item--dragging" : ""}`}
+      className={`hd-item ${wide ? "hd-item--wide" : ""} ${tall ? "hd-item--tall" : ""} ${small ? "hd-item--small" : ""} ${sizing === key ? "hd-item--sizing" : ""} ${section ? "hd-item--section" : ""} ${dragKey === key ? "hd-item--dragging" : ""}`}
       data-hd-key={key}
       key={key}
       onPointerDown={start(key)}
@@ -199,7 +228,10 @@ export function EditableGrid({ addLabel, className, editing, hiddenItems = [], i
       <WideTile.Provider value={wide}><TallTile.Provider value={tall}>{item.node}</TallTile.Provider></WideTile.Provider>
       {editing && <>
         <button aria-label={`${item.removal === "remove" ? t("removeItem") : t("hideItem")}: ${item.label}`} className="hd-item__badge hd-item__badge--remove" onClick={() => hide(item)} type="button"><HDIcon name="minus" size={14} /></button>
-        {sizable && !section && <button aria-label={`${tall ? t("normalSize") : wide ? t("largeSize") : t("doubleSize")}: ${item.label}`} aria-pressed={wide} className="hd-item__badge hd-item__badge--size" onClick={() => (plan.pro ? onLayout(nextSize()) : plan.upsell("feature"))} type="button"><HDIcon name={!plan.pro ? "lock" : tall ? "shrink" : "expand"} size={14} /></button>}
+        {sizable && !section && <button aria-expanded={sizing === key} aria-haspopup="menu" aria-label={`${t("sizeMenu")}: ${item.label} (${t(SIZE_LABELS[size])})`} className="hd-item__badge hd-item__badge--size" onClick={() => setSizing(sizing === key ? null : key)} type="button"><HDIcon name={size === "large" || size === "double" ? "shrink" : "expand"} size={14} /></button>}
+        {sizable && !section && sizing === key && <div aria-label={t("sizeMenu")} className="hd-sizemenu" role="menu">
+          {sizes.map((option) => <button aria-checked={option === size} aria-label={t(SIZE_LABELS[option])} className={`hd-sizemenu__option ${option === size ? "hd-sizemenu__option--on" : ""} ${option !== "normal" && !plan.pro ? "hd-sizemenu__option--locked" : ""}`} key={option} onClick={() => choose(option)} role="menuitemradio" title={t(SIZE_LABELS[option])} type="button">{SIZE_MARKS[option]}</button>)}
+        </div>}
       </>}
     </div>;
   };
@@ -208,6 +240,9 @@ export function EditableGrid({ addLabel, className, editing, hiddenItems = [], i
     {editing && sections && <button className="hd-add-tile hd-add-tile--section" onClick={addSection} type="button"><span><HDIcon name="minus" size={22} /></span>{t("addSection")}</button>}
   </>;
   const gridClass = `${className} hd-grid ${editing ? "hd-grid--editing" : ""}`;
+  // A grid with small cards switches to half-height rows (a normal card spans two of them).
+  const smallKeys = new Set((layout.small ?? []).filter((key) => canBeSmall(key) && !layout.wide.includes(key)));
+  const gridFor = (list: string[]) => list.some((key) => smallKeys.has(key)) ? `${gridClass} hd-grid--halves` : gridClass;
   // Move and release are handled on the root: a card dragged across a separator changes block and
   // loses its pointer capture, so later events can come from anywhere inside.
   const pointer = { onPointerCancel: cancel, onPointerMove: move, onPointerUp: end, ref: rootRef };
@@ -220,11 +255,11 @@ export function EditableGrid({ addLabel, className, editing, hiddenItems = [], i
 
   return <>
     {!sectioned
-      ? <div className={gridClass} {...pointer}>{shown.map(renderItem)}{addTiles}</div>
+      ? <div className={gridFor(shown)} {...pointer}>{shown.map(renderItem)}{addTiles}</div>
       : <div className={`hd-sections ${editing ? "hd-sections--editing" : ""}`} {...pointer}>
         {blocks.map((block, index) => <Fragment key={block.section ?? "start"}>
           {block.section && renderItem(block.section, 0)}
-          {(block.keys.length > 0 || index === blocks.length - 1) && <div className={gridClass}>
+          {(block.keys.length > 0 || index === blocks.length - 1) && <div className={gridFor(block.keys)}>
             {block.keys.map(renderItem)}
             {index === blocks.length - 1 && addTiles}
           </div>}

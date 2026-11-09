@@ -5,9 +5,9 @@ import { domainLabel, hvacLabel, type TranslationKey } from "../i18n";
 import type { DiscoveredEntity } from "../types/discovery";
 import type { HassEntity, HomeAssistant } from "../types/home-assistant";
 import { DEVICE_ICONS, domainIcon, EntityIcon, HA_ICON, HDIcon } from "./HDIcon";
-import { VolumeButtons } from "./WideControls";
+import { LightEffect, VolumeButtons } from "./WideControls";
 import { SpotifyPlayer } from "./SpotifyPlayer";
-import { isSpotify } from "../spotify";
+import { showsPlayer, usePlayers } from "../spotify";
 import { usePlan } from "../plan";
 import { isNumericState } from "../history";
 import { HistoryChart } from "./HistoryChart";
@@ -56,7 +56,8 @@ function Slider({ label, off = false, onCommit, suffix = "%", value }: { label: 
 
 export function EntityModal(props: EntityModalProps) {
   const { pro } = usePlan();
-  if (pro && isSpotify(props.entity)) return <SpotifyPlayer entity={props.entity} hass={props.hass} onClose={props.onClose} t={props.t} />;
+  const everyPlayer = usePlayers();
+  if (showsPlayer(props.entity, pro, everyPlayer)) return <SpotifyPlayer entity={props.entity} hass={props.hass} onClose={props.onClose} t={props.t} />;
   return <EntityDetails {...props} />;
 }
 
@@ -138,6 +139,10 @@ function EntityDetails({ entity, hass, language, onClose, roomName, t }: EntityM
 
       {!unavailable && <div className="hd-detail__body">
         {domain === "light" && dimmable && <Slider label={t("brightness")} off={state?.state !== "on"} onCommit={(value) => void (value === 0 ? call("light", "turn_off") : call("light", "turn_on", { brightness_pct: value }))} value={brightness} />}
+        {domain === "light" && Array.isArray(attrs.effect_list) && attrs.effect_list.length > 0 && <div className="hd-detail__sources hd-detail__effect">
+          <span className="eyebrow">{t("lightEffect")}</span>
+          <LightEffect className="hd-detail__select" hass={hass} label={`${t("lightEffect")}: ${entity.name}`} state={state} t={t} />
+        </div>}
         {domain === "light" && colorful && <div className="hd-swatches" role="group" aria-label={t("predefinedColors")}>{LIGHT_SWATCHES.map((swatch) => <button aria-label={`${t("color")} ${swatch}`} key={swatch} onClick={() => void call("light", "turn_on", { rgb_color: hexToRgb(swatch) })} style={{ background: swatch }} type="button" />)}</div>}
 
         {domain === "climate" && <>

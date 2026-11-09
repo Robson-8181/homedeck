@@ -3,6 +3,7 @@ import type { HomeDeckCardStyle, HomeDeckConfig } from "../types/config";
 import type { DiscoveryResponse } from "../types/discovery";
 import type { HomeAssistant } from "../types/home-assistant";
 import { SparklinesContext } from "../history";
+import { PlayersContext } from "../spotify";
 import { LiveCamerasContext } from "./CameraCard";
 import { OccasionContext, SeasonLayer } from "./SeasonLayer";
 import { SeasonDecor } from "./SeasonDecor";
@@ -145,7 +146,7 @@ export function DynamicShell({ children, config, data, hass, mode = "grid", seas
       <div aria-hidden="true" className="ambient-background"><i /><i /><i /></div>
       {season && (season.occasion?.effect || season.fireworks) && <SeasonLayer effect={season.occasion?.effect ?? null} fireworks={season.fireworks} intensity={season.occasion?.phase === "lead" ? 0.45 : 1} />}
       {season?.occasion && (season.occasion.phase === "day" || season.occasion.id === "christmas") && <SeasonDecor id={season.occasion.id} />}
-      <OccasionContext.Provider value={season?.occasion ?? null}><SparklinesContext.Provider value={Boolean(config.cards?.sparklines)}><LiveCamerasContext.Provider value={config.live_cameras !== false}>{children}</LiveCamerasContext.Provider></SparklinesContext.Provider></OccasionContext.Provider>
+      <OccasionContext.Provider value={season?.occasion ?? null}><SparklinesContext.Provider value={Boolean(config.cards?.sparklines)}><LiveCamerasContext.Provider value={config.live_cameras !== false}><PlayersContext.Provider value={config.cards?.players !== false}>{children}</PlayersContext.Provider></LiveCamerasContext.Provider></SparklinesContext.Provider></OccasionContext.Provider>
     </div>
   );
 }

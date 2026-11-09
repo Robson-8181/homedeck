@@ -50,6 +50,8 @@ export const themeExtras = String.raw`
 .app-shell .spotify-card > .spotify-card__cover:not(.spotify-card__cover--empty) { background-size: cover; background-position: center; }
 .app-shell .spotify-card__meta { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: calc(var(--u)*1.1); }
 .app-shell .spotify-card__source { display: flex; align-items: center; gap: calc(var(--u)*.6); font: 700 calc(var(--u)*1.5)/1 var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: #1fd36b; }
+.app-shell .spotify-card__source > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-shell .spotify-card__source--other, .app-shell .hd-player__source--other { color: rgba(255,255,255,.72); }
 .app-shell .spotify-card__copy { display: flex; flex-direction: column; gap: calc(var(--u)*.35); min-width: 0; }
 .app-shell .spotify-card__copy strong { font: 600 calc(var(--u)*2.05)/1.15 var(--f-body); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .app-shell .spotify-card__copy small { font: 500 calc(var(--u)*1.75)/1.25 var(--f-body); color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -84,6 +86,7 @@ export const themeExtras = String.raw`
 .app-shell .hd-player__art--paused { transform: scale(.92); }
 .app-shell .hd-player__source { display: inline-flex; align-items: center; justify-content: center; gap: calc(var(--u)*.8); font: 700 calc(var(--u)*1.5)/1 var(--f-body); letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.62); }
 .app-shell .hd-player__source svg { color: #1ed760; }
+.app-shell .hd-player__source--other svg { color: inherit; }
 .app-shell .hd-player__title { margin-top: calc(var(--u)*1.2); font: 600 calc(var(--u)*4.6)/1.08 var(--f-display); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .app-shell .hd-player__artist { margin-top: calc(var(--u)*.8); font: 500 calc(var(--u)*2.2)/1.2 var(--f-body); color: rgba(255,255,255,.72); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .app-shell .hd-player__track { display: grid; gap: calc(var(--u)*.6); }
@@ -527,6 +530,21 @@ export const themeExtras = String.raw`
 /* 0.16: history, large cards, camera full screen, weather, sun and energy cards, animations. */
 .app-shell .hd-item--tall { grid-row: span 2; }
 .app-shell .hd-item--tall > :first-child { height: 100%; }
+/* Small sensor cards: a grid holding one switches to half-height rows, every other card spans two. */
+.app-shell .hd-grid--halves { grid-auto-flow: row dense; }
+.app-shell .hd-grid--halves > :is(.hd-item, .hd-add-tile) { grid-row: span 2; }
+.app-shell .hd-grid--halves > .hd-item--tall { grid-row: span 4; }
+.app-shell .hd-grid--halves > .hd-item--small { grid-row: span 1; }
+.app-shell .home-grid.hd-grid--halves { grid-auto-rows: minmax(calc(var(--u)*8.6), 1fr); }
+.app-shell :is(.room-pane .device-grid, .collection-grid).hd-grid--halves { grid-auto-rows: minmax(calc(var(--u)*7.35), auto); }
+.app-shell .sb-grid.hd-grid--halves { grid-auto-rows: minmax(calc(var(--u)*7.6), auto); }
+@media (max-width: 720px) { .app-shell .home-grid.hd-grid--halves { grid-auto-rows: minmax(calc(var(--u)*10.1), auto); } }
+.app-shell .hd-item--small > .device-tile { height: 100%; min-height: 0; flex-direction: row; align-items: center; gap: calc(var(--u)*1.4); padding: calc(var(--u)*1.2) calc(var(--u)*1.6); }
+.app-shell .hd-item--small > .device-tile > .device-tile__top { min-height: 0; flex: none; }
+.app-shell .hd-item--small > .device-tile .device-tile__icon { width: calc(var(--u)*4.4); height: calc(var(--u)*4.4); }
+.app-shell .hd-item--small > .device-tile > .device-tile__copy { flex: 1; min-width: 0; margin: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left; }
+.app-shell .hd-item--small > .device-tile .device-tile__copy :is(strong, span) { -webkit-line-clamp: 1; }
+.app-shell .hd-item--small > .device-tile .device-tile__guard { display: none; }
 .app-shell .hd-history { display: grid; gap: calc(var(--u)*1); color: var(--on); }
 .app-shell .hd-history__head { display: flex; align-items: center; justify-content: space-between; gap: calc(var(--u)*1); color: var(--ink); }
 .app-shell .hd-history__ranges { display: flex; gap: calc(var(--u)*.5); }
@@ -677,4 +695,11 @@ export const themeExtras = String.raw`
 @keyframes hd-balloon { 0% { transform: translate(0, 0); } 50% { transform: translate(24px, -55vh); } 100% { transform: translate(-10px, calc(-100vh - 140px)); } }
 @media (prefers-reduced-motion: reduce) { .app-shell .hd-decor * { animation: none !important; } .app-shell .hd-decor__bunny-body { transform: translateY(14%); } }
 
+
+/* Notices beside the people: chips like the weather one, only while something needs attention. */
+.app-shell .hd-notices { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: calc(var(--u)*.8); min-width: 0; }
+.app-shell .hd-notice { display: inline-flex; align-items: center; gap: calc(var(--u)*.8); max-width: calc(var(--u)*30); padding: calc(var(--u)*.9) calc(var(--u)*1.6) calc(var(--u)*.9) calc(var(--u)*1.2); border: 1px solid color-mix(in srgb, var(--on, #ffc94d) 45%, transparent); border-radius: var(--hd-pill, 99px); background: color-mix(in srgb, var(--on, #ffc94d) 16%, rgba(255,255,255,.06)); backdrop-filter: blur(18px); color: var(--ink, #fff); font: 600 calc(var(--u)*1.7)/1.1 var(--f-body); cursor: pointer; }
+.app-shell .hd-notice__icon { flex: none; display: inline-flex; color: var(--on, #ffc94d); --mdc-icon-size: 18px; }
+.app-shell .hd-notice__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-shell .hd-notice small { flex: none; font-weight: 500; opacity: .7; }
 `;

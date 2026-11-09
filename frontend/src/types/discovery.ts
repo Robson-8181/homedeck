@@ -12,6 +12,8 @@ export interface DiscoveredEntity {
   confirm?: boolean;
   /** Name in Home Assistant, when a nickname was given in HomeDeck. */
   original_name?: string;
+  /** Hidden from its room in Edit mode: left out of the light counts and of "turn all on/off". */
+  hidden?: boolean;
 }
 
 export interface Room {

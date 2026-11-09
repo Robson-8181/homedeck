@@ -10,7 +10,7 @@ import { HDIcon } from "./HDIcon";
 import { WideControls } from "./WideControls";
 import { SpotifyCard } from "./SpotifyCard";
 import { usePlan } from "../plan";
-import { isSpotify } from "../spotify";
+import { isSpotify, usePlayers } from "../spotify";
 import { mediaArt } from "../devices";
 import type { HomeDeckConfig } from "../types/config";
 import { TodayCard } from "./Agenda";
@@ -62,6 +62,7 @@ export function HomeWidget(props: HomeWidgetProps) {
 
 function DeviceWidget({ data, hass, kind, language, onOpen, t }: HomeWidgetProps) {
   const { pro } = usePlan();
+  const everyPlayer = usePlayers();
   const wide = useWideTile();
   const entities = uniqueEntities(data);
 
@@ -110,7 +111,10 @@ function DeviceWidget({ data, hass, kind, language, onOpen, t }: HomeWidgetProps
 
   const players = entities.filter((entity) => entity.domain === "media_player");
   const spotify = players.find((entity) => isSpotify(entity) && hass.states[entity.entity_id]?.state !== "unavailable") ?? players.find(isSpotify);
-  if (spotify && pro) return <SpotifyCard entity={spotify} hass={hass} onOpen={onOpen} t={t} />;
+  // With the player card on every player, the one playing comes first (Spotify among them).
+  const playingNow = everyPlayer ? players.filter((entity) => hass.states[entity.entity_id]?.state === "playing").sort((a, b) => Number(isSpotify(b)) - Number(isSpotify(a)))[0] : undefined;
+  const featured = playingNow ?? spotify;
+  if (featured && pro) return <SpotifyCard entity={featured} hass={hass} onOpen={onOpen} t={t} />;
   const media = players.find((entity) => hass.states[entity.entity_id]?.state === "playing")
     ?? players.find((entity) => !["off", "unavailable", "standby"].includes(hass.states[entity.entity_id]?.state ?? "unavailable"))
     ?? players[0];

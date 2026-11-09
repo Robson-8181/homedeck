@@ -12,7 +12,7 @@ import { ListLayout } from "./screens/layouts/ListLayout";
 import { SidebarLayout, type NavLink } from "./screens/layouts/SidebarLayout";
 import { Screensaver } from "./components/Screensaver";
 import { DoorbellPopup, useDoorbell } from "./components/Doorbell";
-import { useOccasion } from "./components/Agenda";
+import { forgetCalendarColors, useOccasion } from "./components/Agenda";
 import { editingLocked, keepAwakeMode, useDevicePref } from "./devicePrefs";
 import { keepAwakeWanted, startKeepAwake } from "./keepAwake";
 import { createTranslator } from "./i18n";
@@ -55,7 +55,7 @@ export function App({ hass, version }: { hass: HomeAssistant; version?: string }
   const t = useMemo(() => createTranslator(language), [language]);
   configRef.current = config;
   // Nicknames and room options apply to every screen through the discovery data.
-  const data = useMemo(() => (rawData ? personalize(rawData, config?.names, config?.rooms, config?.entity_options, config?.ha_icons) : null), [rawData, config?.names, config?.rooms, config?.entity_options, config?.ha_icons]);
+  const data = useMemo(() => (rawData ? personalize(rawData, config?.names, config?.rooms, config?.entity_options, config?.ha_icons, config?.layouts) : null), [rawData, config?.names, config?.rooms, config?.entity_options, config?.ha_icons, config?.layouts]);
 
   const load = useCallback(async () => {
     setError(false);
@@ -93,7 +93,8 @@ export function App({ hass, version }: { hass: HomeAssistant; version?: string }
       }, 1500);
     };
     for (const eventType of ["area_registry_updated", "device_registry_updated", "entity_registry_updated"]) {
-      void connection.subscribeMessage(rediscover, { type: "subscribe_events", event_type: eventType })
+      const handler = eventType === "entity_registry_updated" ? (event: unknown) => { const data = (event as { data?: { entity_id?: string } })?.data; if (data?.entity_id?.startsWith("calendar.")) forgetCalendarColors(); rediscover(); } : rediscover;
+      void connection.subscribeMessage(handler, { type: "subscribe_events", event_type: eventType })
         .then((unsubscribe) => { if (cancelled) unsubscribe(); else unsubscribers.push(unsubscribe); })
         .catch(() => undefined);
     }

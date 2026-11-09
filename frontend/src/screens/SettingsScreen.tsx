@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
 import { HDIcon, RoomIcon, type IconName } from "../components/HDIcon";
 import { HDSegmented, HDSelect } from "../components/HDSelect";
-import type { TranslationKey } from "../i18n";
+import { domainLabel, type TranslationKey } from "../i18n";
 import type { HomeDeckBackgroundPreset, HomeDeckCardStyle, HomeDeckConfig, HomeDeckPageType } from "../types/config";
 import { withRoomOptions } from "../personalize";
 import { energyCandidates } from "../components/ExtraWidgets";
@@ -242,6 +242,7 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
             <Row label={t("showWeather")}><Switch checked={draft.home.show_weather} label={t("showWeather")} onChange={(show_weather) => update({ home: { ...draft.home, show_weather } })} /></Row>
             <Row label={t("showPresence")}><Switch checked={draft.home.show_presence} label={t("showPresence")} onChange={(show_presence) => update({ home: { ...draft.home, show_presence } })} /></Row>
           </section>
+          <NoticesPanel hass={hass} ids={draft.home.badges ?? []} language={language} onChange={(badges) => update({ home: { ...draft.home, badges } })} t={t} />
           <section className="st-panel">
             <h2>{t("homeActions")}</h2>
             <Row label={t("showStatus")}><Switch checked={draft.visibility.home_cards.status} label={t("showStatus")} onChange={(status) => update({ visibility: { ...draft.visibility, home_cards: { ...draft.visibility.home_cards, status } } })} /></Row>
@@ -391,6 +392,7 @@ function CardStylePanel({ cards, locked, onChange, onUpsell, t }: { cards: HomeD
       <Row description={t("frameDescription")} label={t("frame")}><Switch checked={cards.frame} label={t("frame")} onChange={(frame) => onChange({ ...cards, frame })} /></Row>
       <Row description={t("animationsDescription")} label={t("animations")}><Switch checked={Boolean(cards.animations)} label={t("animations")} onChange={(animations) => onChange({ ...cards, animations })} /></Row>
       <Row description={t("sparklinesDescription")} label={t("sparklines")}><Switch checked={Boolean(cards.sparklines)} label={t("sparklines")} onChange={(sparklines) => onChange({ ...cards, sparklines })} /></Row>
+      <Row description={t("playersDescription")} label={t("players")}><Switch checked={cards.players !== false} label={t("players")} onChange={(players) => onChange({ ...cards, players })} /></Row>
     </fieldset>{locked && <button aria-label={t("proStyleLocked")} className="st-cards__lock" onClick={onUpsell} type="button" />}</div>
     {!locked && changed && <div className="st-actions"><button className="hd-pill" onClick={() => onChange(DEFAULT_CARDS)} type="button"><HDIcon name="refresh" size={16} />{t("restoreDefaults")}</button></div>}
   </section>;
@@ -547,6 +549,30 @@ function moveItem<T>(items: T[], from: number, to: number): T[] {
   const next = [...items];
   next.splice(to, 0, ...next.splice(from, 1));
   return next;
+}
+
+const NOTICE_DOMAINS = ["binary_sensor", "event", "sensor", "cover", "lock", "switch", "input_boolean", "alarm_control_panel", "update", "timer", "vacuum", "light", "fan"];
+
+/** Notices beside the people in the header: the entities chosen here, shown only when they have something to say. */
+function NoticesPanel({ hass, ids, language, onChange, t }: { hass: HomeAssistant; ids: string[]; language?: string; onChange: (ids: string[]) => void; t: (key: TranslationKey) => string }) {
+  const [picking, setPicking] = useState(false);
+  const name = (id: string) => String(hass.states[id]?.attributes.friendly_name ?? id);
+  // Every candidate from Home Assistant, grouped by kind (events and unassigned sensors included).
+  const groups = useMemo<Room[]>(() => NOTICE_DOMAINS.map((domain) => ({
+    id: domain, name: domainLabel(domain, language), icon: null, aliases: [], floor_id: null, device_count: 0,
+    entities: Object.keys(hass.states).filter((id) => id.startsWith(`${domain}.`)).sort((a, b) => name(a).localeCompare(name(b))).map((id) => ({
+      entity_id: id, domain, name: name(id), area_id: "", device_id: null, device_class: typeof hass.states[id]?.attributes.device_class === "string" ? String(hass.states[id]!.attributes.device_class) : null, icon: null,
+    })),
+  })).filter((group) => group.entities.length > 0), [picking]);
+  const toggle = (id: string) => onChange(ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id].slice(0, 12));
+  return <section className="st-panel">
+    <h2>{t("noticesTitle")}</h2><p>{t("noticesDescription")}</p>
+    {ids.length > 0 && <div className="st-group">
+      {ids.map((id) => <Row description={id} key={id} label={name(id)}><button aria-label={`${t("removeItem")}: ${name(id)}`} className="hd-pill" onClick={() => toggle(id)} type="button"><HDIcon name="minus" size={14} />{t("removeItem")}</button></Row>)}
+    </div>}
+    <div className="st-actions"><button className="hd-pill" disabled={ids.length >= 12} onClick={() => setPicking(true)} type="button"><HDIcon name="plus" size={16} />{t("addNotice")}</button></div>
+    {picking && <EntityPicker language={language} onClose={() => setPicking(false)} onToggle={toggle} rooms={groups} selected={ids} t={t} title={t("addNotice")} />}
+  </section>;
 }
 
 /** Calendar and reminders beside the clock: what to show and from which entities. */

@@ -64,6 +64,8 @@ export interface HomeAssistant {
     longitude?: number;
     /** The home's country (ISO code, e.g. "BR"), for the special dates. */
     country?: string;
+    /** The home's units (°C or °F, km or mi...), so Open-Meteo answers in the same ones. */
+    unit_system?: { temperature?: string; length?: string; wind_speed?: string };
   };
   locale?: {
     language?: string;

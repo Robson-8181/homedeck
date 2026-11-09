@@ -13,7 +13,7 @@ import { HDSelect } from "./HDSelect";
 import { ALARM_ARMED, RUNNABLE, SELECTS, alarmStatus, mediaArt, plantStatus, runEntity, selectOption, selectOptions, vacuumActions, vacuumStatus } from "../devices";
 import { SpotifyCard } from "./SpotifyCard";
 import { usePlan } from "../plan";
-import { isSpotify } from "../spotify";
+import { showsPlayer, usePlayers } from "../spotify";
 
 const ACTIVE_STATES = new Set(["on", "open", "opening", "playing", "paused", "heat", "cool", "heat_cool", "auto", "dry", "fan_only", "unlocked", "cleaning", "returning", ...ALARM_ARMED]);
 export const TOGGLES = new Set(["light", "switch", "fan", "input_boolean", "automation"]);
@@ -88,7 +88,8 @@ interface EntityCardProps {
  * camera shows its picture. */
 export function EntityCard(props: EntityCardProps) {
   const plan = usePlan();
-  if (plan.pro && isSpotify(props.entity)) return <SpotifyCard entity={props.entity} hass={props.hass} onOpen={props.onLongPress} t={props.t} />;
+  const everyPlayer = usePlayers();
+  if (showsPlayer(props.entity, plan.pro, everyPlayer)) return <SpotifyCard entity={props.entity} hass={props.hass} onOpen={props.onLongPress} t={props.t} />;
   if (props.entity.domain === "camera") return <CameraCard entity={props.entity} hass={props.hass} onOpen={props.onLongPress} t={props.t} />;
   return <DeviceCard {...props} />;
 }
@@ -142,7 +143,8 @@ function DeviceCard({ entity, hass, language, onLongPress, t }: EntityCardProps)
     onLongPress(entity);
   };
 
-  const fromControl = (target: EventTarget) => Boolean((target as HTMLElement).closest("button, input, label"));
+  // A pick in a dropdown (rendered elsewhere, but its events still reach the card) is not a tap on the card.
+  const fromControl = (target: EventTarget) => Boolean((target as HTMLElement).closest("button, input, label, [role='option'], [role='listbox'], .hdx-select__backdrop"));
   const cancelHold = () => { if (holdTimer.current != null) window.clearTimeout(holdTimer.current); holdTimer.current = null; holdOrigin.current = null; };
   const startHold = (event: PointerEvent<HTMLElement>) => {
     held.current = false;

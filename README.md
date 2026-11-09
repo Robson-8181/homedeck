@@ -110,9 +110,10 @@ on macOS). Your rooms, backgrounds and preferences are kept.
   reminders list, plus an optional **Today card** on Home.
 - **Full weather forecast:** next hours and next 7 days, using your Home Assistant weather
   service, with Open-Meteo as a fallback for your home's location.
-- **Big cards** with brightness, colors, a vertical cover control and a climate ring.
+- **Big cards** with brightness, colors, light effects, a vertical cover control and a climate ring,
+  plus a **small size** for sensors, half the height of a normal card.
 - **Media artwork** for Apple TV, Sonos, Chromecast and other players, with their favorites
-  and sources one tap away.
+  and sources one tap away, and a full **player** for every media player on Pro.
 - **Cameras** with live video right on the card and a full live view, **vacuums** with their controls, and **scripts, buttons and
   selects** (like a washing machine program) right on the dashboard.
 - **Alarm panels** to arm and disarm (with the code when the panel asks for one) and **plants**
@@ -125,6 +126,8 @@ on macOS). Your rooms, backgrounds and preferences are kept.
 - **Special dates:** presents and string lights at Christmas, fireworks at New Year, a spider at
   Halloween, a bunny at Easter and balloons on birthdays from your calendar, following your
   country. Each one optional, with a preview in Settings.
+- **Notices in the header:** pick any entity (a mailbox, the garage door, the doorbell) and it
+  shows up beside the people only when there's something to notice.
 - **Doorbell pop-up:** when the doorbell rings, its camera shows up over the panel, even on the
   screensaver.
 - **Spotify player** (with a default speaker per device), a screensaver with today's events and reminders, scene strip,
@@ -137,7 +140,7 @@ on macOS). Your rooms, backgrounds and preferences are kept.
 - **Free:** up to 4 rooms and 10 controllable devices (lights, switches, fans, covers,
   climate, media and locks). Sensors and scenes don't count. Grid and List layouts.
 - **Pro:** unlimited rooms and devices, all four layouts, double and large cards, your own pages,
-  the energy card, animations, sensor charts on cards, the doorbell pop-up, special dates, the Spotify player, the screensaver with
+  the energy card, animations, sensor charts on cards, the doorbell pop-up, special dates, the full media player, the small sensor size, the screensaver with
   today's agenda, every background and color, the style (corners, frame and glass) and feedback
   straight to support. US$ 14.99 once or
   US$ 7.99 per year, per home (R$ 59.90 or R$ 29.90 per year in Brazil).

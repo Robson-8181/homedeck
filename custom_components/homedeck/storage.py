@@ -101,6 +101,7 @@ def _normalize_names(value: Any) -> dict[str, str]:
 
 _SEASON_IDS = {"christmas", "newyear", "halloween", "valentines", "easter", "carnival", "thanksgiving", "birthdays"}
 _SEASON_EFFECTS = {"snow", "sparkle", "halloween", "hearts", "eggs", "confetti", "bunting", "leaves"}
+_BADGE_ENTITY = re.compile(r"^[a-z_]+\.[a-z0-9_]+$")
 _SEASON_DATE = re.compile(r"^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$")
 
 
@@ -139,7 +140,7 @@ def _normalize_layouts(value: Any) -> dict[str, dict[str, Any]]:
                 for item in _unique_strings(layout.get(key))
                 if len(item) <= _MAX_KEY_LENGTH
             ][:_MAX_LAYOUT_ITEMS]
-            for key in ("order", "hidden", "wide", "added", "tall")
+            for key in ("order", "hidden", "wide", "added", "tall", "small")
         }
         sections = _normalize_sections(layout.get("sections"))
         if sections:
@@ -233,6 +234,10 @@ def normalize_config(value: Any) -> HomeDeckConfig:
         for key in ("show_clock", "show_weather", "show_presence"):
             if isinstance(home.get(key), bool):
                 config["home"][key] = home[key]
+        # Entities shown as small notices beside the presence avatars (mailbox, doorbell...).
+        config["home"]["badges"] = [
+            item for item in _unique_strings(home.get("badges")) if _BADGE_ENTITY.match(item)
+        ][:12]
 
     global_actions = value.get("global_actions")
     if isinstance(global_actions, dict):
@@ -326,7 +331,7 @@ def normalize_config(value: Any) -> HomeDeckConfig:
             number = cards.get(key)
             if isinstance(number, (int, float)) and not isinstance(number, bool):
                 config["cards"][key] = max(0, min(high, round(number)))
-        for key in ("frame", "animations", "sparklines"):
+        for key in ("frame", "animations", "sparklines", "players"):
             if isinstance(cards.get(key), bool):
                 config["cards"][key] = cards[key]
 

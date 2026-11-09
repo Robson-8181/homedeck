@@ -73,7 +73,9 @@ function ListRooms(props: ListLayoutProps) {
   const rooms = roomList.rooms;
   const { byId, roomName } = entityIndex(allRooms);
   const shown = roomId ? rooms.filter((room) => room.id === roomId) : rooms;
-  const favorites = roomId || editing ? [] : config.visibility.visible_home_entities.map((id) => byId.get(id)).filter((entity): entity is DiscoveredEntity => Boolean(entity));
+  // Devices added to Home (in any layout) show as a group of their own; in Edit mode each one can be taken off Home.
+  const favorites = roomId ? [] : config.visibility.visible_home_entities.map((id) => byId.get(id)).filter((entity): entity is DiscoveredEntity => Boolean(entity));
+  const removeFavorite = (id: string) => props.onConfig((current) => ({ ...current, visibility: { ...current.visibility, visible_home_entities: current.visibility.visible_home_entities.filter((item) => item !== id) } }));
   const name = (room: Room) => (room.id === "__unassigned__" ? t("unassigned") : room.name);
 
   const row = useRow(props, setModalEntity);
@@ -107,7 +109,13 @@ function ListRooms(props: ListLayoutProps) {
     {favorites.length > 0 && <div className="ls-groups ls-groups--favorites">
       <section className="ls-group">
         <header className="ls-group__head"><span className="ls-group__icon"><HDIcon name="star" size={18} /></span><span className="ls-group__copy"><b>{t("shortcuts")}</b><small>{favorites.length} {t("entities")}</small></span></header>
-        <div className="ls-rows">{favorites.map(row)}</div>
+        <div className="ls-rows">{editing
+          ? favorites.map((entity) => <div className="ls-row ls-row--editing" key={entity.entity_id}>
+            <span className="ls-row__icon"><EntityIcon entity={entity} size={18} /></span>
+            <span className="ls-row__copy"><b>{entity.name}</b><small>{roomName(entity)}</small></span>
+            <button aria-label={`${t("removeItem")}: ${entity.name}`} className="ls-row__remove" onClick={() => removeFavorite(entity.entity_id)} type="button"><HDIcon name="minus" size={14} /></button>
+          </div>)
+          : favorites.map(row)}</div>
       </section>
     </div>}
     <EditableGrid

@@ -1,3 +1,4 @@
+import { isRoomLight } from "../personalize";
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import type { TranslationKey } from "../i18n";
@@ -20,8 +21,8 @@ interface RoomCardProps {
 
 export function RoomCard({ featured = false, hass, index, room, t, onOpen }: RoomCardProps) {
   const [busy, setBusy] = useState(false);
-  const activeCount = room.entities.filter((entity) => ACTIVE_STATES.has(hass.states[entity.entity_id]?.state)).length;
-  const lights = room.entities.filter((entity) => entity.domain === "light");
+  const activeCount = room.entities.filter((entity) => !entity.hidden && ACTIVE_STATES.has(hass.states[entity.entity_id]?.state)).length;
+  const lights = room.entities.filter(isRoomLight);
   const activeLights = lights.filter((entity) => hass.states[entity.entity_id]?.state === "on");
   const unavailable = room.entities.length > 0 && room.entities.every((entity) => ["unavailable", "unknown"].includes(hass.states[entity.entity_id]?.state));
   const temperature = roomTemperature(hass, room);

@@ -1,3 +1,4 @@
+import { HeaderBadges } from "./HeaderBadges";
 import { useEffect, useMemo, useRef, useState, useContext } from "react";
 import { OccasionContext } from "./SeasonLayer";
 import { createPortal } from "react-dom";
@@ -74,6 +75,7 @@ export function ContextHeader({ config, hass, language, onSettings, part = "all"
               {condition && <small>{conditionLabel}</small>}
             </button>
           )}
+          {(config.home.badges?.length ?? 0) > 0 && <HeaderBadges hass={hass} ids={config.home.badges!} t={t} />}
           {config.home.show_presence && people.length > 0 && <div className="presence-stack" aria-label={`${presentPeople.length} ${t("peopleHome")}`}>{people.slice(0, 4).map((person, index) => <span className={person.state === "home" ? "presence-avatar presence-avatar--home" : "presence-avatar"} key={person.entity_id} style={{ "--avatar": AVATAR_COLORS[index % AVATAR_COLORS.length] } as CSSProperties} title={`${person.attributes.friendly_name ?? person.entity_id}: ${person.state}`}>{person.attributes.entity_picture ? <img alt="" src={person.attributes.entity_picture} /> : initials(String(person.attributes.friendly_name ?? person.entity_id.split(".")[1]))}</span>)}</div>}
           {sidebarHidden(hass) && <button aria-label={t("openMenu")} className="round-action" onClick={(event) => openSidebar(event.currentTarget)} type="button"><HDIcon name="menu" size={19} /></button>}
           <button aria-label={t("settings")} className="round-action" onClick={onSettings} type="button"><HDIcon name="settings" size={19} /></button>

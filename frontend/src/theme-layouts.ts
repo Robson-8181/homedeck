@@ -128,6 +128,7 @@ export const themeLayouts = String.raw`
 
 /* ---------- Lista ---------- */
 .app-shell .ls-layout { gap: calc(var(--u)*2.4); }
+.app-shell .ls-row__remove { flex: none; display: grid; place-items: center; width: calc(var(--u)*3.6); height: calc(var(--u)*3.6); min-width: 26px; min-height: 26px; margin-left: auto; padding: 0; border: 0; border-radius: 50%; background: #d9534f; color: #fff; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
 .app-shell .ls-groups { columns: 2 calc(var(--u)*46); column-gap: calc(var(--u)*2); }
 .app-shell .ls-groups--single { columns: 1; }
 .app-shell .ls-group {

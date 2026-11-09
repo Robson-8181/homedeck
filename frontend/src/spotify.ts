@@ -1,9 +1,35 @@
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import type { DiscoveredEntity } from "./types/discovery";
 import type { HassEntity } from "./types/home-assistant";
 
 export function isSpotify(entity: DiscoveredEntity): boolean {
   return entity.domain === "media_player" && (entity.platform === "spotify" || entity.entity_id.includes("spotify"));
+}
+
+/** Every media player (Apple TV, Sonos, Chromecast…) uses the Spotify-style player card on Pro;
+ * Settings → Appearance can keep it to Spotify only. */
+export const PlayersContext = createContext(true);
+export const usePlayers = () => useContext(PlayersContext);
+
+/** Whether this entity shows as the player card and opens the full-screen player. */
+export function showsPlayer(entity: DiscoveredEntity, pro: boolean, everyPlayer: boolean): boolean {
+  return pro && entity.domain === "media_player" && (isSpotify(entity) || everyPlayer);
+}
+
+// MediaPlayerEntityFeature bits.
+export const MEDIA = { PAUSE: 1, SEEK: 2, VOLUME_SET: 4, PREVIOUS: 16, NEXT: 32, TURN_ON: 128, TURN_OFF: 256, VOLUME_STEP: 1024, SELECT_SOURCE: 2048, PLAY: 16384, SHUFFLE: 32768, REPEAT: 262144 } as const;
+
+/** Whether a player says it can do this; a player that lists no features gets every button. */
+export function mediaCan(state: HassEntity | undefined, feature: number): boolean {
+  const features = Number(state?.attributes.supported_features) || 0;
+  return features === 0 || (features & feature) !== 0;
+}
+
+/** The name on the card: Spotify, the app playing (Music on an Apple TV), or the player itself. */
+export function playerLabel(entity: DiscoveredEntity, state: HassEntity | undefined): string {
+  if (isSpotify(entity)) return "Spotify";
+  const app = state?.attributes.app_name;
+  return typeof app === "string" && app.trim() ? app : entity.name;
 }
 
 /** Current position and duration in seconds; while playing, the position advances from its last update. */

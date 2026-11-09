@@ -9,16 +9,22 @@ import type { HassEntity, HomeAssistant } from "./types/home-assistant";
 export const MAX_NAME = 60;
 
 /** Discovery with the nicknames and room options applied, so every screen and layout shows them. */
-export function personalize(data: DiscoveryResponse, names: HomeDeckConfig["names"], rooms: HomeDeckConfig["rooms"] | undefined, entityOptions?: HomeDeckConfig["entity_options"], haIcons = false): DiscoveryResponse {
+/** A light the room shows (not hidden from it in Edit mode): the ones counted and switched together. */
+export const isRoomLight = (entity: DiscoveredEntity) => entity.domain === "light" && !entity.hidden;
+
+export function personalize(data: DiscoveryResponse, names: HomeDeckConfig["names"], rooms: HomeDeckConfig["rooms"] | undefined, entityOptions?: HomeDeckConfig["entity_options"], haIcons = false, layouts?: HomeDeckConfig["layouts"]): DiscoveryResponse {
   const nicknames = names ?? {};
   const options = rooms ?? {};
   const perEntity = entityOptions ?? {};
-  if (Object.keys(nicknames).length === 0 && Object.keys(options).length === 0 && Object.keys(perEntity).length === 0 && !haIcons) return data;
+  const hiddenIn = (roomId: string) => new Set(layouts?.[`room:${roomId}`]?.hidden ?? []);
+  const anyHidden = data.rooms.some((room) => hiddenIn(room.id).size > 0);
+  if (Object.keys(nicknames).length === 0 && Object.keys(options).length === 0 && Object.keys(perEntity).length === 0 && !haIcons && !anyHidden) return data;
   return {
     ...data,
     rooms: data.rooms.map((room) => {
       const own = options[room.id] ?? {};
       const name = typeof own.name === "string" && own.name.trim() ? own.name.trim() : null;
+      const hidden = hiddenIn(room.id);
       return {
         ...room,
         ...(name ? { name, original_name: room.name } : {}),
@@ -29,8 +35,9 @@ export function personalize(data: DiscoveryResponse, names: HomeDeckConfig["name
           const own = perEntity[entity.entity_id] ?? {};
           // The tile's icon: the one chosen for this device, else Home Assistant's when that option is on.
           const icon = own.icon || (haIcons && entity.icon?.includes(":") ? "ha" : undefined);
-          if (!nickname && !icon && !own.confirm) return entity;
-          return { ...entity, ...(nickname ? { name: nickname, original_name: entity.name } : {}), ...(icon ? { display_icon: icon } : {}), ...(own.confirm ? { confirm: true } : {}) };
+          const off = hidden.has(`entity:${entity.entity_id}`);
+          if (!nickname && !icon && !own.confirm && !off) return entity;
+          return { ...entity, ...(nickname ? { name: nickname, original_name: entity.name } : {}), ...(icon ? { display_icon: icon } : {}), ...(own.confirm ? { confirm: true } : {}), ...(off ? { hidden: true } : {}) };
         }),
       };
     }),

@@ -7,7 +7,7 @@ export const FREE_BACKGROUNDS: HomeDeckBackgroundPreset[] = ["adaptive_ember", "
 export const FREE_VIEW_MODES: HomeDeckViewMode[] = ["grid", "list"];
 export const DEFAULT_ACCENT = "#f4edd9";
 export const DEFAULT_HIGHLIGHT = "#ffc94d";
-export const DEFAULT_CARDS: HomeDeckCardStyle = { corners: 100, frame: true, glass: 50, animations: false, sparklines: false };
+export const DEFAULT_CARDS: HomeDeckCardStyle = { corners: 100, frame: true, glass: 50, animations: false, sparklines: false, players: true };
 export const SUPPORT_EMAIL = "suporte@homedeck.pro";
 const CONTROLLABLE = new Set(["light", "switch", "fan", "cover", "climate", "media_player", "lock"]);
 
@@ -94,7 +94,7 @@ export function effectiveConfig(config: HomeDeckConfig, pro: boolean): HomeDeckC
     screensaver: { ...config.screensaver, enabled: false },
     cards: DEFAULT_CARDS,
     pages: [],
-    layouts: Object.fromEntries(Object.entries(config.layouts).map(([screen, layout]) => [screen, { ...layout, wide: [], tall: [] }])),
+    layouts: Object.fromEntries(Object.entries(config.layouts).map(([screen, layout]) => [screen, { ...layout, wide: [], tall: [], small: [] }])),
     widgets: { ...config.widgets, energy: false },
     doorbell: { ...config.doorbell, enabled: false },
     seasons: config.seasons ? { ...config.seasons, enabled: false } : undefined,

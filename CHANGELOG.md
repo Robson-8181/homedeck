@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.16.4
+
+- List layout: the Devices group (the ones added to Home) no longer disappears in Edit mode; each one gets a − to take it off Home.
+- Lights hidden from a room (in Edit mode) are left out of the counts ("1 of 3 on", "6 lights on at home") and of Turn all on / Turn all off, in the room and on Home. Handy for Govee segment entities and the like.
+- Fixed: in homes set to Fahrenheit, the 7-day forecast (and the hours, when they came from Open-Meteo) showed Celsius. It now follows the weather entity's or Home Assistant's unit, with wind in mph.
+- Light effects: lights with effects (Rainbow, Candle, Thanksgiving...) get an Effect selector in their details and on double and large cards, with "No effect" to go back to plain light. It only shows on lights that have effects. Thanks @JEdwards2525!
+- Fixed: picking an option from a list inside a card (like a washing machine program) also toggled the card.
+- Notices beside the people, in Settings → Home → Notices: pick entities (a mailbox, the garage door, the doorbell...) and each one becomes a chip in the header only when there's something to notice: on, open or detected, a number above zero, or an event in the last 30 minutes ("Doorbell 5 min ago"). A tap opens Home Assistant's details. Nothing shows until you pick them. Thanks @karaspr!
+- Choosing a card's size in Edit mode: the size button opens a slim column of round buttons above it (½×, 1×, 2× and 4×), with the current size marked, instead of cycling on each tap.
+- Small size for sensors (Pro), in the same menu. The card is half as tall, with the icon, name and value on one line, and small cards fit side by side. Thanks @karaspr!
+- Player for every media player (Pro): Apple TV and HomePod (Apple Music), Sonos, Chromecast and other players use the same player as Spotify, with artwork, progress and controls. The card shows the app playing (for example Music), buttons follow what each device supports, and a TV that is off gets a power button. On by default; Settings → Appearance switches back to the previous card.
+- Calendar colors: each calendar now uses the color set in Home Assistant (Settings → Entities → calendar → Color). A calendar without one gets a fixed color that no longer changes when other calendars are added or removed. Thanks @carlospparedes!
+
 ## 0.16.3
 
 - First-time setup has two new steps: pick the layout (Grid and List on Free, Sidebar and Focus on Pro), and "Going on a wall tablet?", with hiding the Home Assistant sidebar, keeping the screen on and the screensaver. Just tapping Continue gives the same result as before.

@@ -16,6 +16,7 @@ class HomeDeckHeaderConfig(TypedDict):
     show_clock: bool
     show_weather: bool
     show_presence: bool
+    badges: list[str]
 
 
 class HomeDeckGlobalActionsConfig(TypedDict):
@@ -143,6 +144,7 @@ class HomeDeckCardStyle(TypedDict):
     glass: int
     animations: bool
     sparklines: bool
+    players: bool
 
 
 class HomeDeckWidgets(TypedDict):
@@ -223,6 +225,7 @@ def default_config() -> HomeDeckConfig:
             "show_clock": True,
             "show_weather": True,
             "show_presence": True,
+            "badges": [],
         },
         "global_actions": {
             "lights_on": True,
@@ -289,6 +292,7 @@ def default_config() -> HomeDeckConfig:
             "glass": 50,
             "animations": False,
             "sparklines": False,
+            "players": True,
         },
         "widgets": {"weather": False, "sun": False, "energy": False},
         "energy": {key: "" for key in ENERGY_FIELDS},

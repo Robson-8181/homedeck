@@ -1,3 +1,4 @@
+import { isRoomLight } from "../../personalize";
 import { useEffect, useRef, useState } from "react";
 import { openSidebar, sidebarHidden } from "../../sidebar";
 import { AgendaButtons } from "../../components/Agenda";
@@ -101,7 +102,7 @@ function FocusRooms(props: FocusLayoutProps) {
   };
 
   const { now: weather } = useWeather(hass, config);
-  const litTotal = data.rooms.flatMap((room) => room.entities).filter((entity) => entity.domain === "light" && hass.states[entity.entity_id]?.state === "on").length;
+  const litTotal = data.rooms.flatMap((room) => room.entities).filter((entity) => isRoomLight(entity) && hass.states[entity.entity_id]?.state === "on").length;
 
   return <main className={`screen fc-layout ${editing ? "screen--editing" : ""}`}>
     <div className="fc-tools">

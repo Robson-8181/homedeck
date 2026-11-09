@@ -30,6 +30,8 @@ export interface ScreenLayout {
   wide: string[];
   /** Item keys shown large (two columns and two rows); always also in `wide`. */
   tall?: string[];
+  /** Sensor keys shown small (half the height of a normal card). */
+  small?: string[];
   /** Entities from other rooms shown on this screen (room screens only). */
   added?: string[];
   /** Separators placed in the order, by key ("section:<id>") with their title. */
@@ -70,6 +72,8 @@ export interface HomeDeckConfig {
     show_clock: boolean;
     show_weather: boolean;
     show_presence: boolean;
+    /** Entities shown as small notices beside the presence avatars, only when there is something to notice. */
+    badges?: string[];
   };
   global_actions: {
     lights_on: boolean;
@@ -177,6 +181,8 @@ export interface HomeDeckCardStyle {
   animations?: boolean;
   /** Double and large sensor cards show a small chart of the last 24 hours. */
   sparklines?: boolean;
+  /** Every media player (not just Spotify) uses the player card and the full-screen player. On by default. */
+  players?: boolean;
 }
 
 export interface HomeDeckEnergy {
