@@ -94,8 +94,8 @@ export function effectiveConfig(config: HomeDeckConfig, pro: boolean): HomeDeckC
     screensaver: { ...config.screensaver, enabled: false },
     cards: DEFAULT_CARDS,
     pages: [],
-    layouts: Object.fromEntries(Object.entries(config.layouts).map(([screen, layout]) => [screen, { ...layout, wide: [], tall: [], small: [] }])),
-    widgets: { ...config.widgets, energy: false },
+    layouts: Object.fromEntries(Object.entries(config.layouts).map(([screen, layout]) => [screen, { ...layout, wide: [], tall: [], small: [], cells: {} }])),
+    widgets: { ...config.widgets, energy: false, bins: false },
     doorbell: { ...config.doorbell, enabled: false },
     seasons: config.seasons ? { ...config.seasons, enabled: false } : undefined,
   };

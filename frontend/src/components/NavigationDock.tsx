@@ -2,15 +2,17 @@ import { useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import type { TranslationKey } from "../i18n";
 import type { HomeDeckConfig, HomeDeckPageConfig } from "../types/config";
-import { HDIcon, type IconName } from "./HDIcon";
+import { HDIcon, type IconName, isIconName } from "./HDIcon";
 
 export type HomeDeckPage = "home" | "rooms" | "scenes" | "media" | "security" | string;
 
 interface Tab { id: string; icon: IconName; label: string }
 
-function pageIcon(page: HomeDeckPageConfig): IconName {
+export function pageIcon(page: HomeDeckPageConfig): IconName {
+  if (page.icon && isIconName(page.icon)) return page.icon;
   if (page.type === "favorites") return "star";
   if (page.type === "scenes") return "scene";
+  if (page.type === "cameras") return "camera";
   return "grid";
 }
 
@@ -21,12 +23,13 @@ export function orderTabs<T extends { id: string }>(tabs: T[], order: string[] =
 }
 
 /** The bottom bar. Home stays first; in Edit mode the other tabs are dragged sideways to reorder them. */
-export function NavigationDock({ active, config, editing, hasMedia, hasScenes, hasSecurity, onNavigate, onOrder, t }: { active: HomeDeckPage; config: HomeDeckConfig; editing: boolean; hasMedia: boolean; hasScenes: boolean; hasSecurity: boolean; onNavigate: (page: HomeDeckPage) => void; onOrder: (order: string[]) => void; t: (key: TranslationKey) => string }) {
+export function NavigationDock({ active, config, editing, hasMedia, hasScenes, hasSecurity, hasCameras, onNavigate, onOrder, t }: { active: HomeDeckPage; config: HomeDeckConfig; editing: boolean; hasMedia: boolean; hasScenes: boolean; hasSecurity: boolean; hasCameras: boolean; onNavigate: (page: HomeDeckPage) => void; onOrder: (order: string[]) => void; t: (key: TranslationKey) => string }) {
   const tabs = orderTabs<Tab>([
     ...(config.navigation.rooms ? [{ id: "rooms", icon: "grid" as const, label: t("roomsPage") }] : []),
     ...(config.navigation.scenes && hasScenes ? [{ id: "scenes", icon: "scene" as const, label: t("scenes") }] : []),
     ...(config.navigation.media && hasMedia ? [{ id: "media", icon: "media" as const, label: t("media") }] : []),
     ...(config.navigation.security && hasSecurity ? [{ id: "security", icon: "shield" as const, label: t("security") }] : []),
+    ...(config.navigation.cameras && hasCameras ? [{ id: "cameras", icon: "camera" as const, label: t("camerasTitle") }] : []),
     ...config.pages.map((page) => ({ id: page.id, icon: pageIcon(page), label: page.title })),
   ], config.navigation.order);
   const nav = useRef<HTMLElement>(null);

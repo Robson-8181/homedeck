@@ -58,7 +58,7 @@ function ListPage({ page, props }: { page: PageRef; props: ScreenProps }) {
     {editing && <p className="edit-hint">{t("editHintSimple")}</p>}
     <div className="ls-groups ls-groups--single">
       <section className="ls-group">
-        {content.body({ className: "ls-rows", render: row })}
+        {content.body({ className: "ls-rows", open: setModalEntity, render: row })}
       </section>
     </div>
     {modalEntity && <EntityModal entity={modalEntity} hass={hass} language={language} onClose={() => setModalEntity(null)} roomName={content.roomName(modalEntity)} t={t} />}

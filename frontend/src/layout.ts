@@ -1,5 +1,5 @@
 import type { HomeDeckConfig, ScreenLayout } from "./types/config";
-import type { DiscoveryResponse } from "./types/discovery";
+import type { DiscoveryResponse, Room } from "./types/discovery";
 
 // Every screen keeps its own layout under config.layouts[screen]:
 //   order  – item keys in the order the user arranged them (new items go last)
@@ -11,7 +11,7 @@ export const pageScreen = (pageId: string) => `page:${pageId}`;
 
 export const roomKey = (roomId: string) => `room:${roomId}`;
 export const entityKey = (entityId: string) => `entity:${entityId}`;
-export const WIDGET_KEYS = ["widget:security", "widget:climate", "widget:media", "widget:today", "widget:weather", "widget:sun", "widget:energy"] as const;
+export const WIDGET_KEYS = ["widget:security", "widget:climate", "widget:media", "widget:today", "widget:weather", "widget:sun", "widget:energy", "widget:bins"] as const;
 export type WidgetKey = (typeof WIDGET_KEYS)[number];
 
 export const SECTION_PREFIX = "section:";
@@ -50,7 +50,7 @@ export function withLayout(config: HomeDeckConfig, screen: string, layout: Scree
 
 /** Devices that only appear once added in Edit mode (from the hidden tray or the picker), so an
  * update never puts an alarm panel or a plant on a screen that was already arranged. */
-export const OPT_IN_DOMAINS = new Set(["alarm_control_panel", "plant"]);
+export const OPT_IN_DOMAINS = new Set(["alarm_control_panel", "plant", "input_boolean"]);
 
 function waitsForOptIn(key: string, layout: ScreenLayout): boolean {
   return key.startsWith("entity:") && OPT_IN_DOMAINS.has(keyId(key).split(".")[0])
@@ -69,6 +69,13 @@ export function arrange(keys: string[], layout: ScreenLayout, optIn = false): { 
     visible: ordered.filter((key) => !hidden.has(key)),
     hidden: ordered.filter((key) => hidden.has(key)),
   };
+}
+
+/** The rooms offered by a room's "add devices": its own hidden devices first, then the other rooms. */
+export function pickerRooms(room: Room, hiddenKeys: string[], others: Room[]): Room[] {
+  const hidden = new Set(hiddenKeys.map(keyId));
+  const own = { ...room, entities: room.entities.filter((entity) => hidden.has(entity.entity_id)) };
+  return [...(own.entities.length > 0 ? [own] : []), ...others];
 }
 
 export function setHidden(layout: ScreenLayout, key: string, hidden: boolean): ScreenLayout {

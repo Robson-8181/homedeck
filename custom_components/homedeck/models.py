@@ -33,6 +33,7 @@ class HomeDeckNavigationConfig(TypedDict):
     scenes: bool
     media: bool
     security: bool
+    cameras: bool
     order: NotRequired[list[str]]
 
 
@@ -153,6 +154,7 @@ class HomeDeckWidgets(TypedDict):
     weather: bool
     sun: bool
     energy: bool
+    bins: bool
 
 
 class HomeDeckConfig(TypedDict):
@@ -170,7 +172,12 @@ class HomeDeckConfig(TypedDict):
     favorites: list[str]
     names: dict[str, str]
     entity_options: dict[str, dict[str, Any]]
+    card_links: dict[str, list[str]]
+    hidden_for: dict[str, list[str]]
+    bins: list[dict[str, str]]
+    card_link_names: dict[str, dict[str, str]]
     ha_icons: bool
+    ha_room_icons: bool
     free_devices: list[str]
     free_rooms: list[str]
     view_mode: str
@@ -192,6 +199,8 @@ class HomeDeckConfig(TypedDict):
     energy: dict[str, str]
     doorbell: HomeDeckDoorbellConfig
     live_cameras: bool
+    camera_whole: bool
+    camera_columns: int
     seasons: dict[str, Any]
 
 
@@ -213,7 +222,12 @@ def default_config() -> HomeDeckConfig:
         "favorites": [],
         "names": {},
         "entity_options": {},
+        "card_links": {},
+        "hidden_for": {},
+        "bins": [],
+        "card_link_names": {},
         "ha_icons": False,
+        "ha_room_icons": False,
         "free_devices": [],
         "free_rooms": [],
         "view_mode": "grid",
@@ -236,6 +250,7 @@ def default_config() -> HomeDeckConfig:
             "scenes": True,
             "media": True,
             "security": True,
+            "cameras": False,
         },
         "layout": {
             "density": "comfortable",
@@ -294,10 +309,12 @@ def default_config() -> HomeDeckConfig:
             "sparklines": False,
             "players": True,
         },
-        "widgets": {"weather": False, "sun": False, "energy": False},
+        "widgets": {"weather": False, "sun": False, "energy": False, "bins": False},
         "energy": {key: "" for key in ENERGY_FIELDS},
         "doorbell": {"enabled": False, "trigger": "", "camera": "", "seconds": 60},
         "live_cameras": True,
+        "camera_whole": False,
+        "camera_columns": 2,
         "seasons": {"enabled": False, "off": [], "custom": []},
     }
 

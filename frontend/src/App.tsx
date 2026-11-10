@@ -5,12 +5,13 @@ import { discoverRooms } from "./api/discovery";
 import { activateLicense, claimCheckout, getLicense, type LicenseStatus } from "./api/license";
 import { HDIcon } from "./components/HDIcon";
 import { DynamicShell } from "./components/DynamicShell";
-import { NavigationDock, orderTabs, type HomeDeckPage } from "./components/NavigationDock";
+import { pageIcon, NavigationDock, orderTabs, type HomeDeckPage } from "./components/NavigationDock";
 import { ProSheet } from "./components/ProSheet";
 import { FocusLayout } from "./screens/layouts/FocusLayout";
 import { ListLayout } from "./screens/layouts/ListLayout";
 import { SidebarLayout, type NavLink } from "./screens/layouts/SidebarLayout";
 import { Screensaver } from "./components/Screensaver";
+import { pauseCameras } from "./cameraPause";
 import { DoorbellPopup, useDoorbell } from "./components/Doorbell";
 import { forgetCalendarColors, useOccasion } from "./components/Agenda";
 import { editingLocked, keepAwakeMode, useDevicePref } from "./devicePrefs";
@@ -19,7 +20,7 @@ import { createTranslator } from "./i18n";
 import { migrateLayouts, withLayout } from "./layout";
 import { effectiveConfig, freeDevices, isControllable, overFreeLimits, panelRoomIds, PlanContext, restrictRooms, type PlanState, type UpsellReason } from "./plan";
 import { availableSections } from "./security";
-import { CustomizeContext, personalize, withNickname, withEntityOptions, withRoomOptions } from "./personalize";
+import { applyAudience, CustomizeContext, personalize, withNickname, withEntityOptions, withRoomOptions } from "./personalize";
 import { PageScreen } from "./screens/PageScreen";
 import { pageId, type PageRef } from "./screens/pages";
 import { HomeScreen } from "./screens/HomeScreen";
@@ -28,7 +29,7 @@ import { PlanGateScreen } from "./screens/PlanGateScreen";
 import { RoomScreen } from "./screens/RoomScreen";
 import { SettingsScreen } from "./screens/SettingsScreen";
 import type { ScreenProps } from "./screens/types";
-import type { HomeDeckConfig, ScreenLayout } from "./types/config";
+import type { HomeDeckEntityOptions, HomeDeckConfig, ScreenLayout } from "./types/config";
 import type { DiscoveryResponse } from "./types/discovery";
 import type { HomeAssistant } from "./types/home-assistant";
 
@@ -54,8 +55,11 @@ export function App({ hass, version }: { hass: HomeAssistant; version?: string }
   const language = hass.locale?.language ?? hass.language;
   const t = useMemo(() => createTranslator(language), [language]);
   configRef.current = config;
-  // Nicknames and room options apply to every screen through the discovery data.
-  const data = useMemo(() => (rawData ? personalize(rawData, config?.names, config?.rooms, config?.entity_options, config?.ha_icons, config?.layouts) : null), [rawData, config?.names, config?.rooms, config?.entity_options, config?.ha_icons, config?.layouts]);
+  const pro = license?.plan === "pro" || legacyBackend;
+  // Nicknames and room options apply to every screen through the discovery data, and "Who can see" (Pro) too.
+  const named = useMemo(() => (rawData ? personalize(rawData, config?.names, config?.rooms, config?.entity_options, config?.ha_icons, config?.layouts, config?.ha_room_icons) : null), [rawData, config?.names, config?.rooms, config?.entity_options, config?.ha_icons, config?.layouts, config?.ha_room_icons]);
+  const hiddenFor = pro ? config?.hidden_for : undefined;
+  const data = useMemo(() => (named ? applyAudience(named, hiddenFor, hass.user, editing) : null), [named, hiddenFor, hass.user?.id, hass.user?.is_admin, editing]);
 
   const load = useCallback(async () => {
     setError(false);
@@ -132,7 +136,6 @@ export function App({ hass, version }: { hass: HomeAssistant; version?: string }
     if (migrated) void saveConfig(migrated);
   }, [config, data, saveConfig]);
 
-  const pro = license?.plan === "pro" || legacyBackend;
   const limits = license?.limits ?? DEFAULT_LIMITS;
   const allowed = useMemo(() => (pro || !config || !data ? null : new Set(freeDevices(config, data.rooms))), [pro, config, data]);
   const view = useMemo(() => (config ? effectiveConfig(config, pro) : null), [config, pro]);
@@ -159,9 +162,31 @@ export function App({ hass, version }: { hass: HomeAssistant; version?: string }
     lookup: (entityId: string) => byId.get(entityId),
     rename: (entityId: string, name: string, original: string) => void updateConfig((current) => withNickname(current, entityId, name, original)),
     setRoom: (roomId: string, change: { icon?: string; temperature?: string }) => void updateConfig((current) => withRoomOptions(current, roomId, change)),
-    setEntity: (entityId: string, change: { icon?: string; confirm?: boolean }) => void updateConfig((current) => withEntityOptions(current, entityId, change)),
+    setEntity: (entityId: string, change: HomeDeckEntityOptions) => void updateConfig((current) => withEntityOptions(current, entityId, change)),
+    rooms: () => data?.rooms ?? [],
+    restricted: (itemKey: string) => Boolean(hass.user && hiddenFor?.[itemKey]?.includes(hass.user.id)),
+    hiddenFor: (itemKey: string) => config?.hidden_for?.[itemKey] ?? [],
+    setHiddenFor: (itemKey: string, userId: string, hidden: boolean) => void updateConfig((current) => {
+      const { [itemKey]: previous = [], ...rest } = current.hidden_for ?? {};
+      const next = hidden ? [...new Set([...previous, userId])] : previous.filter((id) => id !== userId);
+      return { ...current, hidden_for: next.length > 0 ? { ...rest, [itemKey]: next } : rest };
+    }),
+    linksFor: (itemKey: string) => config?.card_links?.[itemKey] ?? [],
+    linkName: (itemKey: string, entityId: string) => config?.card_link_names?.[itemKey]?.[entityId] ?? "",
+    setLinkName: (itemKey: string, entityId: string, name: string) => void updateConfig((current) => {
+      const { [entityId]: _old, ...names } = current.card_link_names?.[itemKey] ?? {};
+      const next = name.trim() ? { ...names, [entityId]: name.trim() } : names;
+      const { [itemKey]: _card, ...others } = current.card_link_names ?? {};
+      return { ...current, card_link_names: Object.keys(next).length > 0 ? { ...others, [itemKey]: next } : others };
+    }),
+    setLinks: (itemKey: string, ids: string[]) => void updateConfig((current) => {
+      const { [itemKey]: _previous, ...rest } = current.card_links ?? {};
+      return { ...current, card_links: ids.length > 0 ? { ...rest, [itemKey]: ids } : rest };
+    }),
     };
-  }, [data, updateConfig]);
+  }, [data, updateConfig, config?.card_links, config?.card_link_names, config?.hidden_for, hiddenFor, hass.user?.id]);
+
+  useEffect(() => { pauseCameras("screensaver", saverOn); }, [saverOn]);
 
   // Screensaver: any touch, click, scroll or key counts as activity.
   const saver = view?.screensaver;
@@ -303,18 +328,19 @@ export function App({ hass, version }: { hass: HomeAssistant; version?: string }
 
   const selectedRoom = activePage === "rooms" ? (visibleData.rooms.find((room) => room.id === selectedRoomId) ?? visibleData.rooms[0]) : undefined;
   const customPage = view.pages.find((page) => page.id === activePage);
-  const { hasMedia, hasScenes, hasSecurity } = availableSections(visibleData.rooms.flatMap((room) => room.entities));
+  const { hasCameras, hasMedia, hasScenes, hasSecurity } = availableSections(visibleData.rooms.flatMap((room) => room.entities));
 
   // Every screen follows the chosen layout: Home, rooms, Media, Security, Scenes and custom pages.
   const mode = view.view_mode;
   const pageRef: PageRef | null = selectedRoom ? null
-    : activePage === "scenes" || activePage === "media" || activePage === "security" ? { kind: "collection", id: activePage }
+    : activePage === "scenes" || activePage === "media" || activePage === "security" || activePage === "cameras" ? { kind: "collection", id: activePage }
     : customPage ? { kind: "custom", page: customPage } : null;
   const links: NavLink[] = orderTabs([
     ...(view.navigation.scenes && hasScenes ? [{ id: "scenes", label: t("scenes"), icon: "scene" as const }] : []),
     ...(view.navigation.media && hasMedia ? [{ id: "media", label: t("media"), icon: "media" as const }] : []),
     ...(view.navigation.security && hasSecurity ? [{ id: "security", label: t("security"), icon: "shield" as const }] : []),
-    ...view.pages.map((page) => ({ id: page.id, label: page.title, icon: (page.type === "favorites" ? "star" : page.type === "scenes" ? "scene" : "grid") as NavLink["icon"] })),
+    ...(view.navigation.cameras && hasCameras ? [{ id: "cameras", label: t("camerasTitle"), icon: "camera" as const }] : []),
+    ...view.pages.map((page) => ({ id: page.id, label: page.title, icon: pageIcon(page) as NavLink["icon"] })),
   ], view.navigation.order);
   const openRoom = (roomId: string | null) => { setSelectedRoomId(roomId); setActivePage(roomId ? "rooms" : "home"); };
 
@@ -326,12 +352,12 @@ export function App({ hass, version }: { hass: HomeAssistant; version?: string }
   else if (pageRef) screen = <PageScreen key={pageId(pageRef)} {...screenProps} page={pageRef} />;
   else screen = <HomeScreen {...screenProps} onOpenRoom={(roomId) => { setSelectedRoomId(roomId); setActivePage("rooms"); }} />;
 
-  const active = selectedRoom ? "rooms" : customPage || ["scenes", "media", "security"].includes(activePage) ? activePage : "home";
+  const active = selectedRoom ? "rooms" : customPage || ["scenes", "media", "security", "cameras"].includes(activePage) ? activePage : "home";
 
   return withPlan(
     <DynamicShell config={view} data={visibleData} hass={hass} mode={mode} season={season}>
       {screen}
-      {mode !== "sidebar" && <NavigationDock active={active} config={view} editing={editing} hasMedia={hasMedia} hasScenes={hasScenes} hasSecurity={hasSecurity} onNavigate={navigate} onOrder={(order) => void updateConfig((current) => ({ ...current, navigation: { ...current.navigation, order } }))} t={t} />}
+      {mode !== "sidebar" && <NavigationDock active={active} config={view} editing={editing} hasMedia={hasMedia} hasScenes={hasScenes} hasSecurity={hasSecurity} hasCameras={hasCameras} onNavigate={navigate} onOrder={(order) => void updateConfig((current) => ({ ...current, navigation: { ...current.navigation, order } }))} t={t} />}
       {!locked && <button aria-label={editing ? t("doneEditing") : t("editScreen")} aria-pressed={editing} className={editing ? "edit-fab edit-fab--on" : "edit-fab"} onClick={() => setEditing((current) => !current)} type="button">
         <HDIcon name={editing ? "check" : "pencil"} size={20} />
       </button>}

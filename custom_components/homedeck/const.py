@@ -4,7 +4,7 @@ from typing import Final
 
 DOMAIN: Final = "homedeck"
 NAME: Final = "HomeDeck"
-VERSION: Final = "0.16.4"
+VERSION: Final = "0.16.5"
 
 PANEL_URL: Final = "/homedeck_static"
 PANEL_PATH: Final = "homedeck"
@@ -20,6 +20,7 @@ SUPPORTED_DOMAINS: Final = {
     "climate",
     "cover",
     "fan",
+    "input_boolean",
     "input_button",
     "input_select",
     "light",

@@ -30,13 +30,17 @@ export function SpotifyPlayer({ entity, hass, onClose, t }: SpotifyPlayerProps) 
   const bar = useRef<HTMLDivElement>(null);
   const volume = typeof attrs.volume_level === "number" ? Math.round(attrs.volume_level * 100) : null;
   // TVs that only step the volume up and down still get the buttons.
-  const volumeButtons = volume != null || (mediaCan(state, MEDIA.VOLUME_STEP) && Number(attrs.supported_features) > 0);
+  const volumeButtons = volume != null || ((mediaCan(state, MEDIA.VOLUME_STEP) || mediaCan(state, MEDIA.VOLUME_SET)) && Number(attrs.supported_features) > 0);
   const repeat = typeof attrs.repeat === "string" && mediaCan(state, MEDIA.REPEAT) ? attrs.repeat : null;
   const spotify = isSpotify(entity);
   const sources = mediaSources(state).slice(0, spotify ? 8 : 40);
   const label = playerLabel(entity, state);
   const off = ["off", "standby"].includes(state?.state ?? "");
   const power = off ? mediaCan(state, MEDIA.TURN_ON) : !spotify && Number(attrs.supported_features) > 0 && mediaCan(state, MEDIA.TURN_OFF);
+  // With nothing on, only what can act is offered: no skipping, and no play on a TV or on a Spotify without a device.
+  const canPlay = mediaCan(state, MEDIA.PLAY) || mediaCan(state, MEDIA.PAUSE);
+  const showPlay = off ? power : canPlay && !(idle && entity.device_class === "tv");
+  const hint = off && !power ? t("cantTurnOn") : off ? t("tapToTurnOn") : spotify && !canPlay ? t("chooseWhereToPlay") : t("tapPlayToResume");
   const canSeek = mediaCan(state, MEDIA.SEEK);
   usePlaybackClock(playing && seek == null);
 
@@ -47,7 +51,7 @@ export function SpotifyPlayer({ entity, hass, onClose, t }: SpotifyPlayerProps) 
   }, [onClose]);
 
   const call = (service: string, data: Record<string, unknown> = {}) => void hass.callService("media_player", service, { entity_id: entity.entity_id, ...data });
-  const playPause = () => { if (off && power) call("turn_on"); else if (spotify) spotifyPlayPause(hass, entity.entity_id, state); else call("media_play_pause"); };
+  const playPause = () => { if (off && power) call("turn_on"); else if (spotify) spotifyPlayPause(hass, entity.entity_id, state); else call(idle ? "media_play" : "media_play_pause"); };
   const step = (up: boolean) => volume != null ? call("volume_set", { volume_level: Math.max(0, Math.min(100, volume + (up ? 5 : -5))) / 100 }) : call(up ? "volume_up" : "volume_down");
   const fraction = (event: ReactPointerEvent<HTMLDivElement>) => {
     const rect = bar.current!.getBoundingClientRect();
@@ -64,7 +68,7 @@ export function SpotifyPlayer({ entity, hass, onClose, t }: SpotifyPlayerProps) 
       <div className="hd-player__head">
         <div className={spotify ? "hd-player__source" : "hd-player__source hd-player__source--other"}><HDIcon name="note" size={15} /><span>{attrs.source && String(attrs.source) !== label ? `${label} · ${String(attrs.source)}` : label}</span></div>
         <div className="hd-player__title" id="hd-player-title">{idle ? t("nothingPlaying") : String(attrs.media_title)}</div>
-        <div className="hd-player__artist">{idle ? (off && power ? t("tapToTurnOn") : t("tapPlayToResume")) : [attrs.media_artist ?? attrs.media_series_title, attrs.media_album_name].filter(Boolean).join(" · ")}</div>
+        <div className="hd-player__artist">{idle ? hint : [attrs.media_artist ?? attrs.media_series_title, attrs.media_album_name].filter(Boolean).join(" · ")}</div>
       </div>
       {!idle && duration > 0 && <div className="hd-player__track">
         {canSeek ? <div aria-label={t("trackPosition")} aria-valuemax={Math.round(duration)} aria-valuemin={0} aria-valuenow={Math.round(shown)} className={seek != null ? "hd-player__bar hd-player__bar--drag" : "hd-player__bar"}
@@ -84,9 +88,9 @@ export function SpotifyPlayer({ entity, hass, onClose, t }: SpotifyPlayerProps) 
           {repeat && <button aria-label={`${t("repeat")}: ${t(`repeat_${repeat}`)}`} className={repeat !== "off" ? "hd-player__small hd-player__small--on" : "hd-player__small"} onClick={() => call("repeat_set", { repeat: REPEAT_NEXT[repeat] ?? "off" })} type="button"><HDIcon name={repeat === "one" ? "repeat1" : "repeat"} size={20} /></button>}
         </div>
         <div className="hd-player__main">
-          {!(off && power) && mediaCan(state, MEDIA.PREVIOUS) && <button aria-label={t("previous")} onClick={() => call("media_previous_track")} type="button"><HDIcon name="prev" size={26} /></button>}
-          <button aria-label={off && power ? t("turnOn") : playing ? t("pause") : t("play")} className="hd-player__pp" onClick={playPause} type="button"><HDIcon name={off && power ? "power" : playing ? "pause" : "play"} size={30} /></button>
-          {!(off && power) && mediaCan(state, MEDIA.NEXT) && <button aria-label={t("next")} onClick={() => call("media_next_track")} type="button"><HDIcon name="next" size={26} /></button>}
+          {!idle && mediaCan(state, MEDIA.PREVIOUS) && <button aria-label={t("previous")} onClick={() => call("media_previous_track")} type="button"><HDIcon name="prev" size={26} /></button>}
+          {showPlay && <button aria-label={off && power ? t("turnOn") : playing ? t("pause") : t("play")} className="hd-player__pp" onClick={playPause} type="button"><HDIcon name={off && power ? "power" : playing ? "pause" : "play"} size={30} /></button>}
+          {!idle && mediaCan(state, MEDIA.NEXT) && <button aria-label={t("next")} onClick={() => call("media_next_track")} type="button"><HDIcon name="next" size={26} /></button>}
         </div>
         <div className="hd-player__side hd-player__side--end">
           {volumeButtons && !off && <div aria-label={t("volume")} className="hd-player__volume" role="group">

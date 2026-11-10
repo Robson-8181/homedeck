@@ -88,6 +88,6 @@ function SidebarPage({ onLongPress, page, props }: { onLongPress: (entity: Disco
   return <>
     <header className="sb-main__header"><div><span className="eyebrow">{content.count} {t("entities")}</span><h1>{content.title}</h1></div></header>
     {editing && <p className="edit-hint">{t("editHint")}</p>}
-    {content.body({ className: "sb-grid", render: (entity) => <EntityCard entity={entity} hass={hass} language={language} onLongPress={onLongPress} t={t} />, sizable: true })}
+    {content.body({ className: "sb-grid", open: onLongPress, render: (entity) => <EntityCard entity={entity} hass={hass} language={language} onLongPress={onLongPress} t={t} />, sizable: true })}
   </>;
 }

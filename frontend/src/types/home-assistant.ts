@@ -71,6 +71,8 @@ export interface HomeAssistant {
     language?: string;
   };
   language?: string;
+  /** Who is using this panel. */
+  user?: { id: string; name?: string; is_admin?: boolean };
   /** REST call through Home Assistant (calendar events). */
   callApi?<T>(method: "GET" | "POST", path: string): Promise<T>;
   connection: {

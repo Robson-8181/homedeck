@@ -1,3 +1,4 @@
+import { BinsCard } from "./BinsCard";
 import type { TranslationKey } from "../i18n";
 import { hvacLabel } from "../i18n";
 import type { WidgetKey } from "../layout";
@@ -8,9 +9,9 @@ import { useWideTile } from "./EditableGrid";
 import { displayState } from "./EntityCard";
 import { HDIcon } from "./HDIcon";
 import { WideControls } from "./WideControls";
-import { SpotifyCard } from "./SpotifyCard";
+import { MediaIdle, SpotifyCard } from "./SpotifyCard";
 import { usePlan } from "../plan";
-import { isSpotify, usePlayers } from "../spotify";
+import { isSpotify, mediaActive, usePlayers } from "../spotify";
 import { mediaArt } from "../devices";
 import type { HomeDeckConfig } from "../types/config";
 import { TodayCard } from "./Agenda";
@@ -40,6 +41,7 @@ export const WIDGET_LABELS: Record<WidgetKey, TranslationKey> = {
   "widget:weather": "weatherNow",
   "widget:sun": "sunCard",
   "widget:energy": "energy",
+  "widget:bins": "binsCard",
 };
 
 interface HomeWidgetProps {
@@ -56,6 +58,7 @@ export function HomeWidget(props: HomeWidgetProps) {
   if (props.kind === "widget:today") return <TodayCard config={props.config} hass={props.hass} language={props.language} t={props.t} />;
   if (props.kind === "widget:weather") return <WeatherWidget config={props.config} hass={props.hass} language={props.language} t={props.t} />;
   if (props.kind === "widget:sun") return <SunWidget hass={props.hass} language={props.language} onOpen={props.onOpen} t={props.t} />;
+  if (props.kind === "widget:bins") return <BinsCard config={props.config} hass={props.hass} language={props.language} onOpen={props.onOpen} t={props.t} />;
   if (props.kind === "widget:energy") return <EnergyWidget config={props.config} hass={props.hass} language={props.language} onOpen={props.onOpen} t={props.t} />;
   return <DeviceWidget {...props} />;
 }
@@ -122,6 +125,7 @@ function DeviceWidget({ data, hass, kind, language, onOpen, t }: HomeWidgetProps
   const playing = state?.state === "playing";
   const art = mediaArt(state);
   const icon = art ? <span className="widget-card__icon widget-card__icon--art" style={{ backgroundImage: art }} /> : <span className="widget-card__icon"><HDIcon name="media" size={22} /></span>;
+  if (media && !mediaActive(state)) return <MediaIdle entity={media} hass={hass} onOpen={onOpen} t={t} />;
   if (wide && media && state && state.state !== "unavailable") {
     return <div className={`widget-card widget-card--wide widget-card--media ${playing ? "widget-card--playing" : ""}`} onClick={(event) => { if (!(event.target as HTMLElement).closest("button, input, label")) onOpen(media); }} role="button" tabIndex={0}>
       {icon}

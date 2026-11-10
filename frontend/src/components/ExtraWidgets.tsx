@@ -21,6 +21,7 @@ export function extraWidgets(config: HomeDeckConfig, hass: HomeAssistant): Widge
   if (config.widgets?.weather) keys.push("widget:weather");
   if (config.widgets?.sun && hass.states["sun.sun"]) keys.push("widget:sun");
   if (config.widgets?.energy && Object.values(config.energy ?? {}).some((id) => id && hass.states[id])) keys.push("widget:energy");
+  if (config.widgets?.bins && (config.bins ?? []).some((bin) => bin.entity && hass.states[bin.entity])) keys.push("widget:bins");
   return keys;
 }
 

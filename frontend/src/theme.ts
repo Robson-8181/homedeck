@@ -16,7 +16,7 @@ export const theme = String.raw`
 }
 
 /* One unit drives every size, so a 7" Echo Show and a 27" monitor keep the same proportions. */
-.app-shell { --u: clamp(4.4px, min(1vw, 1.05vh), 13px); --paper: var(--hd-accent, #f4edd9); font-family: var(--f-body); -webkit-font-smoothing: antialiased; }
+.app-shell { --u: clamp(4.4px, min(1vw, calc(var(--hd-vh, 1vh)*1.05)), 13px); --paper: var(--hd-accent, #f4edd9); font-family: var(--f-body); -webkit-font-smoothing: antialiased; }
 /* No container-type here: it would turn the shell into the containing block of the fixed dock and sheets. */
 .app-shell > .screen {
   min-height: 100vh; display: flex; flex-direction: column; gap: calc(var(--u)*2.6);

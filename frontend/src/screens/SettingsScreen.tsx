@@ -1,9 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from "react";
-import { HDIcon, RoomIcon, type IconName } from "../components/HDIcon";
+import { HDIcon, isIconName, RoomIcon, type IconName } from "../components/HDIcon";
+import { PageIconPicker } from "../components/RoomOptions";
 import { HDSegmented, HDSelect } from "../components/HDSelect";
 import { domainLabel, type TranslationKey } from "../i18n";
-import type { HomeDeckBackgroundPreset, HomeDeckCardStyle, HomeDeckConfig, HomeDeckPageType } from "../types/config";
+import type { HomeDeckCondition, HomeDeckBackgroundPreset, HomeDeckBin, HomeDeckBinColor, HomeDeckCardStyle, HomeDeckConfig, HomeDeckPageType } from "../types/config";
+import { ConditionFields } from "../components/ConditionFields";
+import { DashboardImport } from "../components/DashboardImport";
+import { applyImport } from "../dashboardImport";
 import { withRoomOptions } from "../personalize";
 import { energyCandidates } from "../components/ExtraWidgets";
 import { cameraIds, DoorbellPopup, doorbellCandidates, guessDoorbellCamera } from "../components/Doorbell";
@@ -53,14 +57,29 @@ const BACKGROUNDS: Array<[HomeDeckBackgroundPreset, TranslationKey, string]> = [
   ["adaptive_sunset", "backgroundSunset", "linear-gradient(135deg,#273554,#b4526f 55%,#ef9a62)"],
   ["adaptive_forest", "backgroundForest", "linear-gradient(135deg,#1d3b33,#5f8a62 50%,#d8a24a)"],
   ["adaptive_lagoon", "backgroundLagoon", "linear-gradient(135deg,#14324f,#3f9aa3 50%,#f09a7a)"],
+  ["adaptive_orchid", "backgroundOrchid", "linear-gradient(135deg,#2e2352,#a83f8f 55%,#ee6fa8)"],
+  ["adaptive_reef", "backgroundReef", "linear-gradient(135deg,#123a5a,#1fa58f 55%,#f0b24a)"],
+  ["adaptive_berry", "backgroundBerry", "linear-gradient(135deg,#3a1c40,#c22f4f 55%,#ff7a45)"],
+  ["adaptive_glacier", "backgroundGlacier", "linear-gradient(135deg,#1f3553,#4fa6d6 55%,#a8e4f0)"],
+  ["adaptive_citrus", "backgroundCitrus", "linear-gradient(135deg,#2a3a24,#c0a21f 55%,#ff9f1c)"],
   ["fixed_night", "backgroundNight", "linear-gradient(135deg,#263d68,#111b38,#090f20)"],
   ["fixed_ocean", "backgroundOcean", "linear-gradient(135deg,#17677a,#0a334d,#051d2b)"],
   ["fixed_graphite", "backgroundGraphite", "linear-gradient(135deg,#3c414d,#1d2027,#0c0e12)"],
   ["fixed_wine", "backgroundWine", "linear-gradient(135deg,#5a1f2e,#2e0f18,#14060a)"],
   ["fixed_plum", "backgroundPlum", "linear-gradient(135deg,#3d2a55,#1e1430,#0d0816)"],
+  ["fixed_cobalt", "backgroundCobalt", "linear-gradient(135deg,#4f86ff,#1f4fd8 50%,#12307f)"],
+  ["fixed_violet", "backgroundViolet", "linear-gradient(135deg,#a06bff,#6a2fd6 50%,#3d1a86)"],
+  ["fixed_magenta", "backgroundMagenta", "linear-gradient(135deg,#f0609f,#c42a7e 50%,#7a1650)"],
+  ["fixed_coral", "backgroundCoral", "linear-gradient(135deg,#ff8a62,#e2533f 50%,#94302a)"],
+  ["fixed_emerald", "backgroundEmerald", "linear-gradient(135deg,#3fd0a0,#0f9a6e 50%,#0a5e48)"],
+  ["fixed_teal", "backgroundTeal", "linear-gradient(135deg,#3fc7dd,#0a93b5 50%,#075a78)"],
+  ["fixed_indigo", "backgroundIndigo", "linear-gradient(135deg,#6f74ff,#3b3fd1 50%,#23257f)"],
+  ["fixed_rose", "backgroundRose", "linear-gradient(135deg,#ff7da6,#e0447a 50%,#8f2650)"],
+  ["fixed_amber", "backgroundAmber", "linear-gradient(135deg,#ffba47,#d98a14 50%,#8a540a)"],
+  ["fixed_lime", "backgroundLime", "linear-gradient(135deg,#92cf3f,#5f9e1e 50%,#3a6412)"],
 ];
 const SAVER_DELAYS = [30, 60, 120, 180, 300, 600, 900, 1800];
-const PAGE_ICONS: Record<HomeDeckPageType, IconName> = { favorites: "star", scenes: "scene", custom: "grid" };
+const PAGE_ICONS: Record<HomeDeckPageType, IconName> = { favorites: "star", scenes: "scene", cameras: "camera", custom: "grid" };
 
 interface SettingsScreenProps {
   config: HomeDeckConfig;
@@ -88,6 +107,9 @@ function Switch({ checked, label, onChange }: { checked: boolean; label: string;
 export function SettingsScreen({ config, hass, language, onClose, onDraft, onLicense, onReload, onSave, rooms, t, version }: SettingsScreenProps) {
   const plan = usePlan();
   const [managing, setManaging] = useState(false);
+  const [iconPage, setIconPage] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [imported, setImported] = useState(false);
   const [feedback, setFeedback] = useState(false);
   const [hideHaSidebar, setHideHaSidebar] = useState(hideSidebarPreferred);
   // Pro-only options stay visible with a lock; choosing one opens the Pro sheet.
@@ -172,7 +194,7 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
     setDrag(null);
   };
   const addPage = (type: HomeDeckPageType) => {
-    const title = type === "favorites" ? t("favorites") : type === "scenes" ? t("scenes") : t("newPage");
+    const title = type === "favorites" ? t("favorites") : type === "scenes" ? t("scenes") : type === "cameras" ? t("camerasTitle") : t("newPage");
     update({ pages: [...draft.pages, { id: `page-${type}-${Date.now().toString(36)}`, title, type, icon: PAGE_ICONS[type], entity_ids: [] }] });
   };
 
@@ -215,14 +237,15 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
             </div>
           </section>
           <section className="st-panel">
-            <h2>{t("iconsTitle")}</h2>
-            <Row description={t("haIconsDescription")} label={t("haIcons")}><Switch checked={Boolean(draft.ha_icons)} label={t("haIcons")} onChange={(ha_icons) => update({ ha_icons })} /></Row>
-          </section>
-          <CardStylePanel cards={draft.cards} locked={!plan.pro} onChange={(cards) => update({ cards })} onUpsell={() => plan.upsell("feature")} t={t} />
-          <section className="st-panel">
             <h2>{t("background")}</h2><p>{t("lightsOnly")}</p>
             <div className="st-backgrounds">{BACKGROUNDS.map(([preset, label, preview]) => <button aria-pressed={draft.background.preset === preset} key={preset} onClick={() => (locked(!FREE_BACKGROUNDS.includes(preset)) ? plan.upsell("feature") : update({ background: { ...draft.background, preset } }))} type="button"><i style={{ background: preview }}>{locked(!FREE_BACKGROUNDS.includes(preset)) && <Lock />}</i><b>{t(label)}</b><small>{locked(!FREE_BACKGROUNDS.includes(preset)) ? "Pro" : preset.startsWith("adaptive_") ? t("automatic") : t("fixedBackground")}</small></button>)}</div>
             <Row label={t("animateBackground")}><Switch checked={draft.background.animated} label={t("animateBackground")} onChange={(animated) => update({ background: { ...draft.background, animated } })} /></Row>
+          </section>
+          <CardStylePanel cards={draft.cards} locked={!plan.pro} onChange={(cards) => update({ cards })} onUpsell={() => plan.upsell("feature")} t={t} />
+          <section className="st-panel">
+            <h2>{t("iconsTitle")}</h2>
+            <Row description={t("haIconsDescription")} label={t("haIcons")}><Switch checked={Boolean(draft.ha_icons)} label={t("haIcons")} onChange={(ha_icons) => update({ ha_icons })} /></Row>
+            <Row description={t("haRoomIconsDescription")} label={t("haRoomIcons")}><Switch checked={Boolean(draft.ha_room_icons)} label={t("haRoomIcons")} onChange={(ha_room_icons) => update({ ha_room_icons })} /></Row>
           </section>
 
         </>}
@@ -242,7 +265,7 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
             <Row label={t("showWeather")}><Switch checked={draft.home.show_weather} label={t("showWeather")} onChange={(show_weather) => update({ home: { ...draft.home, show_weather } })} /></Row>
             <Row label={t("showPresence")}><Switch checked={draft.home.show_presence} label={t("showPresence")} onChange={(show_presence) => update({ home: { ...draft.home, show_presence } })} /></Row>
           </section>
-          <NoticesPanel hass={hass} ids={draft.home.badges ?? []} language={language} onChange={(badges) => update({ home: { ...draft.home, badges } })} t={t} />
+          <NoticesPanel hass={hass} home={draft.home} language={language} onChange={(patch) => update({ home: { ...draft.home, ...patch } })} t={t} />
           <section className="st-panel">
             <h2>{t("homeActions")}</h2>
             <Row label={t("showStatus")}><Switch checked={draft.visibility.home_cards.status} label={t("showStatus")} onChange={(status) => update({ visibility: { ...draft.visibility, home_cards: { ...draft.visibility.home_cards, status } } })} /></Row>
@@ -268,6 +291,7 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
           <section className="st-panel">
             <h2>{t("camerasTitle")}</h2>
             <Row description={t("liveCamerasDescription")} label={t("liveCameras")}><Switch checked={draft.live_cameras !== false} label={t("liveCameras")} onChange={(live_cameras) => update({ live_cameras })} /></Row>
+            <Row description={t("cameraWholeDescription")} label={t("cameraWhole")}><Switch checked={Boolean(draft.camera_whole)} label={t("cameraWhole")} onChange={(camera_whole) => update({ camera_whole })} /></Row>
           </section>
           <DoorbellPanel draft={draft} hass={hass} onUpsell={() => plan.upsell("feature")} pro={plan.pro} t={t} update={update} />
         </>}
@@ -306,22 +330,35 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
             <Row description={missing(draft.navigation.scenes, found.hasScenes, "navNoScenes")} label={t("scenes")}><Switch checked={draft.navigation.scenes} label={t("scenes")} onChange={(scenes) => update({ navigation: { ...draft.navigation, scenes } })} /></Row>
             <Row description={missing(draft.navigation.media, found.hasMedia, "navNoMedia")} label={t("media")}><Switch checked={draft.navigation.media} label={t("media")} onChange={(media) => update({ navigation: { ...draft.navigation, media } })} /></Row>
             <Row description={missing(draft.navigation.security, found.hasSecurity, "navNoSecurity")} label={t("security")}><Switch checked={draft.navigation.security} label={t("security")} onChange={(security) => update({ navigation: { ...draft.navigation, security } })} /></Row>
+            <Row description={missing(Boolean(draft.navigation.cameras), found.hasCameras, "navNoCameras")} label={t("camerasTitle")}><Switch checked={Boolean(draft.navigation.cameras)} label={t("camerasTitle")} onChange={(cameras) => update({ navigation: { ...draft.navigation, cameras } })} /></Row>
           </section>
           <section className="st-panel">
             <h2>{t("yourPages")}</h2><p>{t("pagesHint")}</p>
             {!plan.pro ? <div className="st-actions"><button className="hd-pill" onClick={() => plan.upsell("feature")} type="button"><HDIcon name="lock" size={14} />{t("proPagesLocked")}</button></div> : <>
-            {draft.pages.length > 0 && <div className="st-list">{draft.pages.map((page) => <div className="st-page" key={page.id}>
+            {draft.pages.length > 0 && <div className="st-list">{draft.pages.map((page) => <div className="st-page-row" key={page.id}><div className="st-page">
               <div className="st-item st-item--on">
-                <span className="st-item__icon"><HDIcon name={PAGE_ICONS[page.type]} size={18} /></span>
+                <button aria-expanded={iconPage === page.id} aria-label={`${t("pageIconLabel")}: ${page.title}`} className="st-item__icon" onClick={() => setIconPage((open) => open === page.id ? null : page.id)} type="button"><HDIcon name={isIconName(page.icon) ? page.icon : PAGE_ICONS[page.type]} size={18} /></button>
                 <input aria-label={t("pageName")} className="st-input" onChange={(event) => update({ pages: draft.pages.map((item) => item.id === page.id ? { ...item, title: event.target.value } : item) })} value={page.title} />
               </div>
               <button aria-label={`${t("deletePage")}: ${page.title}`} className="st-icon-button st-icon-button--danger" onClick={() => update({ pages: draft.pages.filter((item) => item.id !== page.id) })} type="button"><HDIcon name="trash" size={18} /></button>
-            </div>)}</div>}
+            </div>{iconPage === page.id && <PageIconPicker onPick={(icon) => { update({ pages: draft.pages.map((item) => item.id === page.id ? { ...item, icon } : item) }); setIconPage(null); }} t={t} value={isIconName(page.icon) ? page.icon : PAGE_ICONS[page.type]} />}</div>)}</div>}
             <div className="st-actions">
               <button className="hd-pill" onClick={() => addPage("favorites")} type="button"><HDIcon name="star" size={16} />{t("favorites")}</button>
               <button className="hd-pill" onClick={() => addPage("scenes")} type="button"><HDIcon name="scene" size={16} />{t("scenes")}</button>
+              <button className="hd-pill" onClick={() => addPage("cameras")} type="button"><HDIcon name="camera" size={16} />{t("camerasTitle")}</button>
               <button className="hd-pill" onClick={() => addPage("custom")} type="button"><HDIcon name="plus" size={16} />{t("newPage")}</button>
             </div></>}
+            {imported && <p className="hd-import__done">{t("importDone")}</p>}
+          </section>
+          <section className="st-panel">
+            <h2>{t("importTitle")}</h2><p>{t("importPanelHint")}</p>
+            <div className="st-actions"><button className="hd-pill" onClick={() => setImporting(true)} type="button"><HDIcon name="plus" size={16} />{t("importDashboard")}</button></div>
+            {importing && <div aria-label={t("importTitle")} aria-modal="true" className="hd-sheet-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setImporting(false); }} role="dialog">
+              <section className="hd-sheet hd-detail hd-import-sheet">
+                <header className="hd-detail__header"><span className="hd-detail__icon"><HDIcon name="grid" size={24} /></span><div><span className="eyebrow">{t("navigation")}</span><h2>{t("importTitle")}</h2></div><button aria-label={t("close")} className="hd-close" onClick={() => setImporting(false)} type="button"><HDIcon name="close" size={20} /></button></header>
+                <DashboardImport hass={hass} onCancel={() => setImporting(false)} onImport={(choice) => { setDraft((current) => applyImport(current, choice.dashboard, { pages: choice.pages, onlyThese: choice.onlyThese, rooms, maxRooms: plan.pro ? undefined : plan.limits.rooms })); setImporting(false); setImported(true); }} t={t} />
+              </section>
+            </div>}
           </section>
         </>;
         })()}
@@ -331,7 +368,7 @@ export function SettingsScreen({ config, hass, language, onClose, onDraft, onLic
             <div className="st-plan__head"><span className="hd-pro__mark"><HDIcon name="star" size={20} /></span><div><h2>{t("proActive")}</h2><p>{plan.license?.kind === "annual" ? t("proAnnual") : t("proLifetime")}{plan.license?.email ? ` · ${plan.license.email}` : ""}</p></div></div>
             {plan.license?.expires_at && <Row label={plan.license.cancels ? t("proEnds") : t("proRenews")}><span className="st-value">{new Intl.DateTimeFormat(language, { dateStyle: "medium" }).format(new Date(plan.license.expires_at * 1000))}</span></Row>}
             {plan.license?.manage && <Row description={t("proManageDescription")} label={t("proManage")}><button className="hd-pill" onClick={() => void openPortal(hass, window.location.href).then(({ url }) => window.open(url, "_blank", "noopener")).catch(() => undefined)} type="button">{t("proManageAction")}</button></Row>}
-            <Row description={t("proRemoveDescription")} label={t("proRemove")}><button className="hd-pill" onClick={() => void deactivateLicense(hass).then(onLicense)} type="button">{t("proRemoveAction")}</button></Row>
+            <Row description={t("proRemoveDescription")} label={t("proRemove")}><RemoveLicenseButton onRemove={() => void deactivateLicense(hass).then(onLicense)} t={t} /></Row>
           </> : <>
             <div className="st-plan__head"><span className="hd-pro__mark hd-pro__mark--free"><HDIcon name="home" size={20} /></span><div><h2>{t("freePlan")}</h2><p>{t("freePlanDescription").replace("{rooms}", String(plan.limits.rooms)).replace("{devices}", String(plan.limits.devices))}</p></div></div>
             {plan.license && LICENSE_ERRORS[plan.license.status] && <p className="st-plan__ended"><HDIcon name="shield" size={16} />{t(LICENSE_ERRORS[plan.license.status])}</p>}
@@ -426,7 +463,30 @@ function ExtraCardsPanel({ draft, hass, onUpsell, pro, t, update }: { draft: Hom
         {fields.map(([key, name]) => <div className="st-sub__row" key={key}><span>{t(name)}</span><HDSelect ariaLabel={t(name)} onChange={(id) => update({ energy: { ...energy, [key]: id } })} options={[{ value: "", label: t("none") }, ...[...new Set([...(energy[key] ? [energy[key]] : []), ...candidates[key].map((state) => state.entity_id)])].map((id) => ({ value: id, label: label(id) }))]} value={energy[key]} /></div>)}
       </div>}
     </div>
+    <BinsSettings bins={draft.bins ?? []} enabled={Boolean(widgets.bins)} hass={hass} onBins={(bins) => update({ bins })} onEnabled={(on) => { set({ bins: on }); if (on && (draft.bins ?? []).length === 0) update({ widgets: { ...widgets, bins: true }, bins: [{ entity: "", name: "", color: "black" }] }); }} onUpsell={onUpsell} pro={pro} t={t} />
   </section>;
+}
+
+const BIN_WORDS = /waste|bin|trash|garbage|recycl|m[uü]ll|abfall|tonne|lixo|coleta|basura|odpad/i;
+
+/** Pro: the waste collection card, up to four bins, each a sensor with a name and a color. */
+function BinsSettings({ bins, enabled, hass, onBins, onEnabled, onUpsell, pro, t }: { bins: HomeDeckBin[]; enabled: boolean; hass: HomeAssistant; onBins: (bins: HomeDeckBin[]) => void; onEnabled: (on: boolean) => void; onUpsell: () => void; pro: boolean; t: (key: TranslationKey) => string }) {
+  const name = (id: string) => String(hass.states[id]?.attributes.friendly_name ?? id);
+  const sensors = useMemo(() => Object.keys(hass.states).filter((id) => id.startsWith("sensor.")).sort((a, b) => Number(BIN_WORDS.test(b + name(b))) - Number(BIN_WORDS.test(a + name(a))) || name(a).localeCompare(name(b))), [enabled]);
+  const change = (index: number, patch: Partial<HomeDeckBin>) => onBins(bins.map((bin, at) => at === index ? { ...bin, ...patch } : bin));
+  const colors: Array<[HomeDeckBinColor, TranslationKey]> = [["black", "binBlack"], ["brown", "binBrown"], ["green", "binGreen"], ["blue", "binBlue"], ["yellow", "binYellow"], ["grey", "binGrey"], ["red", "binRed"]];
+  return <div className="st-group">
+    <Row description={t("binsCardDescription")} label={t("binsCard")}>{pro ? <Switch checked={enabled} label={t("binsCard")} onChange={onEnabled} /> : <button className="hd-pill" onClick={onUpsell} type="button"><HDIcon name="lock" size={14} />Pro</button>}</Row>
+    {pro && enabled && <div className="st-sub">
+      {bins.map((bin, index) => <div className="st-bin" key={index}>
+        <HDSelect ariaLabel={t("binSensor")} onChange={(entity) => change(index, { entity })} options={[{ value: "", label: t("binSensor") }, ...[...new Set([...(bin.entity ? [bin.entity] : []), ...sensors])].map((id) => ({ value: id, label: name(id) }))]} value={bin.entity} />
+        <input aria-label={t("binName")} className="st-input st-input--framed" maxLength={30} onChange={(event) => change(index, { name: event.target.value })} placeholder={t("binName")} value={bin.name} />
+        <HDSelect ariaLabel={t("binColor")} onChange={(color) => change(index, { color: color as HomeDeckBinColor })} options={colors.map(([value, label]) => ({ value, label: t(label) }))} value={bin.color} />
+        <button aria-label={t("removeItem")} className="st-icon-button st-icon-button--danger" onClick={() => onBins(bins.filter((_, at) => at !== index))} type="button"><HDIcon name="trash" size={16} /></button>
+      </div>)}
+      {bins.length < 4 && <div className="st-actions"><button className="hd-pill" onClick={() => onBins([...bins, { entity: "", name: "", color: "black" }])} type="button"><HDIcon name="plus" size={16} />{t("binsAdd")}</button></div>}
+    </div>}
+  </div>;
 }
 
 /** Pro: special dates. One switch for all, one per occasion (those of the home's country), and the
@@ -551,10 +611,26 @@ function moveItem<T>(items: T[], from: number, to: number): T[] {
   return next;
 }
 
+/** Removing the license takes a second tap within a few seconds. */
+function RemoveLicenseButton({ onRemove, t }: { onRemove: () => void; t: (key: TranslationKey) => string }) {
+  const [asking, setAsking] = useState(false);
+  useEffect(() => {
+    if (!asking) return;
+    const timer = window.setTimeout(() => setAsking(false), 5000);
+    return () => window.clearTimeout(timer);
+  }, [asking]);
+  return <button className={asking ? "hd-pill hd-pill--danger" : "hd-pill"} onClick={() => { if (asking) { setAsking(false); onRemove(); } else setAsking(true); }} type="button">{asking ? t("proRemoveConfirm") : t("proRemoveAction")}</button>;
+}
+
 const NOTICE_DOMAINS = ["binary_sensor", "event", "sensor", "cover", "lock", "switch", "input_boolean", "alarm_control_panel", "update", "timer", "vacuum", "light", "fan"];
 
 /** Notices beside the people in the header: the entities chosen here, shown only when they have something to say. */
-function NoticesPanel({ hass, ids, language, onChange, t }: { hass: HomeAssistant; ids: string[]; language?: string; onChange: (ids: string[]) => void; t: (key: TranslationKey) => string }) {
+function NoticesPanel({ hass, home, language, onChange, t }: { hass: HomeAssistant; home: HomeDeckConfig["home"]; language?: string; onChange: (patch: Partial<HomeDeckConfig["home"]>) => void; t: (key: TranslationKey) => string }) {
+  const ids = home.badges ?? [];
+  const texts = home.badge_texts ?? {};
+  const rules = home.badge_rules ?? {};
+  const styles = home.badge_styles ?? {};
+  const [ruling, setRuling] = useState<string | null>(null);
   const [picking, setPicking] = useState(false);
   const name = (id: string) => String(hass.states[id]?.attributes.friendly_name ?? id);
   // Every candidate from Home Assistant, grouped by kind (events and unassigned sensors included).
@@ -564,11 +640,34 @@ function NoticesPanel({ hass, ids, language, onChange, t }: { hass: HomeAssistan
       entity_id: id, domain, name: name(id), area_id: "", device_id: null, device_class: typeof hass.states[id]?.attributes.device_class === "string" ? String(hass.states[id]!.attributes.device_class) : null, icon: null,
     })),
   })).filter((group) => group.entities.length > 0), [picking]);
-  const toggle = (id: string) => onChange(ids.includes(id) ? ids.filter((item) => item !== id) : [...ids, id].slice(0, 12));
+  const toggle = (id: string) => {
+    const { [id]: _text, ...others } = texts;
+    const { [id]: _rule, ...otherRules } = rules;
+    const { [id]: _style, ...otherStyles } = styles;
+    onChange(ids.includes(id) ? { badges: ids.filter((item) => item !== id), badge_texts: others, badge_rules: otherRules, badge_styles: otherStyles } : { badges: [...ids, id].slice(0, 12) });
+  };
+  const setRule = (id: string, rule: HomeDeckCondition | undefined) => {
+    const { [id]: _rule, ...others } = rules;
+    onChange({ badge_rules: rule ? { ...others, [id]: rule } : others });
+  };
+  const setStyle = (id: string, style: "" | "icon" | "text") => {
+    const { [id]: _style, ...others } = styles;
+    onChange({ badge_styles: style ? { ...others, [id]: style } : others });
+  };
+  const setText = (id: string, text: string) => {
+    const { [id]: _text, ...others } = texts;
+    onChange({ badge_texts: text ? { ...others, [id]: text } : others });
+  };
   return <section className="st-panel">
     <h2>{t("noticesTitle")}</h2><p>{t("noticesDescription")}</p>
     {ids.length > 0 && <div className="st-group">
-      {ids.map((id) => <Row description={id} key={id} label={name(id)}><button aria-label={`${t("removeItem")}: ${name(id)}`} className="hd-pill" onClick={() => toggle(id)} type="button"><HDIcon name="minus" size={14} />{t("removeItem")}</button></Row>)}
+      {ids.map((id) => <Fragment key={id}><Row description={id} label={name(id)}><div className="st-notice-edit"><button aria-expanded={ruling === id} aria-label={`${t("noticeOptions")}: ${name(id)}`} className={`hd-pill ${rules[id] || styles[id] || texts[id] ? "hd-pill--set" : ""}`} onClick={() => setRuling((open) => open === id ? null : id)} type="button">{t("noticeOptions")}</button><button aria-label={`${t("removeItem")}: ${name(id)}`} className="hd-pill" onClick={() => toggle(id)} type="button"><HDIcon name="minus" size={14} />{t("removeItem")}</button></div></Row>
+        {ruling === id && <div className="st-notice-rules">
+          <div className="hd-rules__row"><span className="hd-rules__label">{t("noticeStyle")}</span><div className="room-options__icons" role="radiogroup" aria-label={t("noticeStyle")}>{([["", "noticeStyleBoth"], ["icon", "noticeStyleIcon"], ["text", "noticeStyleText"]] as const).map(([value, label]) => <button aria-checked={(styles[id] ?? "") === value} key={value} onClick={() => setStyle(id, value)} role="radio" type="button">{t(label)}</button>)}</div></div>
+          {styles[id] !== "icon" && <div className="hd-rules__row"><span className="hd-rules__label">{t("noticeText")}</span><input aria-label={`${t("noticeText")}: ${name(id)}`} className="st-input st-input--framed" maxLength={40} onChange={(event) => setText(id, event.target.value)} placeholder={name(id)} value={texts[id] ?? ""} /></div>}
+          <small>{t("noticeRulesHint")}</small>
+          <ConditionFields hass={hass} onChange={(rule) => setRule(id, rule)} t={t} value={rules[id]} />
+        </div>}</Fragment>)}
     </div>}
     <div className="st-actions"><button className="hd-pill" disabled={ids.length >= 12} onClick={() => setPicking(true)} type="button"><HDIcon name="plus" size={16} />{t("addNotice")}</button></div>
     {picking && <EntityPicker language={language} onClose={() => setPicking(false)} onToggle={toggle} rooms={groups} selected={ids} t={t} title={t("addNotice")} />}

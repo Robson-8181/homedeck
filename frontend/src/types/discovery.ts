@@ -1,3 +1,5 @@
+import type { HomeDeckCondition } from "./config";
+
 export interface DiscoveredEntity {
   entity_id: string;
   domain: string;
@@ -10,6 +12,10 @@ export interface DiscoveredEntity {
   /** HomeDeck's options for it: the icon on its tile ("ha" or a HomeDeck icon) and tap confirmation. */
   display_icon?: string;
   confirm?: boolean;
+  /** The card's highlight takes the color of the light while it is on. */
+  light_accent?: boolean;
+  /** The card only shows while these rules are met. */
+  visible_when?: HomeDeckCondition;
   /** Name in Home Assistant, when a nickname was given in HomeDeck. */
   original_name?: string;
   /** Hidden from its room in Edit mode: left out of the light counts and of "turn all on/off". */

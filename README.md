@@ -98,6 +98,9 @@ on macOS). Your rooms, backgrounds and preferences are kept.
 
 - **Four layouts:** Grid, Sidebar, List and Focus. Every screen, including Media,
   Security, Scenes and your own pages, follows the one you pick.
+- **Bring your dashboard:** import a Home Assistant dashboard you already have, during setup or
+  later. Each tab becomes a HomeDeck screen with the same devices in the same order, and the rooms
+  can show only what's in it.
 - **Edit mode, arranged your way:** drag to reorder, tap − to hide, add devices from any room,
   make a card double or large, split a screen into groups with separators and reorder the bottom
   bar. Nothing is ever deleted from Home Assistant.
@@ -106,6 +109,12 @@ on macOS). Your rooms, backgrounds and preferences are kept.
   Assistant keeps its own names.
 - **Protected cards:** ask for a second tap before switching a device, so a brush against the
   screen does nothing.
+- **Devices inside a card:** double and large cards can hold up to 2 extra devices (a washer's
+  Start button next to its program, a cover next to the room's lights).
+- **Visibility rules:** show a card or a notice only when it matters: a device on or off, a sensor
+  above or below a value, someone home, day or night, a time window and chosen days.
+- **Who can see:** pick which people see each card or room (it controls what shows in HomeDeck, not
+  Home Assistant permissions).
 - **Calendar and reminders** beside the clock, with a full-screen month view and a
   reminders list, plus an optional **Today card** on Home.
 - **Full weather forecast:** next hours and next 7 days, using your Home Assistant weather
@@ -114,9 +123,12 @@ on macOS). Your rooms, backgrounds and preferences are kept.
   plus a **small size** for sensors, half the height of a normal card.
 - **Media artwork** for Apple TV, Sonos, Chromecast and other players, with their favorites
   and sources one tap away, and a full **player** for every media player on Pro.
-- **Cameras** with live video right on the card and a full live view, **vacuums** with their controls, and **scripts, buttons and
+- **Cameras** with live video right on the card and a full live view, a **Cameras screen** with
+  16:9 cells and 1 to 4 per row, camera pages with your own layouts, 6× and 8× camera cards and an
+  option to show the whole picture. Plus **vacuums** with their controls, and **scripts, buttons and
   selects** (like a washing machine program) right on the dashboard.
-- **Alarm panels** to arm and disarm (with the code when the panel asks for one) and **plants**
+- **Alarm panels** to arm and disarm (with the code when the panel asks for one, and the open
+  sensors with "Arm anyway" when Alarmo refuses), a **waste collection card** and **plants**
   from Plant Monitor/OpenPlantbook with their moisture, light and more. Both appear only once
   you add them in Edit mode.
 - **History charts** in sensor details (and, optionally, right on double and large sensor cards),
@@ -127,7 +139,8 @@ on macOS). Your rooms, backgrounds and preferences are kept.
   Halloween, a bunny at Easter and balloons on birthdays from your calendar, following your
   country. Each one optional, with a preview in Settings.
 - **Notices in the header:** pick any entity (a mailbox, the garage door, the doorbell) and it
-  shows up beside the people only when there's something to notice.
+  shows up beside the people only when there's something to notice, as an icon, text or both,
+  with your own text.
 - **Doorbell pop-up:** when the doorbell rings, its camera shows up over the panel, even on the
   screensaver.
 - **Spotify player** (with a default speaker per device), a screensaver with today's events and reminders, scene strip,
@@ -140,7 +153,9 @@ on macOS). Your rooms, backgrounds and preferences are kept.
 - **Free:** up to 4 rooms and 10 controllable devices (lights, switches, fans, covers,
   climate, media and locks). Sensors and scenes don't count. Grid and List layouts.
 - **Pro:** unlimited rooms and devices, all four layouts, double and large cards, your own pages,
-  the energy card, animations, sensor charts on cards, the doorbell pop-up, special dates, the full media player, the small sensor size, the screensaver with
+  the energy card, animations, sensor charts on cards, the doorbell pop-up, special dates, the full media player, the small sensor size,
+  camera pages and big camera sizes, devices inside cards, visibility rules, who can see, the waste
+  collection card, the screensaver with
   today's agenda, every background and color, the style (corners, frame and glass) and feedback
   straight to support. US$ 14.99 once or
   US$ 7.99 per year, per home (R$ 59.90 or R$ 29.90 per year in Brazil).

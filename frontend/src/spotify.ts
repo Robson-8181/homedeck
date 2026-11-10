@@ -25,6 +25,11 @@ export function mediaCan(state: HassEntity | undefined, feature: number): boolea
   return features === 0 || (features & feature) !== 0;
 }
 
+/** Whether a player has something on: playing or paused, with a title. */
+export function mediaActive(state: HassEntity | undefined): boolean {
+  return Boolean(state?.attributes.media_title) && ["playing", "paused"].includes(state?.state ?? "");
+}
+
 /** The name on the card: Spotify, the app playing (Music on an Apple TV), or the player itself. */
 export function playerLabel(entity: DiscoveredEntity, state: HassEntity | undefined): string {
   if (isSpotify(entity)) return "Spotify";

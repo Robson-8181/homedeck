@@ -8,7 +8,7 @@ import { usePlan } from "../../plan";
 import type { DiscoveredEntity, Room } from "../../types/discovery";
 import type { ScreenProps } from "../types";
 import { orderedRooms, roomItems, subsetLayout } from "./shared";
-import { arrange, getLayout } from "../../layout";
+import { arrange, entityKey, getLayout, pickerRooms, showItem } from "../../layout";
 
 interface RoomDevicesProps {
   className: string;
@@ -29,6 +29,7 @@ export function RoomDevices({ className, props, render, room, sizable = false }:
   return <>
     {editing && <RoomOptions allRooms={allRooms} hass={hass} room={room} t={t} />}
     <EditableGrid
+      hass={hass}
       addLabel={t("addDevices")}
       className={className}
       editing={editing}
@@ -45,7 +46,7 @@ export function RoomDevices({ className, props, render, room, sizable = false }:
       sizable={sizable}
       t={t}
     />
-    {picking && <EntityPicker language={language} onClose={() => setPicking(false)} onToggle={(id) => { if (added.includes(id)) setAdded(added.filter((item) => item !== id)); else if (plan.allow(id)) setAdded([...added, id]); }} rooms={catalogRooms.filter((item) => item.id !== room.id)} selected={added} t={t} />}
+    {picking && <EntityPicker language={language} onClose={() => setPicking(false)} onToggle={(id) => { if (hidden.includes(entityKey(id))) { if (plan.allow(id)) onLayout(screen, showItem(layout, entityKey(id), visible)); } else if (added.includes(id)) setAdded(added.filter((item) => item !== id)); else if (plan.allow(id)) setAdded([...added, id]); }} rooms={pickerRooms(room, hidden, catalogRooms.filter((item) => item.id !== room.id))} selected={added} t={t} />}
   </>;
 }
 

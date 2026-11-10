@@ -196,7 +196,6 @@ export function SeasonDecor({ id, preview = false }: { id: string; preview?: boo
     content = <>{boxes.map((box, index) => index % 2 === 0 ? <div className="hd-decor__at hd-decor__row" key={index} style={{ left: box.x + box.w * 0.42 + (index * 13) % 18, top: box.y - 6 }}><Streamer color={CONFETTI[index % 6]} length={34} /><Streamer color={CONFETTI[(index + 3) % 6]} length={24} /></div> : null)}</>;
   } else if (kind === "birthdays" || kind === "newyear") {
     content = <>
-      {boxes.map((box, index) => index % 3 === 0 ? <div className="hd-decor__at hd-decor__row" key={index} style={{ left: box.x + 10, top: box.y - 5 }}>{Array.from({ length: Math.max(3, Math.floor(box.w / 40)) }, (_, bit) => <i className="hd-decor__speck" key={bit} style={{ background: kind === "newyear" ? ["#ffd23f", "#fff2b3", "#e7c766"][bit % 3] : CONFETTI[(index + bit) % 6], transform: `rotate(${(bit * 47) % 180}deg)` }} />)}</div> : null)}
       {kind === "birthdays" && !still && <div className="hd-decor__balloons">{["#ff6b8b", "#4fb3ff", "#ffc94d", "#5fd68a"].map((color, index) => <div className="hd-decor__balloon" key={color} style={{ left: `${8 + index * 24}%`, animationDelay: `${index * (preview ? 0.6 : 3.5)}s` }}><Balloon color={color} /></div>)}</div>}
     </>;
   }

@@ -21,12 +21,27 @@ _ALLOWED_BACKGROUNDS = {
     "fixed_graphite",
     "adaptive_forest",
     "adaptive_lagoon",
+    "adaptive_orchid",
+    "adaptive_reef",
+    "adaptive_berry",
+    "adaptive_glacier",
+    "adaptive_citrus",
     "fixed_wine",
     "fixed_plum",
+    "fixed_cobalt",
+    "fixed_violet",
+    "fixed_magenta",
+    "fixed_coral",
+    "fixed_emerald",
+    "fixed_teal",
+    "fixed_indigo",
+    "fixed_rose",
+    "fixed_amber",
+    "fixed_lime",
 }
 _ALLOWED_FORECAST_TYPES = {"daily", "hourly"}
 _ALLOWED_VIEW_MODES = {"grid", "sidebar", "list", "focus"}
-_ALLOWED_PAGE_TYPES = {"favorites", "scenes", "custom"}
+_ALLOWED_PAGE_TYPES = {"favorites", "scenes", "custom", "cameras"}
 _MAX_LAYOUTS = 300
 _MAX_LAYOUT_ITEMS = 500
 _MAX_KEY_LENGTH = 300
@@ -102,7 +117,125 @@ def _normalize_names(value: Any) -> dict[str, str]:
 _SEASON_IDS = {"christmas", "newyear", "halloween", "valentines", "easter", "carnival", "thanksgiving", "birthdays"}
 _SEASON_EFFECTS = {"snow", "sparkle", "halloween", "hearts", "eggs", "confetti", "bunting", "leaves"}
 _BADGE_ENTITY = re.compile(r"^[a-z_]+\.[a-z0-9_]+$")
+_RULE_CHECKS = ("on", "off", "eq", "neq", "above", "below")
+_MAX_RULES = 6
+_RULE_TIME = re.compile(r"^([01][0-9]|2[0-3]):[0-5][0-9]$")
 _SEASON_DATE = re.compile(r"^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$")
+
+
+_USER_ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+_BIN_COLORS = {"black", "brown", "green", "blue", "yellow", "grey", "red"}
+
+
+def _normalize_hidden_for(value: Any) -> dict[str, list[str]]:
+    """Who a card or room is not shown to: card key to Home Assistant user ids."""
+    if not isinstance(value, dict):
+        return {}
+    result: dict[str, list[str]] = {}
+    for key, users in list(value.items())[:_MAX_LAYOUT_ITEMS]:
+        if not (isinstance(key, str) and key and len(key) <= _MAX_KEY_LENGTH):
+            continue
+        clean = [item for item in _unique_strings(users) if _USER_ID.match(item)][:32]
+        if clean:
+            result[key] = clean
+    return result
+
+
+def _normalize_bins(value: Any) -> list[dict[str, str]]:
+    """The waste collection card: up to four bins, each a sensor with a name and a color."""
+    if not isinstance(value, list):
+        return []
+    result: list[dict[str, str]] = []
+    for item in value[:4]:
+        if not isinstance(item, dict):
+            continue
+        entity = item.get("entity")
+        color = item.get("color")
+        name = item.get("name")
+        result.append({
+            "entity": entity if isinstance(entity, str) and _BADGE_ENTITY.match(entity) else "",
+            "name": name.strip()[:30] if isinstance(name, str) else "",
+            "color": color if color in _BIN_COLORS else "black",
+        })
+    return result
+
+
+def _normalize_card_link_names(value: Any) -> dict[str, dict[str, str]]:
+    """The name an extra device shows inside a card: card key to entity id to name."""
+    if not isinstance(value, dict):
+        return {}
+    result: dict[str, dict[str, str]] = {}
+    for key, names in list(value.items())[:_MAX_LAYOUT_ITEMS]:
+        if not (isinstance(key, str) and key and len(key) <= _MAX_KEY_LENGTH and isinstance(names, dict)):
+            continue
+        clean = {
+            entity_id: name.strip()[:40]
+            for entity_id, name in list(names.items())[:2]
+            if isinstance(entity_id, str) and _BADGE_ENTITY.match(entity_id) and isinstance(name, str) and name.strip()
+        }
+        if clean:
+            result[key] = clean
+    return result
+
+
+def _normalize_card_links(value: Any) -> dict[str, list[str]]:
+    """Extra devices shown inside double and large cards: card key to at most two entity ids."""
+    if not isinstance(value, dict):
+        return {}
+    result: dict[str, list[str]] = {}
+    for key, ids in list(value.items())[:_MAX_LAYOUT_ITEMS]:
+        if not (isinstance(key, str) and key and len(key) <= _MAX_KEY_LENGTH):
+            continue
+        clean = [item for item in _unique_strings(ids) if _BADGE_ENTITY.match(item)][:2]
+        if clean:
+            result[key] = clean
+    return result
+
+
+def _normalize_condition(value: Any) -> dict[str, Any] | None:
+    """Return the rules for showing a card or notice: a device's state, a time window and weekdays."""
+    if not isinstance(value, dict):
+        return None
+    clean: dict[str, Any] = {}
+    rules: list[dict[str, Any]] = []
+    raw_rules = value.get("rules")
+    if isinstance(raw_rules, list):
+        for rule in raw_rules[:_MAX_RULES]:
+            if not isinstance(rule, dict):
+                continue
+            entity = rule.get("entity")
+            check = rule.get("is")
+            if not (isinstance(entity, str) and "." in entity and len(entity) <= _MAX_KEY_LENGTH and check in _RULE_CHECKS):
+                continue
+            item: dict[str, Any] = {"entity": entity, "is": check}
+            target = rule.get("value")
+            if isinstance(target, (int, float)) and not isinstance(target, bool):
+                target = str(target)
+            if check in ("eq", "neq", "above", "below"):
+                if not isinstance(target, str) or not target.strip():
+                    continue
+                item["value"] = target.strip()[:60]
+            rules.append(item)
+    # The first version kept one entity on or off; it becomes a rule.
+    entity = value.get("entity")
+    if not rules and isinstance(entity, str) and "." in entity and len(entity) <= _MAX_KEY_LENGTH:
+        rules.append({"entity": entity, "is": "off" if value.get("state") == "off" else "on"})
+    if rules:
+        clean["rules"] = rules
+        if value.get("match") == "any" and len(rules) > 1:
+            clean["match"] = "any"
+    if value.get("people") in ("home", "away"):
+        clean["people"] = value["people"]
+    start, end = value.get("from"), value.get("to")
+    if isinstance(start, str) and isinstance(end, str) and _RULE_TIME.match(start) and _RULE_TIME.match(end):
+        clean["from"] = start
+        clean["to"] = end
+    days = value.get("days")
+    if isinstance(days, list):
+        valid = sorted({day for day in days if type(day) is int and 0 <= day <= 6})
+        if 0 < len(valid) < 7:
+            clean["days"] = valid
+    return clean or None
 
 
 def _normalize_entity_options(value: Any) -> dict[str, dict[str, Any]]:
@@ -119,6 +252,11 @@ def _normalize_entity_options(value: Any) -> dict[str, dict[str, Any]]:
             clean["icon"] = icon
         if options.get("confirm") is True:
             clean["confirm"] = True
+        if options.get("light_accent") is True:
+            clean["light_accent"] = True
+        when = _normalize_condition(options.get("visible_when"))
+        if when:
+            clean["visible_when"] = when
         if clean:
             result[entity_id] = clean
     return result
@@ -142,6 +280,15 @@ def _normalize_layouts(value: Any) -> dict[str, dict[str, Any]]:
             ][:_MAX_LAYOUT_ITEMS]
             for key in ("order", "hidden", "wide", "added", "tall", "small")
         }
+        cells = layout.get("cells")
+        if isinstance(cells, dict):
+            clean_cells = {
+                key: size
+                for key, size in list(cells.items())[:_MAX_LAYOUT_ITEMS]
+                if isinstance(key, str) and len(key) <= _MAX_KEY_LENGTH and size in (4, 6, 8, 9, 16)
+            }
+            if clean_cells:
+                layouts[screen]["cells"] = clean_cells
         sections = _normalize_sections(layout.get("sections"))
         if sections:
             layouts[screen]["sections"] = sections
@@ -178,6 +325,7 @@ def _normalize_pages(value: Any) -> list[dict[str, Any]]:
                 "type": page_type,
                 "icon": icon[:40] if isinstance(icon, str) else "grid",
                 "entity_ids": _unique_strings(item.get("entity_ids")),
+                **({"columns": item["columns"]} if item.get("columns") in (1, 2, 3, 4) else {}),
             }
         )
     return pages
@@ -213,8 +361,14 @@ def normalize_config(value: Any) -> HomeDeckConfig:
     config["rooms"] = _normalize_rooms(value.get("rooms"))
     config["names"] = _normalize_names(value.get("names"))
     config["entity_options"] = _normalize_entity_options(value.get("entity_options"))
+    config["card_links"] = _normalize_card_links(value.get("card_links"))
+    config["card_link_names"] = _normalize_card_link_names(value.get("card_link_names"))
+    config["hidden_for"] = _normalize_hidden_for(value.get("hidden_for"))
+    config["bins"] = _normalize_bins(value.get("bins"))
     if isinstance(value.get("ha_icons"), bool):
         config["ha_icons"] = value["ha_icons"]
+    if isinstance(value.get("ha_room_icons"), bool):
+        config["ha_room_icons"] = value["ha_room_icons"]
 
     dashboard = value.get("dashboard")
     if isinstance(dashboard, dict):
@@ -238,6 +392,24 @@ def normalize_config(value: Any) -> HomeDeckConfig:
         config["home"]["badges"] = [
             item for item in _unique_strings(home.get("badges")) if _BADGE_ENTITY.match(item)
         ][:12]
+        styles = home.get("badge_styles")
+        if isinstance(styles, dict):
+            config["home"]["badge_styles"] = {
+                entity_id: style
+                for entity_id, style in styles.items()
+                if entity_id in config["home"]["badges"] and style in ("icon", "text")
+            }
+        rules = home.get("badge_rules")
+        if isinstance(rules, dict):
+            clean_rules = {entity_id: _normalize_condition(rule) for entity_id, rule in rules.items() if entity_id in config["home"]["badges"]}
+            config["home"]["badge_rules"] = {entity_id: rule for entity_id, rule in clean_rules.items() if rule}
+        texts = home.get("badge_texts")
+        if isinstance(texts, dict):
+            config["home"]["badge_texts"] = {
+                entity_id: text.strip()[:40]
+                for entity_id, text in texts.items()
+                if entity_id in config["home"]["badges"] and isinstance(text, str) and text.strip()
+            }
 
     global_actions = value.get("global_actions")
     if isinstance(global_actions, dict):
@@ -247,7 +419,7 @@ def normalize_config(value: Any) -> HomeDeckConfig:
 
     navigation = value.get("navigation")
     if isinstance(navigation, dict):
-        for key in ("rooms", "scenes", "media", "security"):
+        for key in ("rooms", "scenes", "media", "security", "cameras"):
             if isinstance(navigation.get(key), bool):
                 config["navigation"][key] = navigation[key]
         if "order" in navigation:
@@ -337,7 +509,7 @@ def normalize_config(value: Any) -> HomeDeckConfig:
 
     widgets = value.get("widgets")
     if isinstance(widgets, dict):
-        for key in ("weather", "sun", "energy"):
+        for key in ("weather", "sun", "energy", "bins"):
             if isinstance(widgets.get(key), bool):
                 config["widgets"][key] = widgets[key]
 
@@ -364,6 +536,10 @@ def normalize_config(value: Any) -> HomeDeckConfig:
 
     if isinstance(value.get("live_cameras"), bool):
         config["live_cameras"] = value["live_cameras"]
+    if isinstance(value.get("camera_whole"), bool):
+        config["camera_whole"] = value["camera_whole"]
+    if value.get("camera_columns") in (1, 2, 3, 4):
+        config["camera_columns"] = value["camera_columns"]
 
     doorbell = value.get("doorbell")
     if isinstance(doorbell, dict):

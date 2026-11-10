@@ -51,5 +51,6 @@ export function availableSections(entities: DiscoveredEntity[]) {
     hasMedia: entities.some((entity) => entity.domain === "media_player"),
     hasScenes: entities.some((entity) => entity.domain === "scene"),
     hasSecurity: entities.some((entity) => isSecurityEntity(entity)),
+    hasCameras: entities.some((entity) => entity.domain === "camera"),
   };
 }

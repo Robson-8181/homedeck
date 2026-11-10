@@ -16,7 +16,7 @@ export function PageScreen(props: ScreenProps & { page: PageRef }) {
     <ContextHeader config={config} hass={hass} language={language} onSettings={props.onSettings} t={t} />
     <header className="collection-header"><div><span className="eyebrow">{content.count} {t("entities")}</span><h1>{content.title}</h1></div></header>
     {editing && <p className="edit-hint">{t("editHint")}</p>}
-    {content.body({ className: "device-grid collection-grid", render: (entity) => <EntityCard entity={entity} hass={hass} language={language} onLongPress={setModalEntity} t={t} />, sizable: true })}
+    {content.body({ className: "device-grid collection-grid", open: setModalEntity, render: (entity) => <EntityCard entity={entity} hass={hass} language={language} onLongPress={setModalEntity} t={t} />, sizable: true })}
     {modalEntity && <EntityModal entity={modalEntity} hass={hass} language={language} onClose={() => setModalEntity(null)} roomName={content.roomName(modalEntity)} t={t} />}
   </main>;
 }

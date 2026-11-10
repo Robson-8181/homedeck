@@ -111,6 +111,7 @@ export function HomeGrid(props: ScreenProps & { className: string; onOpenRoom: (
 
   return <>
     <EditableGrid
+      hass={hass}
       addLabel={t("addDevices")}
       className={props.className}
       editing={editing}

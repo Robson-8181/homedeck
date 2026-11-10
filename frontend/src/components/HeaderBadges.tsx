@@ -1,11 +1,17 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { TranslationKey } from "../i18n";
+import { conditionMet, useCustomize, useMinute } from "../personalize";
+import { usePlan } from "../plan";
+import type { HomeDeckCondition } from "../types/config";
+import type { DiscoveredEntity } from "../types/discovery";
 import type { HassEntity, HomeAssistant } from "../types/home-assistant";
+import { EntityModal } from "./EntityModal";
 import { HDIcon, domainIcon, type IconName } from "./HDIcon";
 
 // Notices beside the presence avatars: entities chosen in Settings → Home (a mailbox, the garage
 // door, the doorbell...) show up as small chips only while there is something to notice, so the
-// header stays clean the rest of the time. A tap opens Home Assistant's own details.
+// header stays clean the rest of the time. A tap opens HomeDeck's own details.
 
 /** How long an event (a doorbell ring, a button press) stays as a notice. */
 const RECENT_MS = 30 * 60 * 1000;
@@ -66,26 +72,33 @@ function NoticeIcon({ hass, state }: { hass: HomeAssistant; state: HassEntity })
   return native ? <ha-state-icon class="hd-notice__icon" ref={ref} /> : <span className="hd-notice__icon"><HDIcon name={fallbackIcon(state)} size={16} /></span>;
 }
 
-/** Re-renders every minute, so "5 min ago" moves and old events go away. */
-function useMinute(): number {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
-    return () => window.clearInterval(timer);
-  }, []);
-  return now;
+export function HeaderBadges({ hass, ids, language, rules, styles, t, texts }: { hass: HomeAssistant; ids: string[]; language?: string; rules?: Record<string, HomeDeckCondition>; styles?: Record<string, "icon" | "text">; t: (key: TranslationKey) => string; texts?: Record<string, string> }) {
+  const now = useMinute();
+  const customize = useCustomize();
+  const [opened, setOpened] = useState<{ id: string; shell: Element } | null>(null);
+  const { pro } = usePlan();
+  const notices = ids.filter((id) => !pro || conditionMet(rules?.[id], hass.states, new Date(now))).map((id) => noticeFor(hass.states[id], now, t)).filter((notice): notice is Notice => Boolean(notice));
+  // Over the whole panel, and it stays open if the notice goes away while it is being looked at.
+  const details = opened && createPortal(<EntityModal entity={entityFor(opened.id, hass, customize?.lookup(opened.id))} hass={hass} language={language} onClose={() => setOpened(null)} t={t} />, opened.shell);
+  if (notices.length === 0) return details || null;
+  return <div className="hd-notices" role="status">
+    {notices.map((notice) => {
+      const label = texts?.[notice.id] || notice.name;
+      const style = styles?.[notice.id];
+      const full = notice.detail ? `${label}: ${notice.detail}` : label;
+      return <button aria-label={full} className={`hd-notice ${style ? `hd-notice--${style}` : ""}`} key={notice.id} onClick={(event) => { const shell = event.currentTarget.closest(".app-shell"); if (shell) setOpened({ id: notice.id, shell }); }} title={full} type="button">
+        {style !== "text" && <NoticeIcon hass={hass} state={notice.state} />}
+        {style !== "icon" && <span className="hd-notice__name">{label}</span>}
+        {style !== "icon" && notice.detail && <small>{notice.detail}</small>}
+      </button>;
+    })}
+    {details}
+  </div>;
 }
 
-export function HeaderBadges({ hass, ids, t }: { hass: HomeAssistant; ids: string[]; t: (key: TranslationKey) => string }) {
-  const now = useMinute();
-  const notices = ids.map((id) => noticeFor(hass.states[id], now, t)).filter((notice): notice is Notice => Boolean(notice));
-  if (notices.length === 0) return null;
-  const open = (element: HTMLElement, entityId: string) => element.dispatchEvent(new CustomEvent("hass-more-info", { bubbles: true, composed: true, detail: { entityId } }));
-  return <div className="hd-notices" role="status">
-    {notices.map((notice) => <button className="hd-notice" key={notice.id} onClick={(event) => open(event.currentTarget, notice.id)} title={notice.detail ? `${notice.name}: ${notice.detail}` : notice.name} type="button">
-      <NoticeIcon hass={hass} state={notice.state} />
-      <span className="hd-notice__name">{notice.name}</span>
-      {notice.detail && <small>{notice.detail}</small>}
-    </button>)}
-  </div>;
+/** The device as HomeDeck knows it, or a plain description for entities outside the panel's rooms. */
+function entityFor(id: string, hass: HomeAssistant, known?: DiscoveredEntity): DiscoveredEntity {
+  if (known) return known;
+  const attributes = hass.states[id]?.attributes ?? {};
+  return { entity_id: id, domain: id.split(".")[0], name: String(attributes.friendly_name ?? id), area_id: "", device_id: null, device_class: typeof attributes.device_class === "string" ? attributes.device_class : null, icon: null };
 }

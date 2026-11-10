@@ -11,7 +11,8 @@ import { SELECTS, plantReadings, selectOption, selectOptions, vacuumActions } fr
 // never toggle the device underneath.
 
 const COLOR_TEMPS: Array<[number, string]> = [[2700, "#ffb46b"], [4000, "#fff0dc"], [6500, "#dfe9ff"]];
-const COLORS: Array<[number, number, number]> = [[255, 90, 90], [255, 176, 58], [95, 214, 138], [79, 179, 255], [167, 139, 250]];
+// The swatch shown on the card, and the fuller color sent to the lamp.
+const COLORS: Array<[[number, number, number], [number, number, number]]> = [[[255, 90, 90], [255, 0, 0]], [[255, 176, 58], [255, 110, 0]], [[95, 214, 138], [0, 255, 0]], [[79, 179, 255], [0, 0, 255]], [[167, 139, 250], [128, 0, 255]]];
 const COLOR_MODES = new Set(["hs", "rgb", "rgbw", "rgbww", "xy"]);
 const COVER_SET_POSITION = 4;
 // Climate modes in the order they are offered; the wide card shows two of them plus off.
@@ -130,7 +131,7 @@ function LightControls({ entity, hass, state, t, call }: WideProps & { call: Cal
     {dimmable && <TileSlider label={`${t("brightness")}: ${entity.name}`} min={1} off={!on} onCommit={(value) => call("light", "turn_on", { brightness_pct: value })} value={on && brightness != null ? Math.max(1, Math.round((brightness / 255) * 100)) : 1} />}
     {(temps.length > 0 || colors.length > 0) && <div className="tile-swatches">
       {temps.map(([kelvin, swatch]) => <button aria-label={`${kelvin} K`} aria-pressed={on && currentK != null && Math.abs(currentK - kelvin) < 300} key={kelvin} onClick={() => call("light", "turn_on", { color_temp_kelvin: kelvin })} style={{ background: swatch }} type="button" />)}
-      {colors.map((rgb) => <button aria-label={`RGB ${rgb.join(", ")}`} aria-pressed={on && Array.isArray(currentRgb) && currentRgb.every((value, index) => Math.abs(Number(value) - rgb[index]) < 40)} key={rgb.join()} onClick={() => call("light", "turn_on", { rgb_color: rgb })} style={{ background: `rgb(${rgb.join(",")})` }} type="button" />)}
+      {colors.map(([shown, rgb]) => <button aria-label={`RGB ${rgb.join(", ")}`} aria-pressed={on && Array.isArray(currentRgb) && currentRgb.every((value, index) => Math.abs(Number(value) - rgb[index]) < 40)} key={rgb.join()} onClick={() => call("light", "turn_on", { rgb_color: rgb })} style={{ background: `rgb(${shown.join(",")})` }} type="button" />)}
     </div>}
     <LightEffect hass={hass} label={`${t("lightEffect")}: ${entity.name}`} state={state} t={t} />
   </div>;

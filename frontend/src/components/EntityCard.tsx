@@ -1,3 +1,4 @@
+import { useCustomize } from "../personalize";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, KeyboardEvent, MouseEvent, PointerEvent } from "react";
 import { hvacLabel, type TranslationKey } from "../i18n";
@@ -10,10 +11,11 @@ import { EntityIcon, HDIcon } from "./HDIcon";
 import { WideControls } from "./WideControls";
 import { CameraCard } from "./CameraCard";
 import { HDSelect } from "./HDSelect";
-import { ALARM_ARMED, RUNNABLE, SELECTS, alarmStatus, mediaArt, plantStatus, runEntity, selectOption, selectOptions, vacuumActions, vacuumStatus } from "../devices";
-import { SpotifyCard } from "./SpotifyCard";
+import { friendlyDate, ALARM_ARMED, RUNNABLE, SELECTS, alarmStatus, mediaArt, plantStatus, runEntity, selectOption, selectOptions, vacuumActions, vacuumStatus } from "../devices";
+import { MediaIdle, SpotifyCard } from "./SpotifyCard";
+import { CardLinks } from "./CardLinks";
 import { usePlan } from "../plan";
-import { showsPlayer, usePlayers } from "../spotify";
+import { mediaActive, showsPlayer, usePlayers } from "../spotify";
 
 const ACTIVE_STATES = new Set(["on", "open", "opening", "playing", "paused", "heat", "cool", "heat_cool", "auto", "dry", "fan_only", "unlocked", "cleaning", "returning", ...ALARM_ARMED]);
 export const TOGGLES = new Set(["light", "switch", "fan", "input_boolean", "automation"]);
@@ -66,6 +68,8 @@ export function displayState(state: HassEntity | undefined, entity: DiscoveredEn
   if (state.state === "off") return t("off");
   if (state.state === "open") return t("open");
   if (state.state === "closed") return t("closed");
+  const when = friendlyDate(state, language);
+  if (when) return when;
   const unit = state.attributes.unit_of_measurement;
   return unit ? `${state.state} ${unit}` : state.state.replaceAll("_", " ");
 }
@@ -90,6 +94,7 @@ export function EntityCard(props: EntityCardProps) {
   const plan = usePlan();
   const everyPlayer = usePlayers();
   if (showsPlayer(props.entity, plan.pro, everyPlayer)) return <SpotifyCard entity={props.entity} hass={props.hass} onOpen={props.onLongPress} t={props.t} />;
+  if (props.entity.domain === "media_player" && !mediaActive(props.hass.states[props.entity.entity_id])) return <MediaIdle entity={props.entity} hass={props.hass} onOpen={props.onLongPress} t={props.t} />;
   if (props.entity.domain === "camera") return <CameraCard entity={props.entity} hass={props.hass} onOpen={props.onLongPress} t={props.t} />;
   return <DeviceCard {...props} />;
 }
@@ -104,6 +109,10 @@ function DeviceCard({ entity, hass, language, onLongPress, t }: EntityCardProps)
   const state = hass.states[entity.entity_id];
   const active = ACTIVE_STATES.has(state?.state ?? "");
   const unavailable = !state || ["unavailable", "unknown"].includes(state.state);
+  const customize = useCustomize();
+  // Optional, per card: the highlight takes the color the light is showing.
+  const rgb = entity.light_accent && state?.state === "on" && Array.isArray(state.attributes.rgb_color) ? state.attributes.rgb_color.map(Number) : null;
+  const lightAccent = rgb ? { "--lc": `rgb(${rgb.join(",")})`, "--on-ink": (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000 > 150 ? "#2a2110" : "#ffffff" } as CSSProperties : undefined;
   const status = useMemo(() => displayState(state, entity, t, language), [state, entity, t, language]);
   const brightness = typeof state?.attributes.brightness === "number" ? Math.round((state.attributes.brightness / 255) * 100) : 0;
   const colorModes = Array.isArray(state?.attributes.supported_color_modes) ? state.attributes.supported_color_modes : [];
@@ -181,6 +190,7 @@ function DeviceCard({ entity, hass, language, onLongPress, t }: EntityCardProps)
       aria-pressed={TOGGLES.has(entity.domain) ? active : undefined}
       className={`device-tile device-tile--tap ${wide ? `device-tile--wide device-tile--wide-${entity.domain}` : ""} ${active ? "device-tile--active" : ""} ${state?.state === "cleaning" ? "device-tile--cleaning" : ""} ${state?.state === "triggered" || (entity.domain === "plant" && state?.state === "problem") ? "device-tile--alert" : ""} ${unavailable ? "device-tile--unavailable" : ""}`}
       data-domain={entity.domain}
+      style={lightAccent}
       data-running={isAppliance(entity) && applianceRunning(state) ? "appliance" : undefined}
       onClick={click}
       onContextMenu={(event) => { event.preventDefault(); cancelHold(); onLongPress(entity); }}
@@ -198,14 +208,16 @@ function DeviceCard({ entity, hass, language, onLongPress, t }: EntityCardProps)
       <div className="device-tile__top">{entity.domain === "media_player" && mediaArt(state)
         ? <span className="device-tile__icon device-tile__icon--art" style={{ backgroundImage: mediaArt(state)! }} />
         : <span className="device-tile__icon"><EntityIcon entity={entity} /></span>}{entity.confirm && <span aria-hidden="true" className="device-tile__guard"><HDIcon name="lock" size={13} /></span>}</div>
-      <div className="device-tile__copy"><strong>{entity.name}</strong>{entity.domain !== "scene" && !(SELECTS.has(entity.domain) && !wide) && <span>{status}</span>}</div>
-
-      {wide && entity.domain === "sensor" && isNumericState(state) && <SensorSpark entityId={entity.entity_id} language={language} hass={hass} unit={typeof state?.attributes.unit_of_measurement === "string" ? state.attributes.unit_of_measurement : undefined} />}
-      {wide && !unavailable && state && <div className="tile-wide"><WideControls entity={entity} hass={hass} language={language} state={state} t={t} /></div>}
-
       {!wide && entity.domain === "light" && !unavailable && dimmable && (
         <label className={state?.state === "on" ? "device-dimmer" : "device-dimmer device-dimmer--off"} style={{ "--value": `${brightnessDraft ?? brightness}%` } as CSSProperties}><span className="sr-only">{t("brightness")}</span><b aria-hidden="true" /><input aria-label={`${t("brightness")}: ${entity.name}`} max="100" min="1" onChange={(event) => setBrightnessDraft(Number(event.currentTarget.value))} onKeyUp={commitKey} onPointerUp={(event) => setBrightness(Number(event.currentTarget.value))} type="range" value={brightnessDraft ?? Math.max(1, brightness)} /></label>
       )}
+      <div className="device-tile__copy"><strong>{entity.name}</strong>{entity.domain !== "scene" && !(SELECTS.has(entity.domain) && !wide) && <span>{status}</span>}</div>
+
+      {wide && entity.domain === "sensor" && isNumericState(state) && <SensorSpark entityId={entity.entity_id} language={language} hass={hass} unit={typeof state?.attributes.unit_of_measurement === "string" ? state.attributes.unit_of_measurement : undefined} />}
+      {wide && !unavailable && state && <div className="tile-wide">{SELECTS.has(entity.domain) && (customize?.linksFor(`entity:${entity.entity_id}`).length ?? 0) > 0
+        ? <HDSelect ariaLabel={`${t("chooseOption")}: ${entity.name}`} className="device-select" onChange={(option) => void run(() => selectOption(hass, entity.entity_id, option))} options={selectOptions(state).map((option) => ({ label: option, value: option }))} value={state.state} />
+        : <WideControls entity={entity} hass={hass} language={language} state={state} t={t} />}<CardLinks hass={hass} itemKey={`entity:${entity.entity_id}`} language={language} t={t} /></div>}
+
 
       {!wide && entity.domain === "cover" && !unavailable && (
         <div className="device-controls device-controls--cover">

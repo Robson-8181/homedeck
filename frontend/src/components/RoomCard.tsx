@@ -6,6 +6,8 @@ import type { Room } from "../types/discovery";
 import { roomTemperature } from "../personalize";
 import type { HomeAssistant } from "../types/home-assistant";
 import { HDIcon, RoomIcon } from "./HDIcon";
+import { CardLinks } from "./CardLinks";
+import { useWideTile } from "./EditableGrid";
 
 const ACTIVE_STATES = new Set(["on", "open", "opening", "playing", "heat", "cool"]);
 const ACCENTS = ["#fbf4df", "#cfe8ff", "#f1d8ff", "#ffd9c8", "#d8f3dc", "#fff1a8"];
@@ -21,6 +23,7 @@ interface RoomCardProps {
 
 export function RoomCard({ featured = false, hass, index, room, t, onOpen }: RoomCardProps) {
   const [busy, setBusy] = useState(false);
+  const wide = useWideTile();
   const activeCount = room.entities.filter((entity) => !entity.hidden && ACTIVE_STATES.has(hass.states[entity.entity_id]?.state)).length;
   const lights = room.entities.filter(isRoomLight);
   const activeLights = lights.filter((entity) => hass.states[entity.entity_id]?.state === "on");
@@ -52,6 +55,7 @@ export function RoomCard({ featured = false, hass, index, room, t, onOpen }: Roo
           </button>
         ) : <span className="room-card__arrow"><HDIcon name="chevron" size={17} /></span>}
       </div>
+      {wide && <div className="room-card__links"><CardLinks hass={hass} itemKey={`room:${room.id}`} t={t} /></div>}
       <div className="room-card__content">
         <strong>{roomName}</strong>
         <span>{lights.length === 0 ? `${activeCount} ${t("active")}` : activeLights.length === 0 ? t("roomLightsOff") : t("roomLitOf").replace("{on}", String(activeLights.length)).replace("{total}", String(lights.length))}</span>

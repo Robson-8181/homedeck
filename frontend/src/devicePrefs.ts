@@ -38,16 +38,23 @@ export function useDevicePref<T>(get: () => T): T {
   return value;
 }
 
-/** Play or pause; starting playback moves it first to this device's speaker when one is chosen. */
-export function spotifyPlayPause(hass: { callService: (domain: string, service: string, data?: Record<string, unknown>) => Promise<unknown> }, entityId: string, state?: { state: string; attributes: Record<string, unknown> }): void {
+/**
+ * Play or pause; starting playback moves it first to this device's speaker when one is chosen.
+ * Returns false when there was nothing to send: Spotify with no active device only accepts a choice
+ * of where to play, and asking it to play would show an error.
+ */
+export function spotifyPlayPause(hass: { callService: (domain: string, service: string, data?: Record<string, unknown>) => Promise<unknown> }, entityId: string, state?: { state: string; attributes: Record<string, unknown> }): boolean {
   const speaker = spotifySpeaker();
   const sources = Array.isArray(state?.attributes.source_list) ? state.attributes.source_list.map(String) : [];
   const starting = state?.state !== "playing";
+  const features = Number(state?.attributes.supported_features) || 0;
+  const canPlay = features === 0 || (features & (1 | 16384)) !== 0; // PAUSE or PLAY
   if (starting && speaker && state?.attributes.source !== speaker && sources.includes(speaker)) {
-    void hass.callService("media_player", "select_source", { entity_id: entityId, source: speaker })
-      .then(() => hass.callService("media_player", "media_play", { entity_id: entityId }))
-      .catch(() => undefined);
-    return;
+    const moved = hass.callService("media_player", "select_source", { entity_id: entityId, source: speaker });
+    void (canPlay ? moved.then(() => hass.callService("media_player", "media_play", { entity_id: entityId })) : moved).catch(() => undefined);
+    return true;
   }
+  if (!canPlay) return false;
   void hass.callService("media_player", "media_play_pause", { entity_id: entityId });
+  return true;
 }

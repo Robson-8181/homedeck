@@ -1,3 +1,4 @@
+import { useCustomize } from "../personalize";
 import { useMemo, useState } from "react";
 import { arrange, entityKey, getLayout, keyId, setHidden } from "../layout";
 import { usePlan } from "../plan";
@@ -19,6 +20,7 @@ export function SceneStrip({ props }: { props: ScreenProps }) {
   const { config, data, editing, hass, language, onLayout, t } = props;
   const [picking, setPicking] = useState(false);
   const plan = usePlan();
+  const customize = useCustomize();
   const everywhere = useMemo(() => entityIndex(props.catalogRooms), [props.catalogRooms]);
   const layout = getLayout(config, SCENES_STRIP);
 
@@ -27,7 +29,7 @@ export function SceneStrip({ props }: { props: ScreenProps }) {
     ...data.rooms.flatMap((room) => room.entities).filter(isScene).map((entity) => entity.entity_id),
     ...(props.catalogRooms.find((room) => room.id === UNASSIGNED)?.entities.filter(isScene).map((entity) => entity.entity_id) ?? []),
     // Scenes discovery did not list (no area and no device) still belong to Home.
-    ...Object.keys(hass.states).filter((id) => id.startsWith("scene.") && !everywhere.byId.has(id)),
+    ...Object.keys(hass.states).filter((id) => id.startsWith("scene.") && !everywhere.byId.has(id) && !(customize?.restricted(`entity:${id}`) && !editing)),
   ])];
   const nativeSet = new Set(nativeIds);
   const added = (layout.added ?? []).filter((id) => !nativeSet.has(id) && everywhere.byId.has(id));
@@ -49,6 +51,7 @@ export function SceneStrip({ props }: { props: ScreenProps }) {
     <section className="scene-section" id="scene-strip">
       <div className="operational-heading"><span>{t("scenes")}</span><i>{shown.length}</i></div>
       <EditableGrid
+        hass={hass}
         addLabel={t("addScenes")}
         className="scene-strip"
         editing={editing}

@@ -1,3 +1,4 @@
+import { pauseCameras } from "./cameraPause";
 import { createRoot, type Root } from "react-dom/client";
 import { App } from "./App";
 import { installFonts } from "./fonts";
@@ -41,6 +42,7 @@ class HomeDeckPanel extends HTMLElement {
   }
 
   connectedCallback() {
+    pauseCameras("panel-closed", false);
     this.renderPanel();
     window.addEventListener("homedeck-sidebar-pref", this.applySidebar);
     this.applySidebar();
@@ -49,6 +51,7 @@ class HomeDeckPanel extends HTMLElement {
   }
 
   disconnectedCallback() {
+    pauseCameras("panel-closed", true);
     window.removeEventListener("homedeck-sidebar-pref", this.applySidebar);
     this.showScrollbars?.();
     this.showScrollbars = undefined;

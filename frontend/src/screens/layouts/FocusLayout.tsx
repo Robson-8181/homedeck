@@ -57,7 +57,7 @@ function FocusPage({ page, props }: { page: PageRef; props: ScreenProps }) {
         <span className="eyebrow">{content.count} {t("entities")}</span>
         <div className="fc-hero"><div className="fc-hero__copy"><h1>{content.title}</h1></div></div>
         {editing && <p className="edit-hint">{t("editHintSimple")}</p>}
-        {content.body({ className: "fc-chips", render: chip })}
+        {content.body({ className: "fc-chips", open: setModalEntity, render: chip })}
       </section>
     </div>
     {modalEntity && <EntityModal entity={modalEntity} hass={hass} language={language} onClose={() => setModalEntity(null)} roomName={content.roomName(modalEntity)} t={t} />}

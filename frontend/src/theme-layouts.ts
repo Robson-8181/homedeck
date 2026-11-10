@@ -169,9 +169,9 @@ export const themeLayouts = String.raw`
 .app-shell .ls-strip button[aria-selected="true"] { background: rgba(255,255,255,.92); color: #1d1a17; border-color: transparent; }
 
 /* ---------- Foco ---------- */
-.app-shell.view-focus > .screen.fc-layout { padding: 0; gap: 0; min-height: 100vh; }
+.app-shell.view-focus > .screen.fc-layout { padding: 0; gap: 0; min-height: calc(var(--hd-vh, 1vh)*100); }
 .app-shell .fc-tools { position: fixed; z-index: 6; top: calc(var(--u)*3 + env(safe-area-inset-top, 0px)); right: calc(var(--u)*3); display: flex; gap: calc(var(--u)*1); }
-.app-shell .fc-track { display: flex; height: 100vh; overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; }
+.app-shell .fc-track { display: flex; height: calc(var(--hd-vh, 1vh)*100); overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; }
 .app-shell .fc-track::-webkit-scrollbar { display: none; }
 .app-shell .fc-page {
   position: relative; flex: 0 0 100%; height: 100%; scroll-snap-align: start; overflow-y: auto; scrollbar-width: none;

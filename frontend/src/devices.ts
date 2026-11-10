@@ -201,3 +201,23 @@ export function loadCameraPlayer(): Promise<boolean> {
   })();
   return cameraPlayer;
 }
+
+/** Sensors that report a moment (2026-10-21T23:12:13+00:00, 2026-10-21): "Today, 23:12", "Oct 21, 23:12". Null for anything else. */
+export function friendlyDate(state: HassEntity | undefined, language?: string): string | null {
+  const value = String(state?.state ?? "");
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
+  if (!dateOnly && !/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/.test(value)) return null;
+  const date = dateOnly ? new Date(`${value}T12:00:00`) : new Date(value);
+  if (Number.isNaN(+date)) return null;
+  const start = (moment: Date) => new Date(moment.getFullYear(), moment.getMonth(), moment.getDate()).getTime();
+  const days = Math.round((start(date) - start(new Date())) / 86_400_000);
+  const time = new Intl.DateTimeFormat(language, { hour: "2-digit", minute: "2-digit" }).format(date);
+  let day: string;
+  if (Math.abs(days) <= 1) {
+    const word = new Intl.RelativeTimeFormat(language, { numeric: "auto" }).format(days, "day");
+    day = word.charAt(0).toLocaleUpperCase(language) + word.slice(1);
+  } else {
+    day = new Intl.DateTimeFormat(language, { day: "numeric", month: "short", ...(date.getFullYear() === new Date().getFullYear() ? {} : { year: "numeric" }) }).format(date);
+  }
+  return dateOnly ? day : `${day}, ${time}`;
+}

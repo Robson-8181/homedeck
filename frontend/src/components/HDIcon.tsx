@@ -34,6 +34,37 @@ export type IconName =
   | "stop"
   | "sun"
   | "switch"
+  | "tv"
+  | "monitor"
+  | "wifi"
+  | "router"
+  | "plug"
+  | "battery"
+  | "flame"
+  | "wind"
+  | "leaf"
+  | "flower"
+  | "paw"
+  | "mail"
+  | "package"
+  | "key"
+  | "garage"
+  | "window"
+  | "blinds"
+  | "lamp"
+  | "coffee"
+  | "fridge"
+  | "shower"
+  | "wrench"
+  | "dumbbell"
+  | "book"
+  | "heart"
+  | "bike"
+  | "solar"
+  | "gate"
+  | "umbrella"
+  | "robot"
+  | "gift"
   | "volume"
   | "plus"
   | "minus"
@@ -133,6 +164,37 @@ const paths: Record<IconName, ReactNode> = {
   star: <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9L12 3Z" />,
   stop: <rect x="7" y="7" width="10" height="10" rx="1" />,
   sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></>,
+  tv: <><rect x="2" y="7" width="20" height="15" rx="2" /><path d="m17 2-5 5-5-5" /></>,
+  monitor: <><rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" /></>,
+  wifi: <><path d="M2 8.8a15 15 0 0 1 20 0M5 12.9a10 10 0 0 1 14 0M8.5 16.4a5 5 0 0 1 7 0" /><path d="M12 20h.01" /></>,
+  router: <><rect x="2" y="14" width="20" height="8" rx="2" /><path d="M6 18h.01M10 18h.01M15 10v4M17.84 7.17a4 4 0 0 0-5.66 0M20.66 4.34a8 8 0 0 0-11.31 0" /></>,
+  plug: <path d="M12 22v-5M9 8V2M15 8V2M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z" />,
+  battery: <><rect x="2" y="7" width="16" height="10" rx="2" /><path d="M22 11v2M6 11v2M10 11v2" /></>,
+  flame: <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5Z" />,
+  wind: <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2M9.6 4.6A2 2 0 1 1 11 8H2M12.6 19.4A2 2 0 1 0 14 16H2" />,
+  leaf: <><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" /><path d="M2 21c0-3 1.85-5.36 5.08-6" /></>,
+  flower: <><circle cx="12" cy="12" r="3" /><path d="M12 9a3 3 0 1 1 0-6 3 3 0 0 1 0 6ZM12 15a3 3 0 1 1 0 6 3 3 0 0 1 0-6ZM9 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM15 12a3 3 0 1 1 6 0 3 3 0 0 1-6 0Z" /></>,
+  paw: <><circle cx="11" cy="4" r="2" /><circle cx="18" cy="8" r="2" /><circle cx="20" cy="16" r="2" /><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.05Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z" /></>,
+  mail: <><rect x="2" y="4" width="20" height="16" rx="2" /><path d="m22 7-10 6L2 7" /></>,
+  package: <><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5M12 22V12" /></>,
+  key: <><circle cx="7.5" cy="15.5" r="5.5" /><path d="m11.4 11.6 9.6-9.6M16 7l3 3M18.5 4.5l2 2" /></>,
+  garage: <><path d="M22 8.35V20a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.35A2 2 0 0 1 3.26 6.5l8-3.2a2 2 0 0 1 1.48 0l8 3.2A2 2 0 0 1 22 8.35Z" /><path d="M6 22V10h12v12M6 14h12M6 18h12" /></>,
+  window: <><rect x="4" y="3" width="16" height="18" rx="1" /><path d="M12 3v18M4 12h16" /></>,
+  blinds: <><path d="M3 3h18M20 7H8M20 11H8M10 19h10M8 15h12M4 3v14" /><circle cx="4" cy="19" r="2" /></>,
+  lamp: <path d="M8 2h8l4 10H4L8 2ZM12 12v6M8 22v-2a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2H8Z" />,
+  coffee: <path d="M17 8h1a4 4 0 1 1 0 8h-1M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4ZM6 2v2M10 2v2M14 2v2" />,
+  fridge: <path d="M5 6a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2ZM5 10h14M9 14v3M9 5v2" />,
+  shower: <path d="m4 4 2.5 2.5M13.5 6.5a4.95 4.95 0 0 0-7 7M15 5 5 15M14 17v.01M10 16v.01M13 13v.01M16 10v.01M11 20v.01M17 14v.01M20 11v.01" />,
+  wrench: <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94Z" />,
+  dumbbell: <path d="m6.5 6.5 11 11M21 21l-1-1M3 3l1 1M18 22l4-4M2 6l4-4M3 10l7-7M14 21l7-7" />,
+  book: <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />,
+  heart: <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />,
+  bike: <><circle cx="18.5" cy="17.5" r="3.5" /><circle cx="5.5" cy="17.5" r="3.5" /><circle cx="15" cy="5" r="1" /><path d="M12 17.5V14l-3-3 4-3 2 3h2" /></>,
+  solar: <><rect x="3" y="8" width="18" height="12" rx="1" /><path d="M3 14h18M9 8v12M15 8v12M12 2v3" /></>,
+  gate: <path d="M4 3 2 5v15c0 .6.4 1 1 1h2c.6 0 1-.4 1-1V5ZM6 8h4M6 18h4M12 3l-2 2v15c0 .6.4 1 1 1h2c.6 0 1-.4 1-1V5ZM14 8h4M14 18h4M20 3l-2 2v15c0 .6.4 1 1 1h2c.6 0 1-.4 1-1V5Z" />,
+  umbrella: <path d="M22 12a10 10 0 0 0-20 0ZM12 12v8a2 2 0 0 0 4 0M12 2v1" />,
+  robot: <><path d="M12 8V4H8" /><rect x="4" y="8" width="16" height="12" rx="2" /><path d="M2 14h2M20 14h2M15 13v2M9 13v2" /></>,
+  gift: <><rect x="3" y="8" width="18" height="4" rx="1" /><path d="M12 8v13M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8s2-5 4.5-5a2.5 2.5 0 0 1 0 5" /></>,
   switch: <><rect x="3" y="7" width="18" height="10" rx="5" /><circle cx="9" cy="12" r="3" /></>,
   volume: <><path d="M11 5 6 9H2v6h4l5 4V5Z" /><path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a9 9 0 0 1 0 12" /></>,
   plus: <path d="M12 5v14M5 12h14" />,
@@ -182,7 +244,9 @@ export function HDIcon({ name, size = 22 }: { name: IconName; size?: number }) {
 }
 
 /** Icons offered for a room in Edit mode, besides the automatic one and the area's icon in Home Assistant. */
-export const ROOM_ICONS: IconName[] = ["home", "sofa", "bed", "kitchen", "dining", "bath", "briefcase", "child", "laundry", "car", "tree", "pool", "game", "stairs", "door", "media", "plant", "star"];
+const EXTRA_ICONS: IconName[] = ["tv", "monitor", "wifi", "router", "plug", "battery", "flame", "wind", "leaf", "flower", "paw", "mail", "package", "key", "garage", "window", "blinds", "lamp", "coffee", "fridge", "shower", "wrench", "dumbbell", "book", "heart", "bike", "solar", "gate", "umbrella", "robot", "gift"];
+
+export const ROOM_ICONS: IconName[] = ["home", "sofa", "bed", "kitchen", "dining", "bath", "briefcase", "child", "laundry", "car", "tree", "pool", "game", "stairs", "door", "media", "plant", "star", ...EXTRA_ICONS];
 
 /** "ha" in a room's icon: the icon of its area in Home Assistant. */
 export const HA_ICON = "ha";
@@ -212,7 +276,11 @@ export function roomIcon(name: string): IconName {
 }
 
 /** Icons offered for a device's tile, in its details. */
-export const DEVICE_ICONS: IconName[] = ["light", "fan", "switch", "power", "cover", "door", "lock", "climate", "media", "speaker", "camera", "vacuum", "laundry", "kitchen", "car", "plant", "alarm", "bell", "sun", "moon", "pool", "star", "button", "sensor"];
+/** Icons a page can have on the dock: the usual ones first, then the rooms' and the devices'. */
+export const pageIconChoices = (): IconName[] => [...new Set<IconName>(["grid", "star", "scene", "list", ...ROOM_ICONS, ...DEVICE_ICONS])];
+export const isIconName = (name: string): name is IconName => Object.prototype.hasOwnProperty.call(paths, name);
+
+export const DEVICE_ICONS: IconName[] = ["light", "fan", "switch", "power", "cover", "door", "lock", "climate", "media", "speaker", "camera", "vacuum", "laundry", "kitchen", "car", "plant", "alarm", "bell", "sun", "moon", "pool", "star", "button", "sensor", ...EXTRA_ICONS];
 
 /** A device's tile icon: its chosen HomeDeck icon, Home Assistant's own icon ("ha", when it has one),
  * or the icon of its type, as before. */
@@ -243,6 +311,7 @@ export function domainIcon(domain: string): IconName {
     select: "list",
     sensor: "sensor",
     switch: "switch",
+    input_boolean: "switch",
     vacuum: "vacuum",
     alarm_control_panel: "alarm",
     plant: "plant",

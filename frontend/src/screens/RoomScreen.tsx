@@ -7,7 +7,7 @@ import { EntityModal } from "../components/EntityModal";
 import { EntityPicker } from "../components/EntityPicker";
 import { RoomOptions } from "../components/RoomOptions";
 import { HDIcon, RoomIcon } from "../components/HDIcon";
-import { arrange, entityKey, getLayout, keyId, roomScreen } from "../layout";
+import { arrange, entityKey, getLayout, keyId, pickerRooms, roomScreen, showItem } from "../layout";
 import type { DiscoveredEntity, Room } from "../types/discovery";
 import { entityIndex, type ScreenProps } from "./types";
 import { usePlan } from "../plan";
@@ -66,6 +66,7 @@ export function RoomScreen(props: ScreenProps & { onSelectRoom: (roomId: string)
           {visible.length === 0 && !editing
             ? <section className="empty-state"><p>{t("noVisibleEntities")}</p></section>
             : <EditableGrid
+                hass={hass}
                 className="device-grid"
                 editing={editing}
                 hiddenItems={hidden.map((key) => ({ key, label: byId.get(keyId(key))?.name ?? keyId(key) }))}
@@ -84,7 +85,7 @@ export function RoomScreen(props: ScreenProps & { onSelectRoom: (roomId: string)
         </section>
       </div>
       {modalEntity && <EntityModal entity={modalEntity} hass={hass} language={language} onClose={() => setModalEntity(null)} roomName={everywhere.roomName(modalEntity) ?? roomName} t={t} />}
-      {picking && <EntityPicker language={language} onClose={() => setPicking(false)} onToggle={(id) => { if (added.includes(id)) setAdded(added.filter((item) => item !== id)); else if (plan.allow(id)) setAdded([...added, id]); }} rooms={props.catalogRooms.filter((item) => item.id !== room.id)} selected={added} t={t} />}
+      {picking && <EntityPicker language={language} onClose={() => setPicking(false)} onToggle={(id) => { if (hidden.includes(entityKey(id))) { if (plan.allow(id)) onLayout(screen, showItem(layout, entityKey(id), visible)); } else if (added.includes(id)) setAdded(added.filter((item) => item !== id)); else if (plan.allow(id)) setAdded([...added, id]); }} rooms={pickerRooms(room, hidden, props.catalogRooms.filter((item) => item.id !== room.id))} selected={added} t={t} />}
     </main>
   );
 }

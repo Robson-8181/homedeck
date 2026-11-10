@@ -9,12 +9,27 @@ export type HomeDeckBackgroundPreset =
   | "fixed_graphite"
   | "adaptive_forest"
   | "adaptive_lagoon"
+  | "adaptive_orchid"
+  | "adaptive_reef"
+  | "adaptive_berry"
+  | "adaptive_glacier"
+  | "adaptive_citrus"
   | "fixed_wine"
-  | "fixed_plum";
+  | "fixed_plum"
+  | "fixed_cobalt"
+  | "fixed_violet"
+  | "fixed_magenta"
+  | "fixed_coral"
+  | "fixed_emerald"
+  | "fixed_teal"
+  | "fixed_indigo"
+  | "fixed_rose"
+  | "fixed_amber"
+  | "fixed_lime";
 
 export type HomeDeckViewMode = "grid" | "sidebar" | "list" | "focus";
 
-export type HomeDeckPageType = "favorites" | "scenes" | "custom";
+export type HomeDeckPageType = "favorites" | "scenes" | "custom" | "cameras";
 
 export interface HomeDeckPageConfig {
   id: string;
@@ -22,6 +37,8 @@ export interface HomeDeckPageConfig {
   type: HomeDeckPageType;
   icon: string;
   entity_ids: string[];
+  /** Camera pages: how many cameras fit side by side (1 to 4). */
+  columns?: number;
 }
 
 export interface ScreenLayout {
@@ -30,6 +47,8 @@ export interface ScreenLayout {
   wide: string[];
   /** Item keys shown large (two columns and two rows); always also in `wide`. */
   tall?: string[];
+  /** Bigger sizes by item: 6 or 8 for camera cards, 4, 9 or 16 cells on a camera page. */
+  cells?: Record<string, number>;
   /** Sensor keys shown small (half the height of a normal card). */
   small?: string[];
   /** Entities from other rooms shown on this screen (room screens only). */
@@ -54,8 +73,18 @@ export interface HomeDeckConfig {
   names?: Record<string, string>;
   /** Tiles show the entity's own icon from Home Assistant when it has one (off by default). */
   ha_icons?: boolean;
+  /** Rooms use the icon of their area in Home Assistant, when it has one. */
+  ha_room_icons?: boolean;
   /** Per device, set in its details: its icon ("ha" or a HomeDeck icon) and whether a tap asks to confirm. */
   entity_options?: Record<string, HomeDeckEntityOptions>;
+  /** Extra devices shown inside double and large cards, by card key ("entity:…", "room:…"). */
+  card_links?: Record<string, string[]>;
+  /** The name each of those devices shows inside that card; none means its own name. */
+  card_link_names?: Record<string, Record<string, string>>;
+  /** Who a card or room is not shown to: card key to Home Assistant user ids. */
+  hidden_for?: Record<string, string[]>;
+  /** The waste collection card: a sensor, a name and a color for each bin. */
+  bins?: HomeDeckBin[];
   dashboard: Record<string, unknown>;
   favorites: string[];
   /** Free plan: the controllable devices chosen to appear (empty = all of the selected rooms, when they fit). */
@@ -74,6 +103,12 @@ export interface HomeDeckConfig {
     show_presence: boolean;
     /** Entities shown as small notices beside the presence avatars, only when there is something to notice. */
     badges?: string[];
+    /** How each notice looks; icon and text when not set. */
+    badge_styles?: Record<string, "icon" | "text">;
+    /** The text to show instead of the entity's name, per entity. */
+    badge_texts?: Record<string, string>;
+    /** When each notice can show, per entity (Pro). */
+    badge_rules?: Record<string, HomeDeckCondition>;
   };
   global_actions: {
     lights_on: boolean;
@@ -84,6 +119,7 @@ export interface HomeDeckConfig {
     scenes: boolean;
     media: boolean;
     security: boolean;
+    cameras?: boolean;
     /** Tab ids of the bottom bar in the order arranged in Edit mode (Home always comes first). */
     order?: string[];
   };
@@ -143,6 +179,7 @@ export interface HomeDeckConfig {
     weather: boolean;
     sun: boolean;
     energy: boolean;
+    bins?: boolean;
   };
   /** Sensors of the energy card; empty fields are left out. */
   energy: HomeDeckEnergy;
@@ -150,6 +187,9 @@ export interface HomeDeckConfig {
   seasons?: { enabled: boolean; off: string[]; custom: Array<{ name: string; date: string; effect: string }> };
   /** Camera cards play their live video while on screen (on by default); off shows a still every 10 s. */
   live_cameras: boolean;
+  /** Camera cards show the whole picture instead of filling the card. */
+  camera_whole?: boolean;
+  camera_columns?: number;
   /** Pro: when the trigger (a doorbell event, or a sensor turning on) fires, the camera pops up. */
   doorbell: {
     enabled: boolean;
@@ -171,6 +211,34 @@ export interface HomeDeckRoomOptions {
 export interface HomeDeckEntityOptions {
   icon?: string;
   confirm?: boolean;
+  /** While on, the card's highlight takes the color of the light. */
+  light_accent?: boolean;
+  /** Outside Edit mode, the card only shows while these rules are met. */
+  visible_when?: HomeDeckCondition;
+}
+
+/** One check on an entity: on or off, equal or not to a state, above or below a number. */
+export interface HomeDeckEntityRule {
+  entity: string;
+  is: "on" | "off" | "eq" | "neq" | "above" | "below";
+  value?: string;
+}
+
+/** When a card or notice shows. Every kind of rule that is set must be met. */
+export interface HomeDeckCondition {
+  /** Checks on entities; with "any", one of them is enough. */
+  rules?: HomeDeckEntityRule[];
+  match?: "all" | "any";
+  /** Someone home, or nobody home (from the people in Home Assistant). */
+  people?: "home" | "away";
+  /** The first version: one entity on or off. Still read, written as a rule from now on. */
+  entity?: string;
+  state?: "on" | "off";
+  /** A time window as "HH:MM"; when it ends before it starts, it runs overnight. */
+  from?: string;
+  to?: string;
+  /** Weekdays, 0 is Sunday; none means every day. An overnight window belongs to the day it started. */
+  days?: number[];
 }
 
 export interface HomeDeckCardStyle {
@@ -183,6 +251,14 @@ export interface HomeDeckCardStyle {
   sparklines?: boolean;
   /** Every media player (not just Spotify) uses the player card and the full-screen player. On by default. */
   players?: boolean;
+}
+
+export type HomeDeckBinColor = "black" | "brown" | "green" | "blue" | "yellow" | "grey" | "red";
+
+export interface HomeDeckBin {
+  entity: string;
+  name: string;
+  color: HomeDeckBinColor;
 }
 
 export interface HomeDeckEnergy {

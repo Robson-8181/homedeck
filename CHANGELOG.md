@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.16.5
+
+- Import a Home Assistant dashboard: during setup or in Settings → Navigation, pick a dashboard you already use. Each tab becomes a HomeDeck screen (Pro) with the same devices, in the same order, with section titles as separators, and the rooms can show only what's in that dashboard. Nothing changes in Home Assistant.
+- Header notices: a tap now opens HomeDeck's own details, and in Settings → Home each notice has its own style (icon and text, icon only or text only) and custom text.
+- Visibility rules (Pro): show a card only when conditions on entities are met (on or off, equal or not to a state, above or below a value, all or any of them), when someone or nobody is home, by day or night, within a time window and on chosen days. For cards it's in the Edit mode options; for header notices, in Settings → Home → Notices.
+- Cameras screen in the bottom bar (optional, in Settings → Navigation): 16:9 cells with no cropping, 1 to 4 cameras per row, drag to reorder and make any camera 4×, 9× or 16× (bigger sizes with Pro).
+- Camera pages (Pro): create as many as you like under Your pages, each with its own cameras and layout.
+- Icon choices stay closed (pages, rooms and cards): only the current icon shows, and the list opens when you tap it.
+- 6× and 8× camera cards (Pro) on the other screens, from the size button in Edit mode.
+- Whole picture on camera cards (optional, in Settings → Cameras): shows the full image instead of cutting the edges.
+- Lighter cameras: the live video on cards is really closed when you leave the screen or HomeDeck, and pauses during the screensaver or while a camera is open full screen.
+- Alarm: when Alarmo doesn't arm because sensors are open, the panel now shows which ones and offers "Arm anyway".
+- Who can see (Pro): when editing a card or a room, an administrator picks which people see it; for everyone else it's gone from screens, counts and actions. This controls what shows in HomeDeck and is not a Home Assistant security permission.
+- Waste collection card (Pro), in Settings → Home: up to 4 bins with a color and a name, the days until collection and the weekday, from your sensors.
+- Devices inside a card (Pro): double and large room and device cards can hold up to 2 extra devices in their free space, each with the right control (cover, light, list, script, button, sensor). In Edit mode, a tap on the card opens the choice, and each one can have its own name on that card. A washer's program and its Start button can share one card.
+- Editing cards only in Edit mode: details no longer show those options. In Edit mode, a tap on a card (without dragging) opens its name, icon and options.
+- Truer light colors: the buttons look the same on screen but now send the lamp the pure color (green 0,255,0, blue 0,0,255...). The details also have "Other color", with a color wheel to pick any color.
+- Highlight follows the light, per card (in the card's options): while it's on, the card's highlight takes the lamp's color.
+- On a tablet lying down, the on-screen keyboard no longer resizes the panel, and browser or app bars that come and go no longer change the size of the cards.
+- In Edit mode, the cards on Home keep the same size as outside it.
+- The brightness control now sits above the name, so the name stays in the same place as on other cards.
+- Media cards realigned. With nothing playing, one centered button turns the player on or starts playing, on every player. A TV that is on with nothing playing gets power, volume and, on bigger cards, the source picker, plus the artwork when there is one, and Spotify with no active device opens the choice of where to play, without an error.
+- Header notices now come before the forecast.
+- Appearance has a new order: colors, background, style and icons.
+- Home Assistant icons on rooms too (Appearance → Icons).
+- 15 new backgrounds (Pro): 10 fixed with more vivid colors and 5 automatic ones that change with the lights that are on (Orchid, Reef, Berry, Glacier and Citrus).
+- Lights with color temperature get Warm, Normal and Cool in their details.
+- 31 new icons for cards, rooms and pages, in a grid that shows them all.
+- Custom pages have their own icon on the bottom bar: pick it in the page's Edit mode or in Settings → Navigation.
+- Date and time sensors in a friendly format ("Today, 23:12", "Oct 21, 20:12").
+- input_boolean can now be added to screens in Edit mode.
+- Hiding a device takes it off the screen: instead of waiting in a list at the bottom, it goes back to "Add devices".
+- Removing the license takes a second tap.
+- New Year and birthdays no longer have the details on top of the cards.
+- Fixed: the frame didn't apply to the cards in Settings; the screensaver clock sits lower when showing events; empty pages no longer show the message, only the add button.
+
 ## 0.16.4
 
 - List layout: the Devices group (the ones added to Home) no longer disappears in Edit mode; each one gets a − to take it off Home.

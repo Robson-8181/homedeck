@@ -148,7 +148,7 @@ export const themeEditing = String.raw`
 .app-shell .st-content { min-width: 0; display: flex; flex-direction: column; gap: calc(var(--u)*1.8); }
 .app-shell .st-panel {
   display: flex; flex-direction: column; gap: calc(var(--u)*1.4); padding: calc(var(--u)*2.6); border-radius: calc(var(--u)*3.4*var(--hd-r,1));
-  background: var(--glass); border: 1px solid var(--line); backdrop-filter: blur(var(--hd-blur,22px)) saturate(1.3); -webkit-backdrop-filter: blur(var(--hd-blur,22px)) saturate(1.3);
+  background: var(--glass); border: 1px solid var(--hd-frame,var(--line)); backdrop-filter: blur(var(--hd-blur,22px)) saturate(1.3); -webkit-backdrop-filter: blur(var(--hd-blur,22px)) saturate(1.3);
 }
 .app-shell .st-panel h2 { margin: 0; font: 600 calc(var(--u)*2.2)/1.2 var(--f-body); }
 .app-shell .st-panel > p { margin: calc(var(--u)*-.8) 0 calc(var(--u)*.4); color: var(--ink-2); font: 500 calc(var(--u)*1.7)/1.35 var(--f-body); }

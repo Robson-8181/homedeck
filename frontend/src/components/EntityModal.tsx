@@ -4,15 +4,20 @@ import type { CSSProperties, KeyboardEvent } from "react";
 import { domainLabel, hvacLabel, type TranslationKey } from "../i18n";
 import type { DiscoveredEntity } from "../types/discovery";
 import type { HassEntity, HomeAssistant } from "../types/home-assistant";
-import { DEVICE_ICONS, domainIcon, EntityIcon, HA_ICON, HDIcon } from "./HDIcon";
+import { DEVICE_ICONS, domainIcon, EntityIcon, HA_ICON, HDIcon, isIconName } from "./HDIcon";
+import { IconChooser } from "./RoomOptions";
 import { LightEffect, VolumeButtons } from "./WideControls";
+import { ColorWheel } from "./ColorWheel";
+import { MjpegImage } from "./CameraCard";
+import { pauseCameras } from "../cameraPause";
+import { AudienceEditor, ConditionEditor, CardLinksEditor } from "./CardLinks";
 import { SpotifyPlayer } from "./SpotifyPlayer";
 import { showsPlayer, usePlayers } from "../spotify";
 import { usePlan } from "../plan";
 import { isNumericState } from "../history";
 import { HistoryChart } from "./HistoryChart";
 import { MAX_NAME, useCustomize } from "../personalize";
-import { ALARM_ARMED, alarmCall, alarmCodeFormat, alarmModes, alarmStatus, cameraIsWebRtcOnly, cameraSnapshot, cameraStream, loadCameraPlayer, mediaArt, mediaSources, plantReadings, plantStatus, RUNNABLE, SELECTS, runEntity, selectOption, selectOptions, vacuumActions, vacuumStatus } from "../devices";
+import { friendlyDate, ALARM_ARMED, alarmCall, alarmCodeFormat, alarmModes, alarmStatus, cameraIsWebRtcOnly, cameraSnapshot, cameraStream, loadCameraPlayer, mediaArt, mediaSources, plantReadings, plantStatus, RUNNABLE, SELECTS, runEntity, selectOption, selectOptions, vacuumActions, vacuumStatus } from "../devices";
 
 interface EntityModalProps {
   entity: DiscoveredEntity;
@@ -23,16 +28,13 @@ interface EntityModalProps {
   t: (key: TranslationKey) => string;
 }
 
-const LIGHT_SWATCHES = ["#ffd9a0", "#ffffff", "#9fd3ff", "#7aa8ff", "#8a7bff", "#ff9ac1", "#ff6b5e", "#ffb36b", "#7be0a0"];
+// The swatch shown on screen, and the fuller color sent to the lamp (soft tints look washed out on RGB lamps).
+const LIGHT_SWATCHES: Array<[string, number[]]> = [["#ffd9a0", [255, 200, 130]], ["#ffffff", [255, 255, 255]], ["#9fd3ff", [0, 200, 255]], ["#7aa8ff", [0, 0, 255]], ["#8a7bff", [128, 0, 255]], ["#ff9ac1", [255, 0, 128]], ["#ff6b5e", [255, 0, 0]], ["#ffb36b", [255, 110, 0]], ["#7be0a0", [0, 255, 0]]];
 const ACTIVE = new Set(["on", "open", "opening", "playing", "unlocked", "heat", "cool", "heat_cool", "auto", "dry", "fan_only", "cleaning", "returning", ...ALARM_ARMED]);
 const COMMIT_KEYS = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"]);
 
 function num(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
-
-function hexToRgb(value: string): number[] {
-  return [1, 3, 5].map((index) => Number.parseInt(value.slice(index, index + 2), 16));
 }
 
 /** Pill slider like the cards' brightness bar: a rounded fill with its marker set a little inside the
@@ -68,6 +70,7 @@ function EntityDetails({ entity, hass, language, onClose, roomName, t }: EntityM
   const unavailable = !state || ["unavailable", "unknown"].includes(state.state);
   const [target, setTarget] = useState(num(attrs.temperature, num(attrs.current_temperature, 22)));
   const [busy, setBusy] = useState(false);
+  const [wheel, setWheel] = useState(false);
 
   useEffect(() => { setTarget(num(attrs.temperature, num(attrs.current_temperature, 22))); }, [state?.last_updated]);
   useEffect(() => {
@@ -107,7 +110,7 @@ function EntityDetails({ entity, hass, language, onClose, roomName, t }: EntityM
     if (SELECTS.has(domain)) return state.state;
     if (state.state === "on") return t("stateOn");
     if (state.state === "off") return t("stateOff");
-    return `${state.state.replaceAll("_", " ")}${unit}`;
+    return friendlyDate(state, language) ?? `${state.state.replaceAll("_", " ")}${unit}`;
   })();
 
   const primary = (() => {
@@ -133,7 +136,7 @@ function EntityDetails({ entity, hass, language, onClose, roomName, t }: EntityM
     <section className={`hd-sheet hd-detail ${domain === "camera" ? "hd-detail--camera" : ""} ${busy ? "hd-detail--busy" : ""}`}>
       <header className="hd-detail__header">
         <span className={on ? "hd-detail__icon hd-detail__icon--on" : "hd-detail__icon"}><EntityIcon entity={customize?.lookup(entity.entity_id) ?? entity} size={24} /></span>
-        <div><span className="eyebrow">{roomName ?? domainLabel(domain, language)}</span><EntityName entity={entity} t={t} /><p>{status}</p></div>
+        <div><span className="eyebrow">{roomName ?? domainLabel(domain, language)}</span><h2 id="hd-detail-title">{(customize?.lookup(entity.entity_id) ?? entity).name}</h2><p>{status}</p></div>
         <button aria-label={t("close")} className="hd-close" onClick={onClose} type="button"><HDIcon name="close" size={20} /></button>
       </header>
 
@@ -143,7 +146,21 @@ function EntityDetails({ entity, hass, language, onClose, roomName, t }: EntityM
           <span className="eyebrow">{t("lightEffect")}</span>
           <LightEffect className="hd-detail__select" hass={hass} label={`${t("lightEffect")}: ${entity.name}`} state={state} t={t} />
         </div>}
-        {domain === "light" && colorful && <div className="hd-swatches" role="group" aria-label={t("predefinedColors")}>{LIGHT_SWATCHES.map((swatch) => <button aria-label={`${t("color")} ${swatch}`} key={swatch} onClick={() => void call("light", "turn_on", { rgb_color: hexToRgb(swatch) })} style={{ background: swatch }} type="button" />)}</div>}
+        {domain === "light" && colorModes.includes("color_temp") && (() => {
+          const low = num(attrs.min_color_temp_kelvin, 2000);
+          const high = num(attrs.max_color_temp_kelvin, 6500);
+          const current = state?.state === "on" && attrs.color_mode === "color_temp" ? num(attrs.color_temp_kelvin, 0) : 0;
+          const temps: Array<[TranslationKey, number, string]> = [["colorWarm", 2700, "#ffb46b"], ["colorNormal", 4000, "#fff0dc"], ["colorCold", 6500, "#cfe0ff"]];
+          return <div className="hd-temps" role="group" aria-label={t("colorTemperature")}>{temps.map(([label, kelvin, swatch]) => {
+            const value = Math.max(low, Math.min(high, kelvin));
+            return <button aria-pressed={current > 0 && Math.abs(current - value) < 400} key={label} onClick={() => void call("light", "turn_on", { color_temp_kelvin: value })} style={{ "--t": swatch } as CSSProperties} type="button"><i />{t(label)}</button>;
+          })}</div>;
+        })()}
+        {domain === "light" && colorful && <div className="hd-swatches" role="group" aria-label={t("predefinedColors")}>
+          {LIGHT_SWATCHES.map(([swatch, rgb]) => <button aria-label={`${t("color")} ${swatch}`} key={swatch} onClick={() => void call("light", "turn_on", { rgb_color: rgb })} style={{ background: swatch }} type="button" />)}
+          <button aria-expanded={wheel} aria-label={t("otherColor")} className="hd-swatches__other" onClick={() => setWheel(!wheel)} title={t("otherColor")} type="button" />
+        </div>}
+        {domain === "light" && colorful && wheel && <ColorWheel hs={Array.isArray(attrs.hs_color) ? [Number(attrs.hs_color[0]), Number(attrs.hs_color[1])] : [30, 60]} label={t("otherColor")} onPick={(hs) => void hass.callService("light", "turn_on", { entity_id: entity.entity_id, hs_color: hs })} />}
 
         {domain === "climate" && <>
           <div className="hd-stepper">
@@ -196,33 +213,56 @@ function EntityDetails({ entity, hass, language, onClose, roomName, t }: EntityM
       </div>}
 
       {primary && <button className={on ? "hd-detail__primary" : "hd-detail__primary hd-detail__primary--off"} disabled={busy} onClick={() => void primary.run()} type="button"><HDIcon name={domain === "scene" ? "scene" : domain === "lock" ? "lock" : RUNNABLE.has(domain) ? "play" : "power"} size={18} />{primary.label}</button>}
-      <DeviceOptions entity={entity} t={t} />
     </section>
   </div>;
 }
 
 /** The device's own options, behind a small button: its tile icon (automatic, Home Assistant's, or a
  * HomeDeck icon) and, for what a tap switches, asking for a second tap first. */
-function DeviceOptions({ entity: opened, t }: { entity: DiscoveredEntity; t: (key: TranslationKey) => string }) {
+/** Edit mode, a tap on a card: its name, icon and the card's own options. */
+export function EntityEditSheet({ entityId, hass, linkable, onClose, t }: { entityId: string; hass: HomeAssistant; linkable: boolean; onClose: () => void; t: (key: TranslationKey) => string }) {
   const customize = useCustomize();
-  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const close = (event: globalThis.KeyboardEvent) => { if (event.key === "Escape") onClose(); };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [onClose]);
+  const entity = customize?.lookup(entityId);
+  if (!entity) return null;
+  return <div aria-labelledby="hd-detail-title" aria-modal="true" className="hd-sheet-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }} role="dialog">
+    <section className="hd-sheet hd-detail">
+      <header className="hd-detail__header">
+        <span className="hd-detail__icon"><EntityIcon entity={entity} size={24} /></span>
+        <div><span className="eyebrow">{t("deviceOptions")}</span><EntityName entity={entity} t={t} /></div>
+        <button aria-label={t("close")} className="hd-close" onClick={onClose} type="button"><HDIcon name="close" size={20} /></button>
+      </header>
+      <DeviceOptions entity={entity} state={hass.states[entityId]} t={t} />
+      <section className="room-options hd-detail__options">{linkable && !["camera", "media_player"].includes(entity.domain) && <CardLinksEditor itemKey={`entity:${entityId}`} ownId={entityId} t={t} />}<ConditionEditor entity={entity} hass={hass} t={t} /><AudienceEditor hass={hass} itemKey={`entity:${entityId}`} t={t} /></section>
+    </section>
+  </div>;
+}
+
+function DeviceOptions({ entity: opened, state, t }: { entity: DiscoveredEntity; state?: HassEntity; t: (key: TranslationKey) => string }) {
+  const customize = useCustomize();
   if (!customize) return null;
   const entity = customize.lookup(opened.entity_id) ?? opened;
   const chosen = entity.display_icon ?? "";
   const switches = ["light", "switch", "fan", "input_boolean", "automation", "scene", "cover", ...RUNNABLE].includes(entity.domain);
   const haIcon = entity.icon?.includes(":") && typeof customElements !== "undefined" && customElements.get("ha-icon") ? entity.icon : null;
   const pick = (icon: string) => customize.setEntity(entity.entity_id, { icon });
-  if (!open) return <button className="hd-detail__options-toggle" onClick={() => setOpen(true)} type="button"><HDIcon name="settings" size={15} />{t("deviceOptions")}{entity.confirm && <HDIcon name="lock" size={13} />}</button>;
+  const modes = Array.isArray(state?.attributes.supported_color_modes) ? state.attributes.supported_color_modes.map(String) : [];
+  const colorLight = entity.domain === "light" && modes.some((mode) => ["hs", "xy", "rgb", "rgbw", "rgbww"].includes(mode));
   return <section className="room-options hd-detail__options" aria-label={t("deviceOptions")}>
     <div className="room-options__row">
       <span className="eyebrow">{t("tileIcon")}</span>
-      <div className="room-options__icons" role="radiogroup" aria-label={t("tileIcon")}>
+      <IconChooser current={chosen === HA_ICON && haIcon ? <EntityIcon entity={{ ...entity, display_icon: HA_ICON }} size={18} /> : <HDIcon name={chosen && chosen !== HA_ICON && isIconName(chosen) ? chosen : domainIcon(entity.domain)} size={18} />} action={t("changeIcon")} label={t("tileIcon")}>
         <button aria-checked={chosen === ""} aria-label={t("iconAuto")} className="room-options__auto" onClick={() => pick("")} role="radio" type="button"><HDIcon name={domainIcon(entity.domain)} size={18} /><span>{t("iconAuto")}</span></button>
         {haIcon && <button aria-checked={chosen === HA_ICON} aria-label={t("iconFromArea")} className="room-options__auto" onClick={() => pick(HA_ICON)} role="radio" type="button"><EntityIcon entity={{ ...entity, display_icon: HA_ICON }} size={18} /><span>{t("iconFromArea")}</span></button>}
         {DEVICE_ICONS.map((icon) => <button aria-checked={chosen === icon} aria-label={icon} key={icon} onClick={() => pick(icon)} role="radio" type="button"><HDIcon name={icon} size={18} /></button>)}
-      </div>
+      </IconChooser>
     </div>
     {switches && <label className="hd-detail__confirm"><span><b>{t("confirmToggle")}</b><small>{t("confirmToggleDescription")}</small></span><input checked={Boolean(entity.confirm)} className="st-switch" onChange={(event) => customize.setEntity(entity.entity_id, { confirm: event.target.checked })} type="checkbox" /></label>}
+    {colorLight && <label className="hd-detail__confirm"><span><b>{t("lightAccent")}</b><small>{t("lightAccentDescription")}</small></span><input checked={Boolean(entity.light_accent)} className="st-switch" onChange={(event) => customize.setEntity(entity.entity_id, { light_accent: event.target.checked })} type="checkbox" /></label>}
   </section>;
 }
 
@@ -233,8 +273,18 @@ function AlarmPanel({ busy, hass, run, state, t }: { busy: boolean; hass: HomeAs
   const armed = ALARM_ARMED.has(state.state) || ["arming", "pending", "triggered"].includes(state.state);
   // Many panels arm without a code and only ask for it to disarm.
   const format = armed || state.attributes.code_arm_required !== false ? alarmCodeFormat(state) : null;
-  const send = (service: string) => void run(async () => { try { await alarmCall(hass, state, service, code); } finally { setCode(""); } });
+  const [lastMode, setLastMode] = useState<string | null>(null);
+  const send = (service: string) => { setLastMode(service); void run(async () => { try { await alarmCall(hass, state, service, code); } finally { setCode(""); } }); };
+  // Alarmo doesn't raise an error when a door or window is open: it stays disarmed and lists them here.
+  const open = !armed && state.attributes.open_sensors && typeof state.attributes.open_sensors === "object" ? Object.keys(state.attributes.open_sensors as Record<string, unknown>) : [];
+  const alarmoMode: Record<string, string> = { alarm_arm_away: "away", alarm_arm_home: "home", alarm_arm_night: "night", alarm_arm_vacation: "vacation", alarm_arm_custom_bypass: "custom" };
+  const force = () => { const mode = lastMode ? alarmoMode[lastMode] : undefined; if (mode) void run(async () => { try { await hass.callService("alarmo", "arm", { entity_id: state.entity_id, mode, force: true, ...(code ? { code } : {}) }); } finally { setCode(""); } }); };
   return <div className="hd-alarm">
+    {open.length > 0 && <div className="hd-alarm__open">
+      <b>{t("alarmNotArmed")}</b>
+      <span>{open.map((id) => String(hass.states[id]?.attributes.friendly_name ?? id)).join(", ")}</span>
+      {lastMode && alarmoMode[lastMode] && <button disabled={busy || (format != null && !code)} onClick={force} type="button">{t("alarmArmAnyway")}</button>}
+    </div>}
     {format && <input aria-label={t("alarmCode")} autoComplete="off" className="hd-alarm__code" inputMode={format === "number" ? "numeric" : "text"} onChange={(event) => setCode(event.target.value)} placeholder={t("alarmCode")} type="password" value={code} />}
     {armed
       ? <button className="hd-detail__primary" disabled={busy || (format != null && !code)} onClick={() => send("alarm_disarm")} type="button"><HDIcon name="lock" size={18} />{t("alarmDisarm")}</button>
@@ -326,8 +376,14 @@ export function CameraLive({ entity, hass, t }: { entity: DiscoveredEntity; hass
   };
   const shell = frame.current?.closest(".app-shell") ?? null;
   const live = mode === "player" && Boolean(state);
+  // Only one stream at a time: the cards behind wait while this one is open.
+  useEffect(() => {
+    pauseCameras("open-camera", true);
+    return () => pauseCameras("open-camera", false);
+  }, []);
   const picture = live ? <HaCameraPlayer hass={hass} state={state} />
-    : source ? <img alt={entity.name} onError={() => (mode === "mjpeg" ? fallBack() : undefined)} src={source} />
+    : source && mode === "mjpeg" ? <MjpegImage alt={entity.name} onError={fallBack} src={source} />
+    : source ? <img alt={entity.name} src={source} />
       : mode === "mjpeg" || mode === "probe" ? <span className="mini-spinner" /> : <p>{t("cameraOffline")}</p>;
   return <div className="hd-camera" ref={frame}>
     {picture}
